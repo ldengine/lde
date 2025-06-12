@@ -8,6 +8,27 @@
     },
     {
       "path": "./packages/dataset"
+    },
+    {
+      "path": "./packages/sparql-importer"
+    },
+    {
+      "path": "./packages/sparql-qlever"
+    },
+    {
+      "path": "./packages/distribution-download"
+    },
+    {
+      "path": "./packages/wait-for-sparql"
+    },
+    {
+      "path": "./packages/task-runner"
+    },
+    {
+      "path": "./packages/task-runner-docker"
+    },
+    {
+      "path": "./packages/task-runner-native"
     }
   ]
 }

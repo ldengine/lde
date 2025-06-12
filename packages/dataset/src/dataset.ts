@@ -1,47 +1,47 @@
 export class Dataset {
-  constructor(
-    public readonly iri: URL,
-    public distributions: Distribution[],
-  ) {}
+  constructor(public readonly iri: URL, public distributions: Distribution[]) {}
 
   public getSparqlDistribution(): Distribution | null {
     return (
       this.distributions.filter(
-        distribution => distribution.isSparql() && distribution.isValid,
+        (distribution) => distribution.isSparql() && distribution.isValid
       )[0] ?? null
     );
   }
 
   public getDownloadDistributions(): Distribution[] {
     const validDistributions = this.distributions.filter(
-      distribution => distribution.isValid,
+      (distribution) => distribution.isValid
     );
 
     return [
-      ...validDistributions.filter(distribution =>
-        distribution.mimeType?.endsWith('+gzip'),
+      ...validDistributions.filter((distribution) =>
+        distribution.mimeType?.endsWith('+gzip')
       ),
-      ...validDistributions.filter(distribution =>
-        distribution.accessUrl?.endsWith('.nt.gz'),
+      ...validDistributions.filter((distribution) =>
+        distribution.accessUrl?.endsWith('.nt.gz')
       ),
       ...validDistributions.filter(
-        distribution =>
+        (distribution) =>
           undefined !== distribution.mimeType &&
           ['application/n-triples', 'text/turtle'].includes(
-            distribution.mimeType,
-          ),
+            distribution.mimeType
+          )
       ),
     ];
   }
 }
 
 export class Distribution {
-  public mimeType?: string;
-  public accessUrl?: string;
   public byteSize?: number;
   public lastModified?: Date;
   public isValid?: boolean;
   public namedGraph?: string;
+
+  constructor(
+    public readonly mimeType: string,
+    public readonly accessUrl: string
+  ) {}
 
   public isSparql() {
     return (
@@ -52,10 +52,8 @@ export class Distribution {
   }
 
   public static sparql(endpoint: string, namedGraph?: string) {
-    const distribution = new this();
-    distribution.mimeType = 'application/sparql-query';
+    const distribution = new this('application/sparql-query', endpoint);
     distribution.isValid = true;
-    distribution.accessUrl = endpoint;
     distribution.namedGraph = namedGraph;
 
     return distribution;
