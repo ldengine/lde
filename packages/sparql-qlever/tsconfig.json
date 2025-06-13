@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../task-runner"
+    },
+    {
+      "path": "../wait-for-sparql"
+    },
+    {
+      "path": "../distribution-download"
+    },
+    {
+      "path": "../dataset"
+    },
+    {
+      "path": "../sparql-importer"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}

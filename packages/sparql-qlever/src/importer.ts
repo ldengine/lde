@@ -21,6 +21,7 @@ export interface Options {
   };
   port?: number;
 }
+
 /**
  * Import RDF to a QLever SPARQL server.
  *
