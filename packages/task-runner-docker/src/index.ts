@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { TaskRunner, Task } from '@lde/task-runner';
+import { TaskRunner } from '@lde/task-runner';
 import Docker, { Container, ContainerCreateOptions } from 'dockerode';
 
 export interface DockerTaskRunnerOptions {
@@ -8,12 +8,6 @@ export interface DockerTaskRunnerOptions {
   port?: number;
   mountDir?: string;
   docker?: Docker;
-}
-
-export class DockerTask extends Task {
-  constructor(public readonly task: Container) {
-    super();
-  }
 }
 
 export class DockerTaskRunner implements TaskRunner<Container> {
