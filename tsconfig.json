@@ -4,7 +4,7 @@
   "files": [],
   "references": [
     {
-      "path": "./packages/dataset-register-client"
+      "path": "./packages/dataset-registry-client"
     },
     {
       "path": "./packages/dataset"
@@ -29,6 +29,15 @@
     },
     {
       "path": "./packages/task-runner-native"
+    },
+    {
+      "path": "./packages/sparql-server"
+    },
+    {
+      "path": "./packages/pipeline"
+    },
+    {
+      "path": "./packages/test-lib"
     }
   ]
 }
