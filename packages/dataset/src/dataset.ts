@@ -39,8 +39,8 @@ export class Distribution {
   public namedGraph?: string;
 
   constructor(
-    public readonly mimeType: string,
-    public readonly accessUrl: string
+    public readonly accessUrl: string,
+    public readonly mimeType: string
   ) {}
 
   public isSparql() {
