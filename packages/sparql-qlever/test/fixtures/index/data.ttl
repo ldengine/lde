@@ -1,0 +1,3 @@
+@prefix schema: <https://schema.org/> .
+
+<http://example.com/source> a schema:CreativeWork .
