@@ -8,7 +8,11 @@
     "lib": ["es2022"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "noEmitOnError": true,
+
+    // This causes tests to fail with error TS5110: Option 'module' must be set to 'NodeNext' when option 'moduleResolution' is set to 'NodeNext'.
+    // if run individually in IntellJ
+    "noEmitOnError": false,
+
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
