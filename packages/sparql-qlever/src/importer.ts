@@ -5,7 +5,7 @@ import {
   NotSupported,
 } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
-import { Downloader } from '@lde/distribution-download';
+import { Downloader, LastModifiedDownloader } from '@lde/distribution-download';
 import { basename, dirname } from 'path';
 import { writeFile } from 'node:fs/promises';
 import { TaskRunner } from '@lde/task-runner';
@@ -34,7 +34,7 @@ export class Importer implements ImporterInterface {
 
   constructor({ taskRunner, downloader, indexName, qleverOptions }: Options) {
     this.taskRunner = taskRunner;
-    this.downloader = downloader ?? new Downloader();
+    this.downloader = downloader ?? new LastModifiedDownloader();
     this.indexName = indexName ?? 'data';
     this.qleverOptions = qleverOptions ?? {
       'ascii-prefixes-only': true,
