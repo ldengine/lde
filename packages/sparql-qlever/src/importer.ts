@@ -1,18 +1,17 @@
 import {
   Importer as ImporterInterface,
-  NotSupported,
   ImportFailed,
   ImportSuccessful,
+  NotSupported,
 } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
 import { Downloader } from '@lde/distribution-download';
 import { basename, dirname } from 'path';
 import { writeFile } from 'node:fs/promises';
-import { waitForSparqlEndpointAvailable } from '@lde/wait-for-sparql';
-import { TaskRunner, Task } from '@lde/task-runner';
+import { TaskRunner } from '@lde/task-runner';
 
 export interface Options {
-  taskRunner: TaskRunner<Task>;
+  taskRunner: TaskRunner<unknown>;
   indexName?: string;
   downloader?: Downloader;
   qleverOptions?: {
@@ -29,18 +28,11 @@ export interface Options {
  */
 export class Importer implements ImporterInterface {
   private indexName;
-  private taskRunner;
+  private taskRunner: TaskRunner<unknown>;
   private downloader;
   private qleverOptions;
-  private port = 7001;
 
-  constructor({
-    taskRunner,
-    downloader,
-    indexName,
-    qleverOptions,
-    port,
-  }: Options) {
+  constructor({ taskRunner, downloader, indexName, qleverOptions }: Options) {
     this.taskRunner = taskRunner;
     this.downloader = downloader ?? new Downloader();
     this.indexName = indexName ?? 'data';
@@ -48,7 +40,6 @@ export class Importer implements ImporterInterface {
       'ascii-prefixes-only': true,
       'num-triples-per-batch': 100000,
     };
-    this.port = port ?? 7001;
   }
 
   public async import(
@@ -89,12 +80,7 @@ export class Importer implements ImporterInterface {
       this.fileFormatFromMimeType(distribution.mimeType)
     );
 
-    const sparqlEndpoint = new URL(
-      `http://localhost:${this.options.port}/sparql`
-    );
-    await waitForSparqlEndpointAvailable(sparqlEndpoint);
-
-    return new ImportSuccessful(distribution, sparqlEndpoint);
+    return new ImportSuccessful(distribution);
   }
 
   private fileFormatFromMimeType(mimeType: string): fileFormat {
@@ -130,11 +116,7 @@ export class Importer implements ImporterInterface {
         this.indexName
       } -s ${settingsFile} -F ${format} -f -`
     );
-    await this.options.taskRunner.wait(indexTask);
-
-    this.serverTask = await this.options.taskRunner.run(
-      `ServerMain --index-basename ${this.indexName} --memory-max-size 6G --port ${this.options.port}`
-    );
+    await this.taskRunner.wait(indexTask);
   }
 }
 

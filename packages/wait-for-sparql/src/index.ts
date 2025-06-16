@@ -11,9 +11,8 @@ export async function waitForSparqlEndpointAvailable(
   url: string,
   options?: Options
 ) {
-  const query = options?.query ?? 'select * where { ?s ?p ?o } limit 1';
-  const fetcher =
-    options?.fetcher ?? new SparqlEndpointFetcher({ timeout: 300_000 });
+  const query = options?.query ?? 'construct where { ?s ?p ?o } limit 1';
+  const fetcher = options?.fetcher ?? new SparqlEndpointFetcher();
   await pRetry(
     async () => {
       let results;

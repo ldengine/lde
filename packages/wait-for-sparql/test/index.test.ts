@@ -1,4 +1,4 @@
-import { waitForSparqlEndpointAvailable } from '../src';
+import { waitForSparqlEndpointAvailable } from '../src/index.js';
 
 describe('waitForSparqlEndpointAvailable', () => {
   it('rejects when SPARQL endpoint is unavailable', async () => {

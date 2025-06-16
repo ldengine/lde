@@ -19,6 +19,11 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "@lde/dataset": "0.0.1",
+    "@lde/distribution-download": "0.0.1",
+    "@lde/sparql-importer": "0.0.1",
+    "@lde/sparql-server": "0.0.1",
+    "@lde/task-runner": "0.0.1"
   }
 }
