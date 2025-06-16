@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { TaskRunner } from '@lde/task-runner';
+import { TaskRunner, Task } from '@lde/task-runner';
 import Docker, { Container, ContainerCreateOptions } from 'dockerode';
 
 export interface DockerTaskRunnerOptions {
@@ -8,6 +8,12 @@ export interface DockerTaskRunnerOptions {
   port?: number;
   mountDir?: string;
   docker?: Docker;
+}
+
+export class DockerTask extends Task {
+  constructor(public readonly task: Container) {
+    super();
+  }
 }
 
 export class DockerTaskRunner implements TaskRunner<Container> {
@@ -45,7 +51,7 @@ export class DockerTaskRunner implements TaskRunner<Container> {
         await this.options.docker
           .getContainer(this.options.containerName)
           .remove({ force: true });
-      } catch (e) {
+      } catch {
         // Ignore if the container does not exist yet.
       }
     }
@@ -102,7 +108,8 @@ export class DockerTaskRunner implements TaskRunner<Container> {
       tail: 100,
     });
 
-    logStream.on('data', () => {
+    logStream.on('data', (data) => {
+      console.log(data.toString());
       // process.stdout.write(chunk.toString());
     });
 
