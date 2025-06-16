@@ -5,7 +5,11 @@ import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
 
-export class Downloader {
+export interface Downloader {
+  download(distribution: Distribution, target?: string): Promise<string>;
+}
+
+export class LastModifiedDownloader implements Downloader {
   constructor(private readonly path = 'imports') {}
 
   public async download(

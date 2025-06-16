@@ -1,17 +1,17 @@
 import { Distribution } from '@lde/dataset';
-import { Downloader } from '../src';
+import { LastModifiedDownloader } from '../src/download.js';
 import nock from 'nock';
 import { join } from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
 const localFile = join(os.tmpdir(), 'example.com!file.nt');
-const downloader = new Downloader(os.tmpdir());
+const downloader = new LastModifiedDownloader(os.tmpdir());
 const distribution = new Distribution(
   'https://example.com/file.nt',
   'application/n-triples'
 );
 
-describe('Downloader', () => {
+describe('LastModifiedDownloader', () => {
   afterAll(async () => {
     nock.restore();
   });
