@@ -1,5 +1,5 @@
 export default {
-  displayName: '@lde/dataset-register-client',
+  displayName: '@lde/dataset-registry-client',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

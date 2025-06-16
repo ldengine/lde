@@ -1,5 +1,5 @@
 {
-  "name": "@lde/dataset-register-client",
+  "name": "@lde/dataset-registry-client",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
