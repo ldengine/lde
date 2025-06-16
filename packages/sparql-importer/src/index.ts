@@ -1,5 +1,4 @@
 import { Dataset, Distribution } from '@lde/dataset';
-import EventEmitter from 'node:events';
 
 /**
  * An Importer takes a {@link Dataset}, selects a suitable {@link Distribution}
@@ -8,7 +7,8 @@ import EventEmitter from 'node:events';
  * This assumes that all Distributions of the Dataset are roughly equivalent:
  * https://docs.nde.nl/requirements-datasets/#dataset-distributions.
  */
-export interface Importer extends EventEmitter<Events> {
+// export interface Importer extends EventEmitter<Events> {
+export interface Importer {
   /**
    * Import a {@link Dataset} to a SPARQL server.
    */
@@ -17,15 +17,14 @@ export interface Importer extends EventEmitter<Events> {
   ): Promise<NotSupported | ImportFailed | ImportSuccessful>;
 }
 
-interface Events {
-  imported: [statements: number];
-  end: [statements: number];
-}
+// interface Events {
+//   imported: [statements: number];
+//   end: [statements: number];
+// }
 
 export class ImportSuccessful {
   constructor(
     public readonly distribution: Distribution,
-    public readonly endpoint: URL,
     public readonly identifier?: string
   ) {}
 }
