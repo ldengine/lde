@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
-  "files": [],
+  "files": ["vite.config.base.ts"],
   "references": [
     {
       "path": "./packages/dataset-registry-client"
