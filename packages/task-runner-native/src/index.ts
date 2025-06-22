@@ -30,14 +30,14 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
       task.stdout.on('data', (data) => {
         this.stdout.set(
           task.pid!,
-          this.stdout.get(task.pid) ?? '' + data.toString()
+          this.stdout.get(task.pid!) ?? '' + data.toString()
         );
       });
 
       task.stderr.on('data', (data) => {
         this.stderr.set(
           task.pid!,
-          this.stderr.get(task.pid) ?? '' + data.toString()
+          this.stderr.get(task.pid!) ?? '' + data.toString()
         );
       });
     }

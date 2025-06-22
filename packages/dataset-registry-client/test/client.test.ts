@@ -1,6 +1,9 @@
 import { Client } from '../src';
 import { rdfMediaTypes, sparqlMediaTypes } from '@lde/dataset';
-import { startSparqlEndpoint, teardownSparqlEndpoint } from '@lde/test';
+import {
+  startSparqlEndpoint,
+  teardownSparqlEndpoint,
+} from '@lde/local-sparql-endpoint';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 

@@ -1,0 +1,17 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://foo.org/id/dataset/foo> a dcat:Dataset ;
+  dct:title "test" ;
+  dcat:distribution [
+    a dcat:Distribution ;
+    dcat:accessURL <http://foo.org/sparql2> ;
+    dcat:mediaType "application/sparql-query" ;
+    dct:modified "2022-12-03T10:26"^^xsd:dateTime ;
+  ] , [
+    a dcat:Distribution ;
+    dcat:accessURL <http://foo.org/files/foo.ttl.gz> ;
+    dcat:mediaType "text/turtle" ;
+    dcat:byteSize "87654321" ;
+  ] .

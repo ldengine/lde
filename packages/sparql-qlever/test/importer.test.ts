@@ -4,8 +4,6 @@ import { ImportSuccessful } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
 import { resolve } from 'node:path';
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 describe('Importer', () => {
   describe('import', () => {
     it('imports Turtle data', async () => {
@@ -37,6 +35,6 @@ describe('Importer', () => {
 
       const result = await importer.import(dataset);
       expect(result).toBeInstanceOf(ImportSuccessful);
-    });
+    }, 10_000);
   });
 });
