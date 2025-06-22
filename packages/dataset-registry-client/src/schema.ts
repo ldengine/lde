@@ -1,21 +1,5 @@
-import { createNamespace } from 'ldkit';
 import { dcterms, xsd } from 'ldkit/namespaces';
-
-const dcat = createNamespace({
-  iri: 'http://www.w3.org/ns/dcat#',
-  prefix: 'dcat:',
-  terms: [
-    'Dataset',
-    'Distribution',
-    'accessURL',
-    'keyword',
-    'mediaType',
-    'byteSize',
-    'distribution',
-    'modified',
-    'downloadURL',
-  ],
-} as const);
+import { dcat } from './dcat.js';
 
 export const DatasetSchema = {
   '@type': dcat.Dataset,
@@ -38,6 +22,7 @@ export const DatasetSchema = {
       mediaType: dcat.mediaType,
       byteSize: {
         '@id': dcat.byteSize,
+        '@type': xsd.nonNegativeInteger,
         '@optional': true,
       },
       modified: {
