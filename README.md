@@ -6,7 +6,7 @@ LDE is a suite of Node.js libraries that power your Linked Data applications and
 
 * [x] [@lde/dataset](packages/dataset): core objects dataset and distribution
 * [ ] [@lde/dataset-analyzer-pipeline](packages/dataset-analyzer-pipeline): statistical analysis of datasets
-* [ ] [@lde/dataset-registry-client](packages/dataset-registry-client): retrieve dataset descriptions from DCAT-AP 3.0 registries
+* [x] [@lde/dataset-registry-client](packages/dataset-registry-client): retrieve dataset descriptions from DCAT-AP 3.0 registries
 * [x] [@lde/distribution-download](packages/distribution-download): download distributions for processing locally
 * [x] [@lde/local-sparql-endpoint](packages/pipeline): quickly start a local SPARQL endpoint for testing and development
 * [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
