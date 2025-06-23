@@ -1,5 +1,6 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
+import { configDefaults } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -12,6 +13,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       reporter: ['text'],
+      exclude: [...(configDefaults.coverage.exclude ?? []), '**/index.ts'],
       provider: 'v8' as const,
       thresholds: {
         autoUpdate: true,
