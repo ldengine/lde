@@ -19,8 +19,8 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "^0.0.1",
-    "filenamify-url": "^3.1.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "@lde/dataset": "0.0.1",
+    "filenamify-url": "3.1.0"
   }
 }

@@ -11,5 +11,18 @@
   },
   "include": ["src/**/*.ts"],
   "references": [],
-  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+  "exclude": [
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts",
+    "test/**/*.test.ts",
+    "test/**/*.spec.ts",
+    "test/**/*.test.tsx",
+    "test/**/*.spec.tsx",
+    "test/**/*.test.js",
+    "test/**/*.spec.js",
+    "test/**/*.test.jsx",
+    "test/**/*.spec.jsx"
+  ]
 }

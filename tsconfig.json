@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
-  "files": ["vite.config.base.ts"],
   "references": [
     {
       "path": "./packages/dataset-registry-client"
@@ -34,10 +33,7 @@
       "path": "./packages/sparql-server"
     },
     {
-      "path": "./packages/pipeline"
-    },
-    {
-      "path": "./packages/test-lib"
+      "path": "./packages/local-sparql-endpoint"
     }
   ]
 }

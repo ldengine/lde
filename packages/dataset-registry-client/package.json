@@ -23,8 +23,7 @@
     "ldkit": "^2.4.0",
     "n3": "^1.26.0",
     "sparqljs": "^3.7.3",
-    "tslib": "^2.3.0",
-    "vite": "^6.0.0"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@comunica/query-sparql-file": "^4.3.0",

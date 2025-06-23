@@ -4,7 +4,7 @@
   "include": [],
   "references": [
     {
-      "path": "../test"
+      "path": "../local-sparql-endpoint"
     },
     {
       "path": "../dataset"

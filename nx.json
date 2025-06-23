@@ -42,12 +42,6 @@
       }
     },
     {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      }
-    },
-    {
       "plugin": "@nx/vite/plugin",
       "options": {
         "buildTargetName": "build",
@@ -78,10 +72,10 @@
   },
   "generators": {
     "@nx/js:library": {
-      "directory": "",
+      "bundler": "tsc",
       "linter": "eslint",
       "publishable": true,
-      "unitTestRunner": "jest"
+      "unitTestRunner": "vitest"
     }
   }
 }
