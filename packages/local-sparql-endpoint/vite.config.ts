@@ -6,7 +6,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/dataset-registry-client',
+    cacheDir: '../../node_modules/.vite/packages/local-sparql-endpoint',
     test: {
       coverage: {
         thresholds: {},
