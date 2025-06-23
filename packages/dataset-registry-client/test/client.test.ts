@@ -60,7 +60,7 @@ describe('Client', () => {
       const expectedTotal = 2;
       expect(results.total).toEqual(expectedTotal);
       let count = 0;
-      for await (const result of results) {
+      for await (const _ of results) {
         count++;
       }
       expect(count).toEqual(expectedTotal);
