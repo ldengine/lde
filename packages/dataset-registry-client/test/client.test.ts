@@ -1,4 +1,4 @@
-import { Client } from '../src';
+import { Client } from '../src/client.js';
 import { rdfMediaTypes, sparqlMediaTypes } from '@lde/dataset';
 import {
   startSparqlEndpoint,
@@ -23,7 +23,7 @@ describe('Client', () => {
 
   describe('query', () => {
     it('queries datasets from SPARQL endpoint with criteria', async () => {
-      const results = client.query({
+      const results = await client.query({
         where: {
           distribution: {
             mediaType: {
@@ -33,11 +33,13 @@ describe('Client', () => {
         },
       });
 
+      const expectedTotal = 2;
+      expect(results.total).toEqual(expectedTotal);
       let count = 0;
       for await (const _ of results) {
         count++;
       }
-      expect(count).toEqual(1);
+      expect(count).toEqual(expectedTotal);
     });
 
     it('queries datasets from SPARQL endpoint with a custom CONSTRUCT query', async () => {
@@ -53,13 +55,15 @@ describe('Client', () => {
             dcat:mediaType ?distribution_mediaType .
         }    
       `;
-      const results = client.query(query);
+      const results = await client.query(query);
 
+      const expectedTotal = 2;
+      expect(results.total).toEqual(expectedTotal);
       let count = 0;
-      for await (const _ of results) {
+      for await (const result of results) {
         count++;
       }
-      expect(count).toEqual(1);
+      expect(count).toEqual(expectedTotal);
     });
 
     it('throws an error for non-CONSTRUCT queries', async () => {
@@ -70,11 +74,9 @@ describe('Client', () => {
         }
       `;
 
-      await expect(async () => {
-        for await (const _ of client.query(query)) {
-          // Intentionally empty
-        }
-      }).rejects.toThrow('Must be CONSTRUCT query');
+      await expect(client.query(query)).rejects.toThrow(
+        'Must be CONSTRUCT query'
+      );
     });
   });
 });

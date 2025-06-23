@@ -15,3 +15,17 @@
     dcat:mediaType "text/turtle" ;
     dcat:byteSize "87654321" ;
   ] .
+
+<http://bar.org/id/dataset/bar> a dcat:Dataset ;
+  dct:title "test" ;
+  dcat:distribution [
+    a dcat:Distribution ;
+    dcat:accessURL <http://bar.org/sparql2> ;
+    dcat:mediaType "application/sparql-query" ;
+    dct:modified "2022-12-03T10:26"^^xsd:dateTime ;
+  ] , [
+    a dcat:Distribution ;
+    dcat:accessURL <http://bar.org/files/bar.ttl.gz> ;
+    dcat:mediaType "text/turtle" ;
+    dcat:byteSize "87654321" ;
+  ] .
