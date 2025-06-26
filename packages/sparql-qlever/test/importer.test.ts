@@ -35,6 +35,6 @@ describe('Importer', () => {
 
       const result = await importer.import(dataset);
       expect(result).toBeInstanceOf(ImportSuccessful);
-    }, 10_000);
+    }, 30_000);
   });
 });

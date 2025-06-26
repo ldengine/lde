@@ -1,0 +1,20 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+    void:classPartition ?classPartition .
+    ?classPartition void:class ?type ;
+    void:entities ?entities .
+}
+#namedGraph#
+WHERE {
+    {
+        SELECT (COUNT(?type) AS ?entities) ?type {
+            #subjectFilter#
+            ?s a ?type .
+        }
+        GROUP BY ?type
+    }
+    BIND(URI(CONCAT("#class-", MD5(STR(?type)))) AS ?classPartition)
+}
+LIMIT 10000

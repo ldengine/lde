@@ -7,7 +7,7 @@ import fs from 'node:fs/promises';
 const localFile = join(os.tmpdir(), 'example.com!file.nt');
 const downloader = new LastModifiedDownloader(os.tmpdir());
 const distribution = new Distribution(
-  'https://example.com/file.nt',
+  new URL('https://example.com/file.nt'),
   'application/n-triples'
 );
 
