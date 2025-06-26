@@ -50,7 +50,10 @@ export class Client {
             new Dataset(
               new URL(dataset.$id),
               dataset.distribution.map((d) => {
-                const distribution = new Distribution(d.accessURL, d.mediaType);
+                const distribution = new Distribution(
+                  new URL(d.accessURL),
+                  d.mediaType
+                );
                 distribution.byteSize = d.byteSize ?? undefined;
                 distribution.lastModified = d.modified ?? undefined;
 

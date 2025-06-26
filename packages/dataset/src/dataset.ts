@@ -19,7 +19,7 @@ export class Dataset {
         distribution.mimeType?.endsWith('+gzip')
       ),
       ...validDistributions.filter((distribution) =>
-        distribution.accessUrl?.endsWith('.nt.gz')
+        distribution.accessUrl?.toString().endsWith('.nt.gz')
       ),
       ...validDistributions.filter(
         (distribution) =>
@@ -37,9 +37,10 @@ export class Distribution {
   public lastModified?: Date;
   public isValid?: boolean;
   public namedGraph?: string;
+  public subjectFilter?: string;
 
   constructor(
-    public readonly accessUrl: string,
+    public readonly accessUrl: URL,
     public readonly mimeType: string
   ) {}
 
@@ -51,8 +52,8 @@ export class Distribution {
     );
   }
 
-  public static sparql(endpoint: string, namedGraph?: string) {
-    const distribution = new this('application/sparql-query', endpoint);
+  public static sparql(endpoint: URL, namedGraph?: string) {
+    const distribution = new this(endpoint, 'application/sparql-query');
     distribution.isValid = true;
     distribution.namedGraph = namedGraph;
 

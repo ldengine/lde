@@ -27,6 +27,10 @@ export class Server<Task> implements SparqlServer {
       this.task = undefined;
     }
   }
+
+  public get queryEndpoint(): URL {
+    return new URL(`http://localhost:${this.port}/sparql`);
+  }
 }
 
 export interface Arguments<Task> {
