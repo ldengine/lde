@@ -8,14 +8,11 @@ export class Paginator<T> implements AsyncIterable<T> {
   async *[Symbol.asyncIterator](): AsyncIterator<T> {
     let offset = 0;
     while (true) {
-      if (offset >= this.pageSize) {
+      if (offset >= this.total) {
         break;
       }
 
       const items = await this.fetchPage(offset, this.pageSize);
-      if (items.length === 0) {
-        break;
-      }
 
       for (const item of items) {
         yield item;
