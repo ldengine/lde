@@ -9,7 +9,12 @@ export default mergeConfig(
     cacheDir: '../../node_modules/.vite/packages/dataset-registry-client',
     test: {
       coverage: {
-        thresholds: {},
+        thresholds: {
+          lines: 81.08,
+          functions: 81.81,
+          branches: 45,
+          statements: 81.08,
+        },
       },
     },
   })
