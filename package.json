@@ -43,15 +43,6 @@
   ],
   "nx": {
     "includedScripts": [],
-    "targetDefaults": {
-      "bump-coverage-thresholds": {
-        "executor": "nx:run-commands",
-        "options": {
-          "command": "cat package.json",
-          "cwd": "{projectRoot}"
-        }
-      }
-    },
     "targets": {
       "local-registry": {
         "executor": "@nx/js:verdaccio",
