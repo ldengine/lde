@@ -15,4 +15,5 @@ LDE is a suite of Node.js libraries that power your Linked Data applications and
 * [ ] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
 * [ ] [@lde/task-runner-docker](packages/task-runner-docker): run tasks in Docker containers
 * [ ] [@lde/task-runner-native](packages/task-runner-native): run tasks natively on the host system
+* [ ] [@lde/validator](packages/validator): validate datasets and pipeline outputs against SHACL shapes
 * [x] [@lde/wait-for-sparql](packages/wait-for-sparql): wait for a SPARQL endpoint to become available
