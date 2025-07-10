@@ -23,6 +23,7 @@ LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 * [x] [@lde/distribution-download](packages/distribution-download): download distributions for processing locally
 * [x] [@lde/local-sparql-endpoint](packages/pipeline): quickly start a local SPARQL endpoint for testing and development
 * [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
+* [ ] [@lde/shacl-docgen](packages/shacl-docgen): generate documentation from SHACL shapes
 * [x] [@lde/sparql-importer](packages/sparql-importer): import data dumps to a local SPARQL endpoint for querying
 * [x] [@lde/sparql-qlever](packages/sparql-qlever): QLever SPARQL adapter for importing and serving data
 * [ ] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
