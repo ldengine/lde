@@ -1,8 +1,21 @@
 # LDE – Linked Data Engine
 
-LDE is a suite of Node.js libraries that power your Linked Data applications and pipelines.
+LDE is a suite of Node.js libraries to power your Linked Data applications and pipelines.
+Use it to efficiently query, analyze, transform, enrich and validate RDF datasets.
+
+LDE is built on standards including SPARQL, SHACL and DCAT-AP 3.0.
+
+## Features
+
+* Discover and retrieve datasets from DCAT-AP 3.0 registries.
+* Query and transform datasets with pure SPARQL queries (instead of code or a DSL): no vendor lock-in.
+* Use SPARQL endpoints directly when possible; import data dumps to a local endpoint when necessary.
+* Compose pipelines with YAML (for non-technical users) or TypeScript code (for developers). 
+* Get started quickly with ready-to-use Docker images.
 
 ## Packages
+
+LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 
 * [x] [@lde/dataset](packages/dataset): core objects dataset and distribution
 * [ ] [@lde/dataset-analyzer-pipeline](packages/dataset-analyzer-pipeline): statistical analysis of datasets
