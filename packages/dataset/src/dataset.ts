@@ -1,3 +1,5 @@
+import { Distribution } from './distribution.js';
+
 export class Dataset {
   constructor(public readonly iri: URL, public distributions: Distribution[]) {}
 
@@ -29,34 +31,5 @@ export class Dataset {
           )
       ),
     ];
-  }
-}
-
-export class Distribution {
-  public byteSize?: number;
-  public lastModified?: Date;
-  public isValid?: boolean;
-  public namedGraph?: string;
-  public subjectFilter?: string;
-
-  constructor(
-    public readonly accessUrl: URL,
-    public readonly mimeType: string
-  ) {}
-
-  public isSparql() {
-    return (
-      (this.mimeType === 'application/sparql-query' ||
-        this.mimeType === 'application/sparql-results+json') &&
-      this.accessUrl !== null
-    );
-  }
-
-  public static sparql(endpoint: URL, namedGraph?: string) {
-    const distribution = new this(endpoint, 'application/sparql-query');
-    distribution.isValid = true;
-    distribution.namedGraph = namedGraph;
-
-    return distribution;
   }
 }
