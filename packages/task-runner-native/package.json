@@ -1,6 +1,6 @@
 {
   "name": "@lde/task-runner-native",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,6 +20,6 @@
   ],
   "dependencies": {
     "tslib": "^2.3.0",
-    "@lde/task-runner": "0.0.1"
+    "@lde/task-runner": "0.0.3"
   }
 }

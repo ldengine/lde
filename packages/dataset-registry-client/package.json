@@ -1,6 +1,6 @@
 {
   "name": "@lde/dataset-registry-client",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,7 +19,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.0.1",
+    "@lde/dataset": "0.2.0",
     "ldkit": "^2.4.0",
     "n3": "^1.26.0",
     "sparqljs": "^3.7.3",

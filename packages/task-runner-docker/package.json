@@ -1,6 +1,6 @@
 {
   "name": "@lde/task-runner-docker",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -21,7 +21,7 @@
   "dependencies": {
     "dockerode": "^4.0.7",
     "tslib": "^2.3.0",
-    "@lde/task-runner": "0.0.1"
+    "@lde/task-runner": "0.0.3"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.40"

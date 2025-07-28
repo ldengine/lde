@@ -1,6 +1,6 @@
 {
   "name": "@lde/distribution-download",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,7 +20,7 @@
   ],
   "dependencies": {
     "tslib": "^2.3.0",
-    "@lde/dataset": "0.0.1",
+    "@lde/dataset": "0.2.0",
     "filenamify-url": "3.1.0"
   }
 }
