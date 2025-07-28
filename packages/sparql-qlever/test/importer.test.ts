@@ -8,7 +8,7 @@ describe('Importer', () => {
   describe('import', () => {
     it('imports Turtle data', async () => {
       const taskRunner = new DockerTaskRunner({
-        image: 'adfreiburg/qlever',
+        image: process.env.QLEVER_IMAGE!,
         containerName: 'qlever-importer-test',
         mountDir: resolve('test/fixtures/index'),
       });
