@@ -8,6 +8,9 @@ export default mergeConfig(
     root: __dirname,
     cacheDir: '../../node_modules/.vite/packages/dataset-registry-client',
     test: {
+      env: {
+        QLEVER_IMAGE: 'adfreiburg/qlever:commit-45b05e1',
+      },
       coverage: {
         thresholds: {
           lines: 81.08,

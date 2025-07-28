@@ -8,7 +8,7 @@ describe('Server', () => {
     it('start QLever', async () => {
       const port = 7001;
       const taskRunner = new DockerTaskRunner({
-        image: 'adfreiburg/qlever',
+        image: process.env.QLEVER_IMAGE!,
         containerName: 'qlever-server-test',
         mountDir: resolve('test/fixtures/index'),
         port,
