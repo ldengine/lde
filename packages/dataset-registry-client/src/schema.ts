@@ -1,4 +1,4 @@
-import { dcterms, xsd } from 'ldkit/namespaces';
+import { dcterms, foaf, xsd } from 'ldkit/namespaces';
 import { dcat } from './dcat.js';
 
 export const DatasetSchema = {
@@ -6,12 +6,41 @@ export const DatasetSchema = {
   title: {
     '@id': dcterms.title,
     '@multilang': true,
-    '@optional': true,
   },
   description: {
     '@id': dcterms.description,
+    '@optional': true, // But required in DCAT-AP 3.0
     '@multilang': true,
+  },
+  language: {
+    '@id': dcterms.language,
     '@optional': true,
+    '@array': true,
+  },
+  license: {
+    '@id': dcterms.license,
+    '@optional': true,
+  },
+  creator: {
+    '@id': dcterms.creator,
+    '@optional': true, // But required in DCAT-AP 3.0
+    '@array': true,
+    '@schema': {
+      name: {
+        '@id': foaf.name,
+        '@multilang': true,
+      },
+    },
+  },
+  publisher: {
+    '@id': dcterms.publisher,
+    '@optional': true,
+    '@schema': {
+      name: {
+        '@id': foaf.name,
+        '@multilang': true,
+      },
+    },
   },
   distribution: {
     '@id': dcat.distribution,
@@ -23,6 +52,10 @@ export const DatasetSchema = {
       byteSize: {
         '@id': dcat.byteSize,
         '@type': xsd.nonNegativeInteger,
+        '@optional': true,
+      },
+      conformsTo: {
+        '@id': dcterms.conformsTo,
         '@optional': true,
       },
       modified: {

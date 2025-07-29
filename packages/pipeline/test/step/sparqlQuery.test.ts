@@ -31,7 +31,10 @@ describe('SparqlQuery', () => {
         identifier: 'foo',
         query: 'bar',
       });
-      const dataset = new Dataset(new URL('http://example.org/dataset'), []);
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [],
+      });
 
       const result = await sparqlQuery.execute(dataset);
 
@@ -60,7 +63,10 @@ describe('SparqlQuery', () => {
       distribution.subjectFilter = '<http://example.org/foo>';
 
       const datasetIri = 'http://foo.org/id/dataset/foo';
-      const dataset = new Dataset(datasetIri, [distribution]);
+      const dataset = new Dataset({
+        iri: new URL(datasetIri),
+        distributions: [distribution],
+      });
 
       await sparqlQuery.execute(dataset);
 
@@ -94,7 +100,10 @@ describe('SparqlQuery', () => {
         new URL(`http://localhost:${port}/sparql`),
         'http://foo.org/id/graph/foo'
       );
-      const dataset = new Dataset(new URL(datasetIri), [distribution]);
+      const dataset = new Dataset({
+        iri: new URL(datasetIri),
+        distributions: [distribution],
+      });
 
       const result = await sparqlQuery.execute(dataset);
       expect(result).not.toBeInstanceOf(NotSupported);

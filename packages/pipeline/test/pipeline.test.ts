@@ -18,7 +18,10 @@ const distribution = new Distribution(
 distribution.isValid = true;
 
 const manualSelection = new ManualDatasetSelection([
-  new Dataset(new URL('https://foo.org/dataset/1'), [distribution]),
+  new Dataset({
+    iri: new URL('https://foo.org/dataset/1'),
+    distributions: [distribution],
+  }),
 ]);
 
 describe('Pipeline', () => {
@@ -35,6 +38,7 @@ describe('Pipeline', () => {
 
   it('runs a pipeline with only an import step', async () => {
     const server = new (class implements SparqlServer {
+      queryEndpoint = new URL('https://example.com/sparql');
       start = vi.fn();
       stop = vi.fn();
     })();
