@@ -12,7 +12,7 @@ export interface Creator {
 
 export interface DatasetArguments {
   iri: URL;
-  title: Record<string, string>;
+  title?: Record<string, string>;
   description?: Record<string, string>;
   language?: string[];
   license?: URL;
@@ -23,7 +23,7 @@ export interface DatasetArguments {
 
 export class Dataset {
   readonly iri: URL;
-  readonly title?: Record<string, string>;
+  readonly title: Record<string, string>;
   readonly description?: Record<string, string>;
   readonly language: string[];
   readonly license?: URL;
