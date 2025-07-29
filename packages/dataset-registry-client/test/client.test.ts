@@ -1,5 +1,5 @@
 import { Client } from '../src/client.js';
-import { rdfMediaTypes, sparqlMediaTypes } from '@lde/dataset';
+import { Dataset, rdfMediaTypes, sparqlMediaTypes } from '@lde/dataset';
 import {
   startSparqlEndpoint,
   teardownSparqlEndpoint,
@@ -36,10 +36,27 @@ describe('Client', () => {
       const expectedTotal = 2;
       expect(results.total).toEqual(expectedTotal);
       let count = 0;
-      for await (const _ of results) {
+      let firstResult;
+      for await (const result of results) {
+        if (count === 0) {
+          firstResult = result;
+        }
         count++;
       }
       expect(count).toEqual(expectedTotal);
+
+      expect(firstResult).toBeInstanceOf(Dataset);
+      expect(firstResult?.language).toEqual(['nl-NL']);
+      expect(firstResult?.license).toEqual(
+        new URL('http://creativecommons.org/licenses/by/4.0/')
+      );
+      expect(firstResult?.distributions[0]?.conformsTo).toEqual(
+        new URL('https://www.w3.org/TR/sparql11-protocol/')
+      );
+      expect(firstResult?.publisher?.iri).toEqual(new URL('http://foo.org'));
+      expect(firstResult?.publisher?.name).toEqual({ '': 'Foo Organization' });
+      expect(firstResult?.creator[0]?.iri).toEqual(new URL('http://foo.org'));
+      expect(firstResult?.creator[0]?.name).toEqual({ '': 'Foo Organization' });
     });
 
     it('queries datasets from SPARQL endpoint with a custom CONSTRUCT query', async () => {
@@ -49,6 +66,7 @@ describe('Client', () => {
         
         CONSTRUCT WHERE {
           ?dataset a dcat:Dataset ;
+            dct:title ?title ;
             dcat:distribution ?distribution .
 
           ?distribution dcat:accessURL ?distribution_url ;

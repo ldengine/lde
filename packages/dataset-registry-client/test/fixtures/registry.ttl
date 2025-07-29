@@ -1,13 +1,19 @@
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://foo.org/id/dataset/foo> a dcat:Dataset ;
   dct:title "test" ;
+  dct:creator <http://foo.org> ;
+  dct:publisher <http://foo.org> ;
+  dct:language "nl-NL" ;
+  dct:license <http://creativecommons.org/licenses/by/4.0/> ;
   dcat:distribution [
     a dcat:Distribution ;
     dcat:accessURL <http://foo.org/sparql2> ;
     dcat:mediaType "application/sparql-query" ;
+    dct:conformsTo <https://www.w3.org/TR/sparql11-protocol/> ;
     dct:modified "2022-12-03T10:26"^^xsd:dateTime ;
   ] , [
     a dcat:Distribution ;
@@ -29,3 +35,7 @@
     dcat:mediaType "text/turtle" ;
     dcat:byteSize "87654321" ;
   ] .
+
+<http://foo.org> a foaf:Organization ;
+  foaf:name "Foo Organization" ;
+.

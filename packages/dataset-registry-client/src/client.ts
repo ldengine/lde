@@ -41,25 +41,41 @@ export class Client {
         let items;
         if (typeof args === 'string') {
           // Custom query has no paginated results.
+          // TODO: we could add a convention here like {OFFSET} {LIMIT} in the query string.
           items = await datasets.query(prepareQuery(args));
         } else {
           items = await datasets.find({ ...args, take: limit, skip: offset });
         }
         return items.map(
           (dataset) =>
-            new Dataset(
-              new URL(dataset.$id),
-              dataset.distribution.map((d) => {
+            new Dataset({
+              iri: new URL(dataset.$id),
+              title: dataset.title,
+              description: dataset.description,
+              language: dataset.language,
+              license: dataset.license ? new URL(dataset.license) : undefined,
+              distributions: dataset.distribution.map((d) => {
                 const distribution = new Distribution(
                   new URL(d.accessURL),
-                  d.mediaType
+                  d.mediaType,
+                  d.conformsTo ? new URL(d.conformsTo) : undefined
                 );
                 distribution.byteSize = d.byteSize ?? undefined;
                 distribution.lastModified = d.modified ?? undefined;
 
                 return distribution;
-              })
-            )
+              }),
+              creator: dataset.creator.map((creator) => ({
+                iri: new URL(creator.$id),
+                name: creator.name,
+              })),
+              publisher: dataset.publisher
+                ? {
+                    iri: new URL(dataset.publisher.$id),
+                    name: dataset.publisher.name,
+                  }
+                : undefined,
+            })
         );
       },
       total,

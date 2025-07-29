@@ -24,14 +24,15 @@ describe('Importer', () => {
       });
 
       const distribution = new Distribution(
-        'https://example.com/dataset/distribution',
+        new URL('https://example.com/dataset/distribution'),
         'text/turtle'
       );
       distribution.isValid = true;
 
-      const dataset = new Dataset(new URL('https://example.com'), [
-        distribution,
-      ]);
+      const dataset = new Dataset({
+        iri: new URL('https://example.com'),
+        distributions: [distribution],
+      });
 
       const result = await importer.import(dataset);
       expect(result).toBeInstanceOf(ImportSuccessful);

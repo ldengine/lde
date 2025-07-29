@@ -10,9 +10,10 @@ const distribution = new Distribution(
   'application/n-triples'
 );
 distribution.isValid = true;
-const dataset = new Dataset(new URL('http://foo.org/dataset/1'), [
-  distribution,
-]);
+const dataset = new Dataset({
+  iri: new URL('http://foo.org/dataset/1'),
+  distributions: [distribution],
+});
 
 const importer: Importer = {
   import: vi.fn().mockResolvedValue(new ImportSuccessful(distribution)),
