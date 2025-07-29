@@ -47,7 +47,7 @@ describe('Import', () => {
 
       const result = await importStep.execute(dataset);
       expect(result).toBeInstanceOf(NotSupported);
-      expect(result.message).toBe(
+      expect((result as NotSupported).message).toBe(
         'A valid SPARQL distribution is available so no import needed'
       );
     });

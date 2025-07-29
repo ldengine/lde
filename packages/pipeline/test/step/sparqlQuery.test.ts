@@ -109,7 +109,10 @@ describe('SparqlQuery', () => {
       expect(result).not.toBeInstanceOf(NotSupported);
 
       const statements = [];
-      for await (const statement of result) {
+      for await (const statement of result as Exclude<
+        typeof result,
+        NotSupported
+      >) {
         statements.push(statement);
       }
       expect(statements.length).toBe(2);

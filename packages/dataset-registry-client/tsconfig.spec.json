@@ -12,10 +12,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "vite.config.ts",
-    "vite.config.mts",
     "vitest.config.ts",
-    "vitest.config.mts",
     "test/**/*.test.ts",
     "test/**/*.spec.ts",
     "test/**/*.test.tsx",
