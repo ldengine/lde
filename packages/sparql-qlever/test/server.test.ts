@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 
 describe('Server', () => {
   describe('start', () => {
-    it('start QLever', async () => {
+    it('starts and stops QLever', async () => {
       const port = 7001;
       const taskRunner = new DockerTaskRunner({
         image: process.env.QLEVER_IMAGE!,
@@ -19,9 +19,12 @@ describe('Server', () => {
         indexName: 'test-index',
         port,
       });
+
       await server.start();
-      await waitForSparqlEndpointAvailable(`http://localhost:${port}`);
-      console.log('ok');
-    }, 20_000);
+      const endpoint = server.queryEndpoint.toString();
+      expect(endpoint).toEqual(`http://localhost:${port}/sparql`);
+      await waitForSparqlEndpointAvailable(endpoint);
+      await server.stop();
+    }, 10_000);
   });
 });
