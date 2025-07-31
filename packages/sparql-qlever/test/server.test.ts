@@ -10,7 +10,7 @@ describe('Server', () => {
       const taskRunner = new DockerTaskRunner({
         image: process.env.QLEVER_IMAGE!,
         containerName: 'qlever-server-test',
-        mountDir: resolve('test/fixtures/index'),
+        mountDir: resolve('test/fixtures/server'),
         port,
       });
 
@@ -25,6 +25,6 @@ describe('Server', () => {
       expect(endpoint).toEqual(`http://localhost:${port}/sparql`);
       await waitForSparqlEndpointAvailable(endpoint);
       await server.stop();
-    }, 20_000);
+    }, 10_000);
   });
 });
