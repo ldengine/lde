@@ -10,7 +10,7 @@ describe('Importer', () => {
       const taskRunner = new DockerTaskRunner({
         image: process.env.QLEVER_IMAGE!,
         containerName: 'qlever-importer-test',
-        mountDir: resolve('test/fixtures/index'),
+        mountDir: resolve('test/fixtures/importer'),
       });
 
       const importer = new Importer({
@@ -18,7 +18,7 @@ describe('Importer', () => {
         indexName: 'test-index',
         downloader: {
           async download() {
-            return resolve('test/fixtures/index/data.ttl');
+            return resolve('test/fixtures/importer/data.ttl');
           },
         },
       });
