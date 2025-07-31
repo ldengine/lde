@@ -1,3 +1,13 @@
+## 0.3.1 (2025-07-31)
+
+### 🩹 Fixes
+
+- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.0 (2025-07-29)
 
 ### 🚀 Features

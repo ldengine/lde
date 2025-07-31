@@ -1,6 +1,6 @@
 {
   "name": "@lde/pipeline",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,10 +19,10 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.3.0",
-    "@lde/dataset-registry-client": "0.3.0",
-    "@lde/sparql-importer": "0.0.4",
-    "@lde/sparql-server": "0.2.0",
+    "@lde/dataset": "0.3.1",
+    "@lde/dataset-registry-client": "0.3.1",
+    "@lde/sparql-importer": "0.0.5",
+    "@lde/sparql-server": "0.2.1",
     "fetch-sparql-endpoint": "^6.0.0",
     "tslib": "^2.3.0",
     "@rdfjs/types": "^2.0.1"
