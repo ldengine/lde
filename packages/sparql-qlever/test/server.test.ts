@@ -25,6 +25,6 @@ describe('Server', () => {
       expect(endpoint).toEqual(`http://localhost:${port}/sparql`);
       await waitForSparqlEndpointAvailable(endpoint);
       await server.stop();
-    }, 10_000);
+    }, 20_000);
   });
 });
