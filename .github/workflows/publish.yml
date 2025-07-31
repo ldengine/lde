@@ -2,8 +2,10 @@
 name: Publish
 
 on:
-  push:
-    tags: ['*']
+  # Use the release event because push events are not triggered for commits tagged with more than three tags:
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push.
+  release:
+    types: [created]
 
 jobs:
   test:
@@ -24,6 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
           registry-url: https://registry.npmjs.org/
 
       - run: npm ci
