@@ -9,7 +9,6 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@comunica/query-sparql-file": "^4.3.0",
     "@eslint/js": "^9.8.0",
     "@nx/eslint": "21.3.10",
     "@nx/eslint-plugin": "21.3.10",
