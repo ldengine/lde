@@ -7,7 +7,7 @@ export async function startSparqlEndpoint(
   fixture: string
 ): Promise<void> {
   servers = await setup({
-    command: `npx comunica-sparql-file-http ${fixture} -p ${port}`,
+    command: `npx comunica-sparql-file-http --distinctConstruct ${fixture} -p ${port}`,
     port,
     launchTimeout: 60000,
   });

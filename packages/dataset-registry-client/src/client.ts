@@ -29,8 +29,7 @@ export class Client {
       pageSize = total;
     } else {
       // With search criteria the results are paginated.
-      // Work around https://github.com/karelklima/ldkit/issues/146 to calculate
-      // the total number of items.
+      // Use find() instead of count(): https://github.com/karelklima/ldkit/issues/154
       results = await datasets.find({ ...args, take: 10_000 });
       total = results.length;
       pageSize = 1000;
