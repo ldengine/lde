@@ -1,3 +1,13 @@
+## 0.4.0 (2025-08-06)
+
+### 🚀 Features
+
+- optimize count ([#27](https://github.com/ldengine/lde/pull/27))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.1 (2025-07-31)
 
 ### 🩹 Fixes

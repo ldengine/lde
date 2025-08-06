@@ -1,3 +1,9 @@
+## 0.3.2 (2025-08-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.4.0
+
 ## 0.3.1 (2025-07-31)
 
 ### 🩹 Fixes

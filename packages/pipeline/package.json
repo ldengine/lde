@@ -1,6 +1,6 @@
 {
   "name": "@lde/pipeline",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,7 +20,7 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.3.1",
-    "@lde/dataset-registry-client": "0.3.1",
+    "@lde/dataset-registry-client": "0.4.0",
     "@lde/sparql-importer": "0.0.5",
     "@lde/sparql-server": "0.2.1",
     "fetch-sparql-endpoint": "^6.0.0",
