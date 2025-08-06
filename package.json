@@ -2,6 +2,10 @@
   "name": "@lde/source",
   "version": "0.0.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ldengine/lde.git"
+  },
   "scripts": {
     "prepare": "husky"
   },
