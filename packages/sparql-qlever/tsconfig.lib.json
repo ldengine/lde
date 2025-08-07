@@ -24,7 +24,7 @@
       "path": "../task-runner/tsconfig.lib.json"
     },
     {
-      "path": "../distribution-download/tsconfig.lib.json"
+      "path": "../distribution-downloader/tsconfig.lib.json"
     },
     {
       "path": "../dataset/tsconfig.lib.json"

@@ -1,5 +1,5 @@
 {
-  "name": "@lde/distribution-download",
+  "name": "@lde/distribution-downloader",
   "version": "0.2.2",
   "type": "module",
   "main": "./dist/index.js",

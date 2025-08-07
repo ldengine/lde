@@ -15,7 +15,7 @@
       "path": "./packages/sparql-qlever"
     },
     {
-      "path": "./packages/distribution-download"
+      "path": "./packages/distribution-downloader"
     },
     {
       "path": "./packages/wait-for-sparql"
