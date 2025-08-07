@@ -16,7 +16,7 @@
       "path": "../task-runner"
     },
     {
-      "path": "../distribution-download"
+      "path": "../distribution-downloader"
     },
     {
       "path": "../dataset"
