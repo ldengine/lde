@@ -1,3 +1,17 @@
+## 0.3.2 (2025-08-07)
+
+### 🩹 Fixes
+
+- rename distribution-download to distribution-downloader ([#29](https://github.com/ldengine/lde/pull/29))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.2.3
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.1 (2025-07-31)
 
 ### 🩹 Fixes

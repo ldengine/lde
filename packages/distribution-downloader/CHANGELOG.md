@@ -1,3 +1,13 @@
+## 0.2.3 (2025-08-07)
+
+### 🩹 Fixes
+
+- rename distribution-download to distribution-downloader ([#29](https://github.com/ldengine/lde/pull/29))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.2 (2025-07-31)
 
 ### 🩹 Fixes
