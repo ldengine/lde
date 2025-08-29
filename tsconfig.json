@@ -37,6 +37,9 @@
     },
     {
       "path": "./packages/pipeline"
+    },
+    {
+      "path": "./packages/docgen"
     }
   ]
 }

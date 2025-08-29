@@ -1,0 +1,27 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+
+[] a sh:NodeShape ;
+    sh:targetClass dcat:Dataset ;
+    sh:property [
+        sh:path dct:title ;
+        sh:minCount 1 ;
+    ] ,
+    [
+        sh:path dct:alternative ;
+        sh:description "Niet in het Engels"@nl ;
+    ] ,
+    [
+        sh:path dct:description ;
+        sh:datatype rdf:langString ;
+        sh:description "Require description to be a multilingual string if it exists"@en ;
+    ] ,
+    [
+        sh:path dct:description ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:description "Require description to exist"@en , "Vereist dat beschrijving bestat"@nl ;
+    ] .
