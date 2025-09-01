@@ -1,6 +1,6 @@
 {
   "name": "@lde/docgen",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate documentation from SHACL shapes",
   "repository": "github:ldengine/lde",
   "keywords": [
