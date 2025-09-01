@@ -1,0 +1,27 @@
+{
+  "@context": {
+    "@vocab": "http://www.w3.org/ns/shacl#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "targetClass": {
+      "@type": "@id"
+    },
+    "path": {
+      "@type": "@id"
+    },
+    "class": {
+      "@type": "@id"
+    },
+    "node": {
+      "@type": "@id"
+    },
+    "nodeKind": {
+      "@type": "@vocab"
+    },
+    "severity": {
+      "@type": "@vocab"
+    }
+  },
+  "@type": "NodeShape"
+}

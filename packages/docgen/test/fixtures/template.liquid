@@ -1,0 +1,12 @@
+{% for nodeShape in nodeShapes -%}
+    targetClass: {{ nodeShape.targetClass }}
+    {% assign mergedProperties = nodeShape.property | mergePropertiesByPath -%}
+    numOfProperties: {{ mergedProperties.size -}}
+
+    {%- for property in mergedProperties %}
+        path: {{ property.path }}
+        minCount: {{ property.minCount }}
+        severity: {{ property.severity }}
+        description: {{ property.description | lang: "en" }}
+    {% endfor %}
+{% endfor %}
