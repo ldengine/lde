@@ -7,6 +7,9 @@
     "targetClass": {
       "@type": "@id"
     },
+    "datatype": {
+      "@type": "@id"
+    },
     "path": {
       "@type": "@id"
     },
