@@ -72,7 +72,8 @@
     "changelog": {
       "projectChangelogs": {
         "createRelease": "github"
-      }
+      },
+      "automaticFromRef": true
     }
   },
   "generators": {
