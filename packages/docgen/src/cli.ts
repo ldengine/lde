@@ -35,7 +35,7 @@ program
     'after',
     `
 Example:
-  $ docgen shacl.ttl template.liquid
+  $ npx @lde/docgen@latest from-shacl shacl.ttl template.liquid
     `
   )
   .action(async (rdfFile: string, templateFile: string, { frame }) => {
