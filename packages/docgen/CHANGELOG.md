@@ -1,3 +1,13 @@
+## 0.2.1 (2025-09-02)
+
+### 🩹 Fixes
+
+- example ([c096adf](https://github.com/ldengine/lde/commit/c096adf))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.0 (2025-09-01)
 
 ### 🚀 Features
