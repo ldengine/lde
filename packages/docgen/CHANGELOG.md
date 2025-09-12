@@ -1,3 +1,13 @@
+## 0.2.2 (2025-09-12)
+
+### 🩹 Fixes
+
+- use http:// for schema.org ([#31](https://github.com/ldengine/lde/pull/31))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.1 (2025-09-02)
 
 ### 🩹 Fixes
