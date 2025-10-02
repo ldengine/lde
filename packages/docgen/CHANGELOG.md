@@ -1,3 +1,13 @@
+## 0.3.0 (2025-10-02)
+
+### 🚀 Features
+
+- add rdf namespace to context ([25d3338](https://github.com/ldengine/lde/commit/25d3338))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.2 (2025-09-12)
 
 ### 🩹 Fixes
