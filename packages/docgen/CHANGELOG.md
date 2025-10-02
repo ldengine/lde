@@ -1,3 +1,13 @@
+## 0.4.1 (2025-10-02)
+
+### 🩹 Fixes
+
+- re-add class to frame ([e8e0146](https://github.com/ldengine/lde/commit/e8e0146))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.0 (2025-10-02)
 
 ### 🚀 Features
