@@ -14,6 +14,9 @@
     "path": {
       "@type": "@id"
     },
+    "class": {
+      "@type": "@id"
+    },
     "or": {
       "@container": "@list"
     },
