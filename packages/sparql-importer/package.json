@@ -2,9 +2,6 @@
   "name": "@lde/sparql-importer",
   "version": "0.0.5",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -14,12 +11,15 @@
       "default": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@lde/dataset": "0.3.1"
+    "@lde/dataset": "0.3.1",
+    "tslib": "^2.3.0"
   }
 }

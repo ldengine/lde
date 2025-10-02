@@ -5,7 +5,10 @@ import {
   NotSupported,
 } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
-import { Downloader, LastModifiedDownloader } from '@lde/distribution-downloader';
+import {
+  Downloader,
+  LastModifiedDownloader,
+} from '@lde/distribution-downloader';
 import { basename, dirname } from 'path';
 import { writeFile } from 'node:fs/promises';
 import { TaskRunner } from '@lde/task-runner';

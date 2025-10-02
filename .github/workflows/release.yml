@@ -37,9 +37,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }} # Needed for pushing release commits.
 
-      - run:
-          npx nx release publish --access public
+      - run: npx nx release publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
-

@@ -8,9 +8,15 @@ describe('CLI Unit Tests', () => {
 
   beforeEach(() => {
     originalArgv = process.argv;
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never) as any;
+    consoleLogSpy = vi
+      .spyOn(console, 'log')
+      .mockImplementation(() => undefined);
+    consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    processExitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never) as any;
     vi.resetModules();
   });
 
@@ -23,35 +29,53 @@ describe('CLI Unit Tests', () => {
 
   it('should handle success case', async () => {
     vi.doMock('../src/index.js', () => ({
-      generateDocumentation: vi.fn().mockResolvedValue('Mock documentation')
+      generateDocumentation: vi.fn().mockResolvedValue('Mock documentation'),
     }));
 
-    process.argv = ['node', 'cli.js', 'from-shacl', 'test.ttl', 'template.liquid'];
+    process.argv = [
+      'node',
+      'cli.js',
+      'from-shacl',
+      'test.ttl',
+      'template.liquid',
+    ];
     await import('../src/cli.js');
-    
+
     expect(consoleLogSpy).toHaveBeenCalledWith('Mock documentation');
   });
 
   it('should handle Error instance', async () => {
     vi.doMock('../src/index.js', () => ({
-      generateDocumentation: vi.fn().mockRejectedValue(new Error('Test error'))
+      generateDocumentation: vi.fn().mockRejectedValue(new Error('Test error')),
     }));
 
-    process.argv = ['node', 'cli.js', 'from-shacl', 'test.ttl', 'template.liquid'];
+    process.argv = [
+      'node',
+      'cli.js',
+      'from-shacl',
+      'test.ttl',
+      'template.liquid',
+    ];
     await import('../src/cli.js');
-    
+
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Test error');
     expect(processExitSpy).toHaveBeenCalledWith(1);
   });
 
   it('should handle non-Error value', async () => {
     vi.doMock('../src/index.js', () => ({
-      generateDocumentation: vi.fn().mockRejectedValue('String error')
+      generateDocumentation: vi.fn().mockRejectedValue('String error'),
     }));
 
-    process.argv = ['node', 'cli.js', 'from-shacl', 'test.ttl', 'template.liquid'];
+    process.argv = [
+      'node',
+      'cli.js',
+      'from-shacl',
+      'test.ttl',
+      'template.liquid',
+    ];
     await import('../src/cli.js');
-    
+
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: String error');
     expect(processExitSpy).toHaveBeenCalledWith(1);
   });

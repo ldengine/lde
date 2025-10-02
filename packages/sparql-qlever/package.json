@@ -2,9 +2,6 @@
   "name": "@lde/sparql-qlever",
   "version": "0.3.2",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -14,16 +11,19 @@
       "default": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@lde/sparql-importer": "0.0.5",
     "@lde/dataset": "0.3.1",
     "@lde/distribution-downloader": "0.2.3",
+    "@lde/sparql-importer": "0.0.5",
+    "@lde/sparql-server": "0.2.1",
     "@lde/task-runner": "0.0.4",
-    "@lde/sparql-server": "0.2.1"
+    "tslib": "^2.3.0"
   }
 }
