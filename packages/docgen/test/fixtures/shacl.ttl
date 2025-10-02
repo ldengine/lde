@@ -2,7 +2,7 @@
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
-
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 [] a sh:NodeShape ;
     sh:targetClass dcat:Dataset ;
@@ -13,10 +13,14 @@
     [
         sh:path dct:alternative ;
         sh:description "Niet in het Engels"@nl ;
+        sh:datatype xsd:string ;
     ] ,
     [
         sh:path dct:description ;
-        sh:datatype rdf:langString ;
+        sh:or (
+            [ sh:datatype rdf:langString ]
+            [ sh:datatype xsd:string ]
+        ) ;
         sh:description "Require description to be a multilingual string if it exists"@en ;
     ] ,
     [

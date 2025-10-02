@@ -1,6 +1,6 @@
 {
   "name": "@lde/docgen",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Generate documentation from SHACL shapes",
   "keywords": [
     "shacl",
@@ -35,6 +35,8 @@
     "jsonld": "^8.3.3",
     "liquidjs": "^10.21.1",
     "rdf-dereference": "^4.0.0",
+    "rdf-serialize": "^4.0.1",
+    "stream-to-string": "^1.2.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

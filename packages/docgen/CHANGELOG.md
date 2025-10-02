@@ -1,3 +1,13 @@
+## 0.4.0 (2025-10-02)
+
+### 🚀 Features
+
+- frame RDF lists ([#32](https://github.com/ldengine/lde/pull/32))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.0 (2025-10-02)
 
 ### 🚀 Features
