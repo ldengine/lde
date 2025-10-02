@@ -2,17 +2,14 @@
   "name": "@lde/docgen",
   "version": "0.4.0",
   "description": "Generate documentation from SHACL shapes",
-  "repository": "github:ldengine/lde",
   "keywords": [
     "shacl",
     "rdf",
     "documentation",
     "generator"
   ],
+  "repository": "github:ldengine/lde",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -22,14 +19,17 @@
       "default": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "docgen": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "frames",
     "!**/*.tsbuildinfo"
   ],
-  "bin": {
-    "docgen": "./dist/cli.js"
-  },
   "dependencies": {
     "commander": "^14.0.0",
     "jsonld": "^8.3.3",

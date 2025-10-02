@@ -8,8 +8,7 @@
       "vite/client",
       "node",
       "vitest"
-    ],
-    "forceConsistentCasingInFileNames": true
+    ]
   },
   "include": [
     "vitest.config.ts",
