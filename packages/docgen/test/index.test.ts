@@ -27,10 +27,12 @@ describe('Integration tests', () => {
         minCount: 
         severity: 
         description: 
+        datatype: xsd:string
     
         path: http://purl.org/dc/terms/description
         minCount: 1
         severity: Info
-        description: Require description to be a multilingual string if it exists`);
+        description: Require description to be a multilingual string if it exists
+        datatype: rdf:langString, xsd:string`);
   });
 });
