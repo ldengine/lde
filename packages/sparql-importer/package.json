@@ -1,6 +1,6 @@
 {
   "name": "@lde/sparql-importer",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
@@ -19,7 +19,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.4.0",
+    "@lde/dataset": "0.4.1",
     "tslib": "^2.3.0"
   }
 }

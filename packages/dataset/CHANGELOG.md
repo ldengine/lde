@@ -1,3 +1,13 @@
+## 0.4.1 (2025-10-06)
+
+### 🩹 Fixes
+
+- add repository URL, required for provenance ([bc1cfd5](https://github.com/ldengine/lde/commit/bc1cfd5))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.0 (2025-10-06)
 
 ### 🚀 Features
