@@ -1,3 +1,13 @@
+## 0.3.7 (2025-10-06)
+
+### 🩹 Fixes
+
+- add repository URL ([7bb2f77](https://github.com/ldengine/lde/commit/7bb2f77))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.6 (2025-10-06)
 
 ### 🧱 Updated Dependencies
