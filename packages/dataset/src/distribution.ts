@@ -1,3 +1,5 @@
+const SPARQL_URI = 'https://www.w3.org/TR/sparql11-protocol/';
+
 export class Distribution {
   public byteSize?: number;
   public lastModified?: Date;
@@ -13,14 +15,19 @@ export class Distribution {
 
   public isSparql() {
     return (
-      (this.mimeType === 'application/sparql-query' ||
+      (this.conformsTo?.toString() == SPARQL_URI ||
+        this.mimeType === 'application/sparql-query' ||
         this.mimeType === 'application/sparql-results+json') &&
       this.accessUrl !== null
     );
   }
 
   public static sparql(endpoint: URL, namedGraph?: string) {
-    const distribution = new this(endpoint, 'application/sparql-query');
+    const distribution = new this(
+      endpoint,
+      'application/sparql-query',
+      new URL(SPARQL_URI)
+    );
     distribution.isValid = true;
     distribution.namedGraph = namedGraph;
 
