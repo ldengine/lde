@@ -1,3 +1,10 @@
+## 0.3.6 (2025-10-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.2.6
+- Updated @lde/sparql-importer to 0.0.8
+
 ## 0.3.5 (2025-10-06)
 
 ### 🧱 Updated Dependencies
