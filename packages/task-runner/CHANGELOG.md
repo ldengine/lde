@@ -1,3 +1,13 @@
+## 0.0.5 (2025-10-06)
+
+### 🩹 Fixes
+
+- add repository URL to all packages ([6cf66dc](https://github.com/ldengine/lde/commit/6cf66dc))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.0.4 (2025-07-31)
 
 ### 🩹 Fixes

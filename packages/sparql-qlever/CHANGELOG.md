@@ -1,3 +1,12 @@
+## 0.3.5 (2025-10-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner-docker to 0.0.5
+- Updated @lde/wait-for-sparql to 0.0.5
+- Updated @lde/sparql-server to 0.2.2
+- Updated @lde/task-runner to 0.0.5
+
 ## 0.3.4 (2025-10-06)
 
 ### 🧱 Updated Dependencies

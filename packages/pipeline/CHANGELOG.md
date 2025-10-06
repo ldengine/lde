@@ -1,3 +1,11 @@
+## 0.3.5 (2025-10-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.4.3
+- Updated @lde/local-sparql-endpoint to 0.0.3
+- Updated @lde/sparql-server to 0.2.2
+
 ## 0.3.4 (2025-10-06)
 
 ### 🧱 Updated Dependencies
