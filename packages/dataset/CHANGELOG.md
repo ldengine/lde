@@ -1,3 +1,13 @@
+## 0.4.0 (2025-10-06)
+
+### 🚀 Features
+
+- use SPARQL protocol URI for conformsTo ([#34](https://github.com/ldengine/lde/pull/34))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.1 (2025-07-31)
 
 ### 🩹 Fixes
