@@ -2,6 +2,9 @@
   "name": "@lde/pipeline",
   "version": "0.3.6",
   "type": "module",
+  "repository": {
+    "url": "https://github.com/ldengine/lde"
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {
