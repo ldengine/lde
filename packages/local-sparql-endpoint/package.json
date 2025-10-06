@@ -1,6 +1,9 @@
 {
   "name": "@lde/local-sparql-endpoint",
   "version": "0.0.2",
+  "repository": {
+    "url": "https://github.com/ldengine/lde"
+  },
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
