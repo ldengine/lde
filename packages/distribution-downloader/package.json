@@ -1,6 +1,9 @@
 {
   "name": "@lde/distribution-downloader",
   "version": "0.2.5",
+  "repository": {
+    "url": "https://github.com/ldengine/lde"
+  },
   "type": "module",
   "exports": {
     "./package.json": "./package.json",

@@ -1,6 +1,9 @@
 {
   "name": "@lde/sparql-importer",
   "version": "0.0.7",
+  "repository": {
+    "url": "https://github.com/ldengine/lde"
+  },
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
