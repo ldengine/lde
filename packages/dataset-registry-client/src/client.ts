@@ -54,7 +54,7 @@ export class Client {
               distributions: dataset.distribution.map((d) => {
                 const distribution = new Distribution(
                   new URL(d.accessURL),
-                  d.mediaType,
+                  d.mediaType ?? undefined,
                   d.conformsTo ? new URL(d.conformsTo) : undefined
                 );
                 distribution.byteSize = d.byteSize ?? undefined;

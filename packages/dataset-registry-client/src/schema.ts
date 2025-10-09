@@ -48,7 +48,10 @@ export const DatasetSchema = {
     '@schema': {
       '@type': dcat.Distribution,
       accessURL: dcat.accessURL,
-      mediaType: dcat.mediaType,
+      mediaType: {
+        '@id': dcat.mediaType,
+        '@optional': true,
+      },
       byteSize: {
         '@id': dcat.byteSize,
         '@type': xsd.nonNegativeInteger,
