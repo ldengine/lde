@@ -9,7 +9,7 @@ export class Distribution {
 
   constructor(
     public readonly accessUrl: URL,
-    public readonly mimeType: string,
+    public readonly mimeType?: string,
     public readonly conformsTo?: URL
   ) {}
 

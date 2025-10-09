@@ -27,7 +27,6 @@
   dcat:distribution [
     a dcat:Distribution ;
     dcat:accessURL <http://bar.org/sparql2> ;
-    dcat:mediaType "application/sparql-query" ;
     dct:modified "2022-12-03T10:26"^^xsd:dateTime ;
   ] , [
     a dcat:Distribution ;

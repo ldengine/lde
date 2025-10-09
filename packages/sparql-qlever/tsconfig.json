@@ -10,19 +10,19 @@
       "path": "../task-runner-docker"
     },
     {
-      "path": "../sparql-server"
+      "path": "../dataset"
     },
     {
       "path": "../task-runner"
     },
     {
-      "path": "../distribution-downloader"
-    },
-    {
-      "path": "../dataset"
+      "path": "../sparql-server"
     },
     {
       "path": "../sparql-importer"
+    },
+    {
+      "path": "../distribution-downloader"
     },
     {
       "path": "./tsconfig.lib.json"

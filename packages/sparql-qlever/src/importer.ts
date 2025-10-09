@@ -48,7 +48,12 @@ export class Importer implements ImporterInterface {
   public async import(
     dataset: Dataset
   ): Promise<NotSupported | ImportSuccessful | ImportFailed> {
-    const downloadDistributions = dataset.getDownloadDistributions();
+    const downloadDistributions = dataset
+      .getDownloadDistributions()
+      .filter(
+        (distribution): distribution is Distribution & { mimeType: string } =>
+          distribution.mimeType !== undefined
+      );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
     }
@@ -75,7 +80,7 @@ export class Importer implements ImporterInterface {
   }
 
   private async doImport(
-    distribution: Distribution
+    distribution: Distribution & { mimeType: string }
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
     await this.index(
