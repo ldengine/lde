@@ -1,3 +1,19 @@
+## 0.3.8 (2025-10-09)
+
+### 🩹 Fixes
+
+- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.2.7
+- Updated @lde/sparql-importer to 0.0.9
+- Updated @lde/dataset to 0.4.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.7 (2025-10-06)
 
 ### 🩹 Fixes

@@ -1,3 +1,13 @@
+## 0.4.2 (2025-10-09)
+
+### 🩹 Fixes
+
+- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.1 (2025-10-06)
 
 ### 🩹 Fixes

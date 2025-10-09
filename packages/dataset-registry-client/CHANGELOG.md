@@ -1,3 +1,17 @@
+## 0.4.4 (2025-10-09)
+
+### 🩹 Fixes
+
+- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset to 0.4.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.3 (2025-10-06)
 
 ### 🧱 Updated Dependencies
