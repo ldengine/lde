@@ -40,6 +40,9 @@
     },
     {
       "path": "./packages/docgen"
+    },
+    {
+      "path": "./packages/sparql-monitor"
     }
   ]
 }

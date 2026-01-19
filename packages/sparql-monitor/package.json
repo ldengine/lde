@@ -1,0 +1,36 @@
+{
+  "name": "@lde/sparql-monitor",
+  "version": "0.0.1",
+  "description": "Monitor SPARQL endpoints with periodic checks",
+  "repository": {
+    "url": "https://github.com/ldengine/lde"
+  },
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "cron": "^4.1.0",
+    "drizzle-kit": "^0.30.4",
+    "drizzle-orm": "^0.38.4",
+    "fetch-sparql-endpoint": "^6.0.0",
+    "postgres": "^3.4.5",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
