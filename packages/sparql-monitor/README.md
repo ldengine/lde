@@ -8,7 +8,84 @@ Monitor SPARQL endpoints with periodic checks, storing observations in PostgreSQ
 npm install @lde/sparql-monitor
 ```
 
-## Usage
+## CLI Usage
+
+The easiest way to use the monitor is via the CLI with a configuration file.
+
+### Quick Start
+
+1. Create a configuration file (TypeScript, JavaScript, JSON, or YAML)
+2. Run the monitor
+
+```bash
+# Start continuous monitoring
+npx sparql-monitor start
+
+# Run a one-off check
+npx sparql-monitor check
+
+# Check a specific monitor
+npx sparql-monitor check dbpedia
+
+# Use a custom config path
+npx sparql-monitor start --config ./configs/production.config.ts
+```
+
+### TypeScript Config (`sparql-monitor.config.ts`)
+
+```typescript
+import { defineConfig } from '@lde/sparql-monitor';
+
+export default defineConfig({
+  databaseUrl: process.env.DATABASE_URL,
+  intervalSeconds: 300,
+  monitors: [
+    {
+      identifier: 'dbpedia',
+      endpointUrl: new URL('https://dbpedia.org/sparql'),
+      query: 'ASK { ?s ?p ?o }',
+    },
+    {
+      identifier: 'wikidata',
+      endpointUrl: new URL('https://query.wikidata.org/sparql'),
+      query: 'SELECT * WHERE { ?s ?p ?o } LIMIT 1',
+    },
+  ],
+});
+```
+
+### YAML Config (`sparql-monitor.config.yaml`)
+
+```yaml
+databaseUrl: ${DATABASE_URL}
+intervalSeconds: 300
+monitors:
+  - identifier: dbpedia
+    endpointUrl: https://dbpedia.org/sparql
+    query: ASK { ?s ?p ?o }
+  - identifier: wikidata
+    endpointUrl: https://query.wikidata.org/sparql
+    query: SELECT * WHERE { ?s ?p ?o } LIMIT 1
+```
+
+### Environment Variables
+
+Create a `.env` file for sensitive configuration:
+
+```
+DATABASE_URL=postgres://user:pass@localhost:5432/monitoring
+```
+
+The CLI automatically loads `.env` files.
+
+### Config Auto-Discovery
+
+The CLI searches for configuration in this order:
+1. `sparql-monitor.config.{ts,mts,js,mjs,json,yaml,yml}`
+2. `.sparql-monitorrc`
+3. `package.json` → `"sparql-monitor"` key
+
+## Programmatic Usage
 
 ```typescript
 import {
