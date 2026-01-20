@@ -1,3 +1,13 @@
+## 0.4.0 (2026-01-20)
+
+### 🚀 Features
+
+- add @lde/sparql-monitor package ([#37](https://github.com/ldengine/lde/pull/37))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.8 (2025-10-09)
 
 ### 🧱 Updated Dependencies
