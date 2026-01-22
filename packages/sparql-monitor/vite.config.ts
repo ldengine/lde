@@ -9,7 +9,7 @@ export default mergeConfig(
     cacheDir: '../../node_modules/.vite/packages/sparql-monitor',
     test: {
       coverage: {
-        exclude: ['**/cli.ts'],
+        exclude: ['src/cli.ts'],
         thresholds: {
           functions: 89.47,
           lines: 73.83,
