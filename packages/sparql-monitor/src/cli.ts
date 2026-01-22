@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { loadConfig } from 'c12';
+import { createRequire } from 'node:module';
 import { MonitorService } from './service.js';
 import { PostgresObservationStore } from './store.js';
 import { normalizeConfig, type SparqlMonitorConfig } from './config.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json') as { version: string };
 
 const program = new Command();
 
 program
   .name('sparql-monitor')
   .description('Monitor SPARQL endpoints')
-  .version('0.0.1');
+  .version(version);
 
 program
   .command('start')
