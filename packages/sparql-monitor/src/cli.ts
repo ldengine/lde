@@ -4,10 +4,67 @@ import { loadConfig } from 'c12';
 import { createRequire } from 'node:module';
 import { MonitorService } from './service.js';
 import { PostgresObservationStore } from './store.js';
+import type { MonitorConfig } from './types.js';
 import { normalizeConfig, type SparqlMonitorConfig } from './config.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
+
+interface MonitorContext {
+  config: {
+    databaseUrl: string;
+    intervalSeconds?: number;
+    monitors: MonitorConfig[];
+  };
+  store: PostgresObservationStore;
+  service: MonitorService;
+}
+
+async function loadMonitorContext(
+  configFile?: string
+): Promise<MonitorContext> {
+  const { config: rawConfig } = await loadConfig<SparqlMonitorConfig>({
+    name: 'sparql-monitor',
+    configFile,
+    dotenv: true,
+  });
+
+  if (!rawConfig) {
+    console.error('Error: No configuration found.');
+    console.error(
+      'Create a sparql-monitor.config.ts file or specify --config.'
+    );
+    process.exit(1);
+  }
+
+  const config = normalizeConfig(rawConfig);
+
+  const databaseUrl = config.databaseUrl ?? process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error(
+      'Error: databaseUrl required (set in config or DATABASE_URL env).'
+    );
+    process.exit(1);
+  }
+
+  if (config.monitors.length === 0) {
+    console.error('Error: No monitors configured.');
+    process.exit(1);
+  }
+
+  const store = await PostgresObservationStore.create(databaseUrl);
+  const service = new MonitorService({
+    store,
+    monitors: config.monitors,
+    intervalSeconds: config.intervalSeconds,
+  });
+
+  return {
+    config: { ...config, databaseUrl },
+    store,
+    service,
+  };
+}
 
 const program = new Command();
 
@@ -21,50 +78,14 @@ program
   .description('Start monitoring all configured endpoints')
   .option('-c, --config <path>', 'Config file path')
   .action(async (options) => {
-    const { config: rawConfig } = await loadConfig<SparqlMonitorConfig>({
-      name: 'sparql-monitor',
-      configFile: options.config,
-      dotenv: true,
-    });
+    const { config, store, service } = await loadMonitorContext(options.config);
 
-    if (!rawConfig) {
-      console.error('Error: No configuration found.');
-      console.error(
-        'Create a sparql-monitor.config.ts file or specify --config.'
-      );
-      process.exit(1);
-    }
-
-    const config = normalizeConfig(rawConfig);
-
-    const databaseUrl = config.databaseUrl ?? process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      console.error(
-        'Error: databaseUrl required (set in config or DATABASE_URL env).'
-      );
-      process.exit(1);
-    }
-
-    if (config.monitors.length === 0) {
-      console.error('Error: No monitors configured.');
-      process.exit(1);
-    }
-
-    const store = await PostgresObservationStore.create(databaseUrl);
-    const service = new MonitorService({
-      store,
-      monitors: config.monitors,
-      intervalSeconds: config.intervalSeconds,
-    });
-
-    // Run initial check
     await service.checkAll();
-
     service.start();
+
     console.log(`Monitoring ${config.monitors.length} endpoint(s)...`);
     console.log(`Interval: ${config.intervalSeconds ?? 300} seconds`);
 
-    // Graceful shutdown
     const shutdown = async () => {
       console.log('\nShutting down...');
       service.stop();
@@ -81,41 +102,7 @@ program
   .description('Run immediate check (all monitors or specific one)')
   .option('-c, --config <path>', 'Config file path')
   .action(async (identifier, options) => {
-    const { config: rawConfig } = await loadConfig<SparqlMonitorConfig>({
-      name: 'sparql-monitor',
-      configFile: options.config,
-      dotenv: true,
-    });
-
-    if (!rawConfig) {
-      console.error('Error: No configuration found.');
-      console.error(
-        'Create a sparql-monitor.config.ts file or specify --config.'
-      );
-      process.exit(1);
-    }
-
-    const config = normalizeConfig(rawConfig);
-
-    const databaseUrl = config.databaseUrl ?? process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      console.error(
-        'Error: databaseUrl required (set in config or DATABASE_URL env).'
-      );
-      process.exit(1);
-    }
-
-    if (config.monitors.length === 0) {
-      console.error('Error: No monitors configured.');
-      process.exit(1);
-    }
-
-    const store = await PostgresObservationStore.create(databaseUrl);
-    const service = new MonitorService({
-      store,
-      monitors: config.monitors,
-      intervalSeconds: config.intervalSeconds,
-    });
+    const { config, store, service } = await loadMonitorContext(options.config);
 
     try {
       if (identifier) {
