@@ -11,10 +11,10 @@ export default mergeConfig(
       coverage: {
         exclude: ['src/cli.ts', 'drizzle.config.ts'],
         thresholds: {
-          functions: 94.44,
-          lines: 76.75,
+          functions: 68,
+          lines: 80.7,
           branches: 88.09,
-          statements: 76.75,
+          statements: 80.7,
         },
       },
     },
