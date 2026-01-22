@@ -9,11 +9,12 @@ export default mergeConfig(
     cacheDir: '../../node_modules/.vite/packages/sparql-monitor',
     test: {
       coverage: {
+        exclude: ['src/cli.ts', 'drizzle.config.ts'],
         thresholds: {
-          functions: 62.5,
-          lines: 76.01,
-          branches: 84.21,
-          statements: 76.01,
+          functions: 68,
+          lines: 80.7,
+          branches: 88.09,
+          statements: 80.7,
         },
       },
     },

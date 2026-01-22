@@ -14,7 +14,8 @@ export default [
             '{projectRoot}/drizzle.config.{js,ts,mjs,mts}',
           ],
           // postgres is used via drizzle-orm's postgres driver
-          ignoredDependencies: ['postgres'],
+          // c12, commander are used by CLI which is separate from main exports
+          ignoredDependencies: ['postgres', 'c12', 'commander'],
         },
       ],
     },
