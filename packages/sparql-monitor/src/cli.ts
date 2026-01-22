@@ -58,9 +58,7 @@ program
 
     service.start();
     console.log(`Monitoring ${config.monitors.length} endpoint(s)...`);
-    console.log(
-      `Interval: ${config.intervalSeconds ?? 300} seconds`
-    );
+    console.log(`Interval: ${config.intervalSeconds ?? 300} seconds`);
 
     // Graceful shutdown
     const shutdown = async () => {
@@ -117,7 +115,9 @@ program
 
     try {
       if (identifier) {
-        const monitor = config.monitors.find((m) => m.identifier === identifier);
+        const monitor = config.monitors.find(
+          (m) => m.identifier === identifier
+        );
         if (!monitor) {
           console.error(`Error: Monitor '${identifier}' not found.`);
           console.error(

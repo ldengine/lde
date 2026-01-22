@@ -81,6 +81,7 @@ The CLI automatically loads `.env` files.
 ### Config Auto-Discovery
 
 The CLI searches for configuration in this order:
+
 1. `sparql-monitor.config.{ts,mts,js,mjs,json,yaml,yml}`
 2. `.sparql-monitorrc`
 3. `package.json` → `"sparql-monitor"` key
