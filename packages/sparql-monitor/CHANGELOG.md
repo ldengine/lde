@@ -1,3 +1,13 @@
+## 0.3.0 (2026-01-23)
+
+### 🚀 Features
+
+- **sparql-monitor:** export SparqlMonitor class and options type ([#43](https://github.com/ldengine/lde/pull/43))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.2 (2026-01-23)
 
 ### 🩹 Fixes
