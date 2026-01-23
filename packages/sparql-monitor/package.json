@@ -29,13 +29,13 @@
     "c12": "^3.0.2",
     "commander": "^13.1.0",
     "cron": "^4.1.0",
-    "drizzle-kit": "^0.31.8",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-kit": "1.0.0-beta.12-a5629fb",
+    "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "fetch-sparql-endpoint": "^6.0.0",
     "postgres": "^3.4.5",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "vite": "^6.0.0"
+    "@testcontainers/postgresql": "^11.11.0"
   }
 }
