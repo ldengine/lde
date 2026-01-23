@@ -1,38 +1,84 @@
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { PostgresObservationStore } from '../src/store.js';
-
-// Store tests require a real PostgreSQL database connection.
-// The static factory method connects and initializes the schema immediately.
 
 describe('PostgresObservationStore', () => {
   it('exports create factory method', () => {
     expect(PostgresObservationStore.create).toBeInstanceOf(Function);
   });
 
-  // Integration tests would go here with a real database connection.
-  // For example:
-  //
-  // describe('integration', () => {
-  //   let store: PostgresObservationStore;
-  //
-  //   beforeAll(async () => {
-  //     store = await PostgresObservationStore.create(process.env.TEST_DATABASE_URL!);
-  //   });
-  //
-  //   afterAll(async () => {
-  //     await store.close();
-  //   });
-  //
-  //   it('stores and retrieves observations', async () => {
-  //     const observation = await store.store({
-  //       monitor: 'test-monitor',
-  //       responseTime: new Date(),
-  //       success: true,
-  //       responseTimeMs: 100,
-  //       errorMessage: null,
-  //     });
-  //
-  //     const retrieved = await store.get(observation.id);
-  //     expect(retrieved?.id).toBe(observation.id);
-  //   });
-  // });
+  describe('integration', () => {
+    let container: StartedPostgreSqlContainer;
+    let store: PostgresObservationStore;
+
+    beforeAll(async () => {
+      container = await new PostgreSqlContainer('postgres:18').start();
+      store = await PostgresObservationStore.create(container.getConnectionUri());
+    }, 60000);
+
+    afterAll(async () => {
+      await store?.close();
+      await container?.stop();
+    }, 30000);
+
+    it('initializes schema on first run', () => {
+      expect(store).toBeDefined();
+    });
+
+    it('stores and retrieves observations', async () => {
+      const observation = await store.store({
+        monitor: 'test-monitor',
+        observedAt: new Date(),
+        success: true,
+        responseTimeMs: 100,
+        errorMessage: null,
+      });
+
+      expect(observation.id).toBeDefined();
+
+      const retrieved = await store.get(observation.id);
+      expect(retrieved?.id).toBe(observation.id);
+      expect(retrieved?.monitor).toBe('test-monitor');
+      expect(retrieved?.success).toBe(true);
+      expect(retrieved?.responseTimeMs).toBe(100);
+    });
+
+    it('retrieves latest observations per monitor', async () => {
+      // Store observations for two monitors
+      await store.store({
+        monitor: 'monitor-a',
+        observedAt: new Date('2024-01-01'),
+        success: true,
+        responseTimeMs: 50,
+        errorMessage: null,
+      });
+      await store.store({
+        monitor: 'monitor-a',
+        observedAt: new Date('2024-01-02'),
+        success: false,
+        responseTimeMs: 100,
+        errorMessage: 'timeout',
+      });
+      await store.store({
+        monitor: 'monitor-b',
+        observedAt: new Date('2024-01-01'),
+        success: true,
+        responseTimeMs: 75,
+        errorMessage: null,
+      });
+
+      await store.refreshLatestObservationsView();
+      const latest = await store.getLatest();
+
+      expect(latest.size).toBeGreaterThanOrEqual(2);
+      expect(latest.get('monitor-a')?.success).toBe(false);
+      expect(latest.get('monitor-b')?.success).toBe(true);
+    });
+
+    it('handles schema re-initialization on existing database', async () => {
+      // Close and recreate store to test idempotent schema push
+      await store.close();
+      store = await PostgresObservationStore.create(container.getConnectionUri());
+      expect(store).toBeDefined();
+    });
+  });
 });

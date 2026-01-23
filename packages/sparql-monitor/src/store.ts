@@ -1,6 +1,6 @@
-import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq } from 'drizzle-orm';
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq, sql } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from './schema.js';
 import type { ObservationStore, Observation } from './types.js';
 
@@ -11,29 +11,66 @@ const { observations, latestObservations, refreshLatestObservationsViewSql } =
  * PostgreSQL implementation of the ObservationStore interface.
  */
 export class PostgresObservationStore implements ObservationStore {
-  private client: postgres.Sql;
   private db: PostgresJsDatabase;
 
   private constructor(connectionString: string) {
-    this.client = postgres(connectionString);
-    this.db = drizzle(this.client);
+    this.db = drizzle(connectionString);
   }
 
   /**
    * Create a new store and initialize the database schema.
+   *
+   * Uses drizzle-kit's generateMigration to create schema from code.
+   * This approach works around a bug in pushSchema where the execute()
+   * return format doesn't match what drizzle-kit expects.
+   * See: https://github.com/drizzle-team/drizzle-orm/issues/5293
    */
   static async create(
     connectionString: string
   ): Promise<PostgresObservationStore> {
     const store = new PostgresObservationStore(connectionString);
-    const { pushSchema } = await import('drizzle-kit/api');
-    const result = await pushSchema(schema, store.db);
-    await result.apply();
+    const { generateDrizzleJson, generateMigration } = await import(
+      'drizzle-kit/api-postgres'
+    );
+
+    // Generate migration from empty state to our schema
+    const empty = await generateDrizzleJson({});
+    const target = await generateDrizzleJson(schema, empty.id);
+    const migration = await generateMigration(empty, target);
+
+    // Execute each statement, ignoring "already exists" errors for idempotency
+    for (const statement of migration) {
+      try {
+        await store.db.execute(sql.raw(statement));
+      } catch (error) {
+        // Check both direct error and cause for "already exists"
+        const isAlreadyExists = (e: unknown): boolean => {
+          if (!(e instanceof Error)) return false;
+          if (e.message.includes('already exists')) return true;
+          if ('cause' in e) return isAlreadyExists(e.cause);
+          return false;
+        };
+        if (!isAlreadyExists(error)) {
+          throw error;
+        }
+      }
+    }
+
+    // Create unique index on materialized view for CONCURRENTLY refresh
+    try {
+      await store.db.execute(
+        sql`CREATE UNIQUE INDEX latest_observations_monitor_idx ON latest_observations (monitor)`
+      );
+    } catch {
+      // Index may already exist
+    }
+
     return store;
   }
 
   async close(): Promise<void> {
-    await this.client.end();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.db as any).$client.end();
   }
 
   async getLatest(): Promise<Map<string, Observation>> {
