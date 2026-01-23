@@ -1,3 +1,13 @@
+## 0.2.2 (2026-01-23)
+
+### 🩹 Fixes
+
+- **sparql-monitor:** use generateMigration instead of broken pushSchema ([#40](https://github.com/ldengine/lde/pull/40))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.1 (2026-01-23)
 
 ### 🩹 Fixes
