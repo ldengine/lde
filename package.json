@@ -13,6 +13,10 @@
   "scripts": {
     "prepare": "husky"
   },
+  "lint-staged": {
+    "*.ts": "eslint --fix",
+    "*.{ts,json,md}": "prettier --write"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -35,6 +39,7 @@
     "husky": "^9.1.7",
     "jiti": "2.4.2",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^16.2.7",
     "nock": "^14.0.5",
     "nx": "21.3.10",
     "prettier": "^2.6.2",
