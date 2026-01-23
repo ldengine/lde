@@ -1,3 +1,13 @@
+## 0.2.1 (2026-01-23)
+
+### 🩹 Fixes
+
+- **sparql-monitor:** upgrade Drizzle to fix ESM compatibility ([#39](https://github.com/ldengine/lde/pull/39))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.0 (2026-01-22)
 
 ### 🚀 Features
