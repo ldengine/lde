@@ -25,6 +25,7 @@ LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 - [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
 - [x] [@lde/docgen](packages/docgen): generate documentation from RDF such as SHACL shapes
 - [x] [@lde/sparql-importer](packages/sparql-importer): import data dumps to a local SPARQL endpoint for querying
+- [x] [@lde/sparql-monitor](packages/sparql-monitor): monitor SPARQL endpoints with periodic checks
 - [x] [@lde/sparql-qlever](packages/sparql-qlever): QLever SPARQL adapter for importing and serving data
 - [ ] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
 - [ ] [@lde/task-runner-docker](packages/task-runner-docker): run tasks in Docker containers
