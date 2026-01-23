@@ -1,4 +1,7 @@
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql';
 import { PostgresObservationStore } from '../src/store.js';
 
 describe('PostgresObservationStore', () => {
@@ -12,7 +15,9 @@ describe('PostgresObservationStore', () => {
 
     beforeAll(async () => {
       container = await new PostgreSqlContainer('postgres:18').start();
-      store = await PostgresObservationStore.create(container.getConnectionUri());
+      store = await PostgresObservationStore.create(
+        container.getConnectionUri()
+      );
     }, 60000);
 
     afterAll(async () => {
@@ -77,7 +82,9 @@ describe('PostgresObservationStore', () => {
     it('handles schema re-initialization on existing database', async () => {
       // Close and recreate store to test idempotent schema push
       await store.close();
-      store = await PostgresObservationStore.create(container.getConnectionUri());
+      store = await PostgresObservationStore.create(
+        container.getConnectionUri()
+      );
       expect(store).toBeDefined();
     });
   });
