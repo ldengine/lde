@@ -1,9 +1,35 @@
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import type { CheckResult } from './types.js';
 
+/**
+ * Extract credentials from a URL and convert them to a Basic auth header.
+ * Returns a tuple of [URL without credentials, Headers with Authorization].
+ */
+function extractUrlCredentials(
+  url: URL,
+  baseHeaders?: Headers
+): [URL, Headers] {
+  const headers = new Headers(baseHeaders);
+
+  if (url.username || url.password) {
+    const credentials = `${decodeURIComponent(
+      url.username
+    )}:${decodeURIComponent(url.password)}`;
+    headers.set(
+      'Authorization',
+      `Basic ${Buffer.from(credentials).toString('base64')}`
+    );
+
+    const cleanUrl = new URL(url.toString());
+    cleanUrl.username = '';
+    cleanUrl.password = '';
+    return [cleanUrl, headers];
+  }
+
+  return [url, headers];
+}
+
 export interface SparqlMonitorOptions {
-  /** Optional custom fetcher instance. */
-  fetcher?: SparqlEndpointFetcher;
   /** Timeout in milliseconds for the SPARQL request. */
   timeoutMs?: number;
   /** HTTP headers to include in requests (e.g., User-Agent). */
@@ -15,14 +41,14 @@ export interface SparqlMonitorOptions {
  */
 export class SparqlMonitor {
   private readonly fetcher: SparqlEndpointFetcher;
+  private readonly options?: SparqlMonitorOptions;
 
   constructor(options?: SparqlMonitorOptions) {
-    this.fetcher =
-      options?.fetcher ??
-      new SparqlEndpointFetcher({
-        timeout: options?.timeoutMs ?? 30000,
-        defaultHeaders: options?.headers,
-      });
+    this.options = options;
+    this.fetcher = new SparqlEndpointFetcher({
+      timeout: options?.timeoutMs ?? 30000,
+      defaultHeaders: options?.headers,
+    });
   }
 
   /**
@@ -31,26 +57,21 @@ export class SparqlMonitor {
   async check(endpointUrl: URL, query: string): Promise<CheckResult> {
     const observedAt = new Date(); // UTC
     const startTime = performance.now();
+    const [url, fetcher] = this.prepareFetcherForUrl(endpointUrl);
 
     try {
-      const queryType = this.fetcher.getQueryType(query);
+      const queryType = fetcher.getQueryType(query);
 
       switch (queryType) {
         case 'ASK':
-          await this.fetcher.fetchAsk(endpointUrl.toString(), query);
+          await fetcher.fetchAsk(url, query);
           break;
         case 'SELECT':
-          await this.consumeStream(
-            await this.fetcher.fetchBindings(endpointUrl.toString(), query)
-          );
+          await this.consumeStream(await fetcher.fetchBindings(url, query));
           break;
         case 'CONSTRUCT':
-          await this.consumeStream(
-            await this.fetcher.fetchTriples(endpointUrl.toString(), query)
-          );
+          await this.consumeStream(await fetcher.fetchTriples(url, query));
           break;
-        default:
-          throw new Error(`Unsupported query type: ${queryType}`);
       }
 
       const responseTimeMs = Math.round(performance.now() - startTime);
@@ -72,6 +93,29 @@ export class SparqlMonitor {
         observedAt,
       };
     }
+  }
+
+  private prepareFetcherForUrl(
+    endpointUrl: URL
+  ): [string, SparqlEndpointFetcher] {
+    const [url, headers] = extractUrlCredentials(
+      endpointUrl,
+      this.options?.headers
+    );
+    const hasCredentials =
+      headers.has('Authorization') &&
+      !this.options?.headers?.has('Authorization');
+
+    if (!hasCredentials) {
+      return [url.toString(), this.fetcher];
+    }
+
+    const fetcher = new SparqlEndpointFetcher({
+      timeout: this.options?.timeoutMs ?? 30000,
+      defaultHeaders: headers,
+    });
+
+    return [url.toString(), fetcher];
   }
 
   private async consumeStream(stream: NodeJS.ReadableStream): Promise<void> {
