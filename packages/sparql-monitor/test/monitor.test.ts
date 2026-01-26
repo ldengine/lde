@@ -125,7 +125,7 @@ describe('SparqlMonitor', () => {
       const fetchSpy = vi
         .spyOn(globalThis, 'fetch')
         .mockImplementation(
-          async (input: RequestInfo | URL, init?: RequestInit) => {
+          async (input: string | URL | Request, init?: RequestInit) => {
             capturedUrl =
               typeof input === 'string' ? input : (input as URL).toString();
             capturedHeaders = new Headers(init?.headers);
@@ -156,7 +156,7 @@ describe('SparqlMonitor', () => {
       const fetchSpy = vi
         .spyOn(globalThis, 'fetch')
         .mockImplementation(
-          async (_input: RequestInfo | URL, init?: RequestInit) => {
+          async (_input: string | URL | Request, init?: RequestInit) => {
             capturedHeaders = new Headers(init?.headers);
             return mockFetchResponse('{"boolean": true}');
           }
@@ -184,7 +184,7 @@ describe('SparqlMonitor', () => {
       const fetchSpy = vi
         .spyOn(globalThis, 'fetch')
         .mockImplementation(
-          async (_input: RequestInfo | URL, init?: RequestInit) => {
+          async (_input: string | URL | Request, init?: RequestInit) => {
             capturedHeaders = new Headers(init?.headers);
             return mockFetchResponse('{"boolean": true}');
           }
