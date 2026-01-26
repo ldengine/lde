@@ -43,6 +43,9 @@
     },
     {
       "path": "./packages/sparql-monitor"
+    },
+    {
+      "path": "./packages/fastify-rdf"
     }
   ]
 }
