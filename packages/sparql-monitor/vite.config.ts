@@ -12,9 +12,9 @@ export default mergeConfig(
         exclude: ['src/cli.ts', 'drizzle.config.ts'],
         thresholds: {
           functions: 100,
-          lines: 96.78,
-          branches: 86.66,
-          statements: 96.78,
+          lines: 97.17,
+          branches: 88.57,
+          statements: 97.17,
         },
       },
     },
