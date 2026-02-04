@@ -1,0 +1,41 @@
+{
+  "name": "@lde/ldp-server",
+  "version": "0.1.0",
+  "description": "Fastify plugin implementing W3C Linked Data Platform 1.0 for RDF resources",
+  "homepage": "https://github.com/ldengine/lde/tree/main/packages/ldp-server",
+  "repository": {
+    "url": "https://github.com/ldengine/lde",
+    "directory": "packages/ldp-server"
+  },
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@lde/fastify-rdf": "0.1.0",
+    "fastify-plugin": "^5.0.0",
+    "n3": "^1.17.0",
+    "rdf-parse": "^3.0.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@rdfjs/types": "^2.0.0",
+    "fastify": "^5.0.0"
+  },
+  "peerDependencies": {
+    "fastify": "^5.0.0"
+  }
+}
