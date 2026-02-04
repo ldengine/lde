@@ -2,8 +2,10 @@
   "name": "@lde/sparql-monitor",
   "version": "0.4.0",
   "description": "Monitor SPARQL endpoints with periodic checks",
+  "homepage": "https://github.com/ldengine/lde/tree/main/packages/sparql-monitor",
   "repository": {
-    "url": "https://github.com/ldengine/lde"
+    "url": "https://github.com/ldengine/lde",
+    "directory": "packages/sparql-monitor"
   },
   "type": "module",
   "exports": {

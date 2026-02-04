@@ -1,8 +1,10 @@
 {
   "name": "@lde/sparql-qlever",
   "version": "0.5.0",
+  "homepage": "https://github.com/ldengine/lde/tree/main/packages/sparql-qlever",
   "repository": {
-    "url": "https://github.com/ldengine/lde"
+    "url": "https://github.com/ldengine/lde",
+    "directory": "packages/sparql-qlever"
   },
   "type": "module",
   "exports": {

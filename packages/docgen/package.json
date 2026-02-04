@@ -8,7 +8,11 @@
     "documentation",
     "generator"
   ],
-  "repository": "github:ldengine/lde",
+  "homepage": "https://github.com/ldengine/lde/tree/main/packages/docgen",
+  "repository": {
+    "url": "https://github.com/ldengine/lde",
+    "directory": "packages/docgen"
+  },
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
