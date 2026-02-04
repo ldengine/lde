@@ -1,3 +1,13 @@
+## 0.4.0 (2026-01-26)
+
+### 🚀 Features
+
+- **sparql-monitor:** support Basic auth credentials in endpoint URLs ([#44](https://github.com/ldengine/lde/pull/44))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.0 (2026-01-23)
 
 ### 🚀 Features
