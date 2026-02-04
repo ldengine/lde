@@ -1,6 +1,11 @@
 import type { DatasetCore, Stream } from '@rdfjs/types';
 
 /**
+ * Default content type when no Accept header is provided.
+ */
+export const DEFAULT_CONTENT_TYPE = 'text/turtle';
+
+/**
  * Options for the fastify-rdf plugin.
  */
 export interface FastifyRdfOptions {

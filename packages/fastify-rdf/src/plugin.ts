@@ -4,9 +4,11 @@ import { fastifyPlugin } from 'fastify-plugin';
 import { fastifyAccepts } from '@fastify/accepts';
 import { rdfSerializer } from 'rdf-serialize';
 import { Readable } from 'node:stream';
-import type { FastifyRdfOptions, RdfData } from './types.js';
-
-const DEFAULT_CONTENT_TYPE = 'text/turtle';
+import {
+  DEFAULT_CONTENT_TYPE,
+  type FastifyRdfOptions,
+  type RdfData,
+} from './types.js';
 
 /**
  * Collect a readable stream into a string.
