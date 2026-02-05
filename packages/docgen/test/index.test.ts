@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { generateDocumentation } from '../src/index.js';

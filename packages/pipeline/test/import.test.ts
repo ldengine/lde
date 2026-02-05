@@ -1,8 +1,8 @@
+import { describe, it, expect, vi } from 'vitest';
 import { Dataset, Distribution } from '@lde/dataset';
 import { Import } from '../src/import.js';
 import { Importer, ImportSuccessful } from '@lde/sparql-importer';
 import { SparqlServer } from '@lde/sparql-server';
-import { vi } from 'vitest';
 import { NotSupported, Success } from '../src/index.js';
 
 const distribution = new Distribution(

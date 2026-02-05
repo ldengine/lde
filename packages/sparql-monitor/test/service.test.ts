@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { MonitorService } from '../src/service.js';
 import { SparqlMonitor } from '../src/monitor.js';
 import type { ObservationStore, MonitorConfig } from '../src/types.js';

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Client } from '../src/client.js';
 import { Dataset, rdfMediaTypes, sparqlMediaTypes } from '@lde/dataset';
 import {
