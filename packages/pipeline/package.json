@@ -2,7 +2,8 @@
   "name": "@lde/pipeline",
   "version": "0.5.0",
   "repository": {
-    "url": "https://github.com/ldengine/lde"
+    "url": "https://github.com/ldengine/lde",
+    "directory": "packages/pipeline"
   },
   "type": "module",
   "exports": {
