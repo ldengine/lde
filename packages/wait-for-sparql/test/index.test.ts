@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { waitForSparqlEndpointAvailable } from '../src/index.js';
 
 describe('waitForSparqlEndpointAvailable', () => {

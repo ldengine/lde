@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { Pipeline } from '../src/pipeline.js';
 import { Import } from '../src/import.js';
 import { ManualDatasetSelection } from '../src/index.js';
@@ -9,7 +10,6 @@ import {
   NotSupported,
 } from '@lde/sparql-importer';
 import { SparqlServer } from '@lde/sparql-server';
-import { vi } from 'vitest';
 
 const distribution = new Distribution(
   new URL('htts://foo.org/distribution/1'),

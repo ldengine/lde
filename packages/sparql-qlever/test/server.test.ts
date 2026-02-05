@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Server } from '../src/server.js';
 import { DockerTaskRunner } from '@lde/task-runner-docker';
 import { waitForSparqlEndpointAvailable } from '@lde/wait-for-sparql';

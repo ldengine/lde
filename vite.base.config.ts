@@ -6,7 +6,6 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     watch: false,
-    globals: true,
     environment: 'node',
     include: ['{src,test}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],

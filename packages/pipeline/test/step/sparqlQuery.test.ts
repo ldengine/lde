@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { NotSupported, SparqlQuery } from '../../src/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import {

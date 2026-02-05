@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Importer } from '../src/importer.js';
 import { DockerTaskRunner } from '@lde/task-runner-docker';
 import { ImportSuccessful } from '@lde/sparql-importer';

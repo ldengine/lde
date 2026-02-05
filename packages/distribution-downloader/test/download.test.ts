@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { Distribution } from '@lde/dataset';
 import { LastModifiedDownloader } from '../src/download.js';
 import nock from 'nock';
