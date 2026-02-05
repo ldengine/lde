@@ -1,9 +1,10 @@
 {
-  "name": "@lde/sparql-qlever",
-  "version": "0.5.1",
+  "name": "@lde/pipeline-void",
+  "version": "0.1.0",
+  "description": "VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets",
   "repository": {
     "url": "https://github.com/ldengine/lde",
-    "directory": "packages/sparql-qlever"
+    "directory": "packages/pipeline-void"
   },
   "type": "module",
   "exports": {
@@ -23,12 +24,10 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.5.0",
-    "@lde/distribution-downloader": "0.3.0",
-    "@lde/sparql-importer": "0.1.0",
-    "@lde/sparql-server": "0.3.0",
-    "@lde/task-runner": "0.1.0",
-    "@lde/wait-for-sparql": "0.0.5",
+    "@lde/dataset": "0.4.2",
+    "@rdfjs/types": "^2.0.1",
+    "fetch-sparql-endpoint": "^6.0.0",
+    "n3": "^1.17.0",
     "tslib": "^2.3.0"
   }
 }

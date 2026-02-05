@@ -1,0 +1,25 @@
+PREFIX schema: <http://schema.org/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX rico: <https://www.ica.org/standards/RiC/ontology#>
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        void:subset ?licenseSubset .
+    ?licenseSubset
+        dcterms:license ?license ;
+        void:triples ?count .
+}
+#namedGraph#
+WHERE {
+    {
+        SELECT (IRI(?l) AS ?license) (COUNT(*) AS ?count) {
+            #subjectFilter#
+            ?s ?p ?l .
+            VALUES ?p { schema:license <https://schema.org/license> dc:license rico:conditionsOfUse }
+        }
+        GROUP BY ?l
+    }
+    BIND(URI(CONCAT(STR(?dataset), "/.well-known/void#license-", MD5(STR(?license)))) AS ?licenseSubset)
+}

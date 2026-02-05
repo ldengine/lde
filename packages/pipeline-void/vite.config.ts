@@ -6,14 +6,14 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/pipeline',
+    cacheDir: '../../node_modules/.vite/packages/pipeline-void',
     test: {
       coverage: {
         thresholds: {
-          functions: 92.1,
-          lines: 87.38,
-          branches: 91.56,
-          statements: 87.38,
+          functions: 93.75,
+          lines: 96.63,
+          branches: 82.5,
+          statements: 96.63,
         },
       },
     },

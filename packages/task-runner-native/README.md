@@ -1,11 +1,39 @@
-# task-runner-native
+# Task Runner Native
 
-This library was generated with [Nx](https://nx.dev).
+Run shell commands natively on the host system using Node.js `child_process`.
 
-## Building
+## Usage
 
-Run `nx build task-runner-native` to build the library.
+```typescript
+import { NativeTaskRunner } from '@lde/task-runner-native';
 
-## Running unit tests
+const runner = new NativeTaskRunner({
+  cwd: '/path/to/working/dir', // Optional working directory
+  gracefulShutdownTimeout: 5000, // Optional timeout before SIGKILL (default: 5000ms)
+});
 
-Run `nx test task-runner-native` to execute the unit tests via [Jest](https://jestjs.io).
+// Run a command
+const task = await runner.run('echo "Hello World"');
+
+// Wait for completion
+const output = await runner.wait(task);
+console.log(output); // "Hello World"
+
+// Or stop a long-running task
+const task2 = await runner.run('sleep 60');
+await runner.stop(task2); // Sends SIGTERM, then SIGKILL after timeout
+```
+
+## Options
+
+| Option                    | Type     | Default           | Description                                               |
+| ------------------------- | -------- | ----------------- | --------------------------------------------------------- |
+| `cwd`                     | `string` | Current directory | Working directory for spawned processes                   |
+| `gracefulShutdownTimeout` | `number` | `5000`            | Milliseconds to wait after SIGTERM before sending SIGKILL |
+
+## Features
+
+- Spawns commands in a detached process group
+- Graceful shutdown with SIGTERM → SIGKILL escalation
+- Handles already-exited processes in `stop()`
+- Captures stdout and stderr output

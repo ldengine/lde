@@ -1,0 +1,16 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+PREFIX nde: <https://www.netwerkdigitaalerfgoed.nl/def#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        nde:objectsLiteral ?objectsLiteral ;
+        nde:distinctObjectsLiteral ?distinctObjectsLiteral .
+}
+#namedGraph#
+WHERE {
+    SELECT (COUNT(?o) AS ?objectsLiteral) (COUNT(DISTINCT ?o) AS ?distinctObjectsLiteral) {
+        #subjectFilter#
+        ?s ?p ?o .
+        FILTER(ISLITERAL(?o))
+    }
+}

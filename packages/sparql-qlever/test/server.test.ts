@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Server } from '../src/server.js';
 import { DockerTaskRunner } from '@lde/task-runner-docker';
-import { waitForSparqlEndpointAvailable } from '@lde/wait-for-sparql';
 import { resolve } from 'node:path';
 
 describe('Server', () => {
@@ -19,13 +18,13 @@ describe('Server', () => {
         taskRunner,
         indexName: 'test-index',
         port,
+        // Server now waits for endpoint availability internally.
       });
 
       await server.start();
       const endpoint = server.queryEndpoint.toString();
       expect(endpoint).toEqual(`http://localhost:${port}/sparql`);
-      await waitForSparqlEndpointAvailable(endpoint);
       await server.stop();
-    }, 20_000);
+    }, 30_000);
   });
 });

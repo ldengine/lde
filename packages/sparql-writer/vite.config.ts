@@ -6,14 +6,14 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/pipeline',
+    cacheDir: '../../node_modules/.vite/packages/sparql-writer',
     test: {
       coverage: {
         thresholds: {
-          functions: 92.1,
-          lines: 87.38,
-          branches: 91.56,
-          statements: 87.38,
+          functions: 100,
+          lines: 97.36,
+          branches: 87.5,
+          statements: 97.36,
         },
       },
     },

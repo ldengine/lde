@@ -1,0 +1,16 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+PREFIX nde: <https://www.netwerkdigitaalerfgoed.nl/def#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        nde:objectsURI ?objectsUri ;
+        nde:distinctObjectsURI ?distinctObjectsUri .
+}
+#namedGraph#
+WHERE {
+    SELECT (COUNT(?o) AS ?objectsUri) (COUNT(DISTINCT ?o) AS ?distinctObjectsUri) {
+        #subjectFilter#
+        ?s ?p ?o .
+        FILTER(ISIRI(?o))
+    }
+}

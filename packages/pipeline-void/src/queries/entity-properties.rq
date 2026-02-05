@@ -1,0 +1,21 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        void:propertyPartition ?propertyPartition .
+    ?propertyPartition
+        void:property ?p ;
+        void:entities ?subjects ;
+        void:distinctObjects ?objects .
+}
+#namedGraph#
+WHERE {
+    {
+        SELECT (COUNT(DISTINCT ?s) AS ?subjects) (COUNT(DISTINCT ?o) as ?objects) ?p {
+            #subjectFilter#
+            ?s ?p ?o .
+        }
+        GROUP BY ?p
+    }
+    BIND(URI(CONCAT(STR(?dataset), "/.well-known/void#property-partition-", MD5(STR(?p)))) AS ?propertyPartition)
+}

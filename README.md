@@ -28,8 +28,10 @@ LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 - [x] [@lde/sparql-importer](packages/sparql-importer): import data dumps to a local SPARQL endpoint for querying
 - [x] [@lde/sparql-monitor](packages/sparql-monitor): monitor SPARQL endpoints with periodic checks
 - [x] [@lde/sparql-qlever](packages/sparql-qlever): QLever SPARQL adapter for importing and serving data
-- [ ] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
-- [ ] [@lde/task-runner-docker](packages/task-runner-docker): run tasks in Docker containers
-- [ ] [@lde/task-runner-native](packages/task-runner-native): run tasks natively on the host system
+- [x] [@lde/sparql-writer](packages/sparql-writer): write RDF data to SPARQL endpoints or files
+- [x] [@lde/pipeline-void](packages/pipeline-void): VOiD statistical analysis for RDF datasets
+- [x] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
+- [x] [@lde/task-runner-docker](packages/task-runner-docker): run tasks in Docker containers
+- [x] [@lde/task-runner-native](packages/task-runner-native): run tasks natively on the host system
 - [ ] [@lde/validator](packages/validator): validate datasets and pipeline outputs against SHACL shapes
 - [x] [@lde/wait-for-sparql](packages/wait-for-sparql): wait for a SPARQL endpoint to become available

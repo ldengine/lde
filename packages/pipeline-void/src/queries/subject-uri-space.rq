@@ -1,0 +1,31 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        void:subset ?subset .
+    ?subset void:uriSpace ?uriSpace ;
+        void:entities ?count .
+}
+#namedGraph#
+WHERE {
+    {
+        # Pre-group distinct subjects before computing namespace to avoid regex on every triple.
+        SELECT ?uriSpace (COUNT(*) AS ?count) {
+            {
+                SELECT DISTINCT ?s {
+                    #subjectFilter#
+                    ?s ?p ?o .
+                    FILTER(ISIRI(?s))
+                }
+            }
+            # Extract namespace by removing the local name (everything after the last / or #)
+            BIND(REPLACE(STR(?s), "[^/#]+$", "") AS ?uriSpace)
+        }
+        GROUP BY ?uriSpace
+        ORDER BY DESC(?count)
+        LIMIT 10
+    }
+    FILTER(?count > 1)  # Only include namespaces with more than 1 entity
+    BIND(URI(CONCAT(STR(?dataset), "/.well-known/void#subject-uri-space-", MD5(?uriSpace))) AS ?subset)
+}
+

@@ -1,0 +1,18 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?propertyPartition void:distinctObjects ?objects .
+}
+#namedGraph#
+WHERE {
+    # Object counts only. Subject counts in class-properties-subjects.rq.
+    {
+        SELECT ?type ?p (COUNT(DISTINCT ?o) AS ?objects) {
+            #subjectFilter#
+            ?s a ?type ; ?p ?o .
+        }
+        GROUP BY ?type ?p
+    }
+    BIND(URI(CONCAT(STR(?dataset), "/.well-known/void#class-property-", MD5(CONCAT(STR(?type), STR(?p))))) AS ?propertyPartition)
+}
+LIMIT 100000

@@ -28,6 +28,7 @@
     "@lde/sparql-importer": "0.1.0",
     "@lde/sparql-server": "0.3.0",
     "@rdfjs/types": "^2.0.1",
+    "c12": "^3.0.2",
     "fetch-sparql-endpoint": "^6.0.0",
     "tslib": "^2.3.0"
   }
