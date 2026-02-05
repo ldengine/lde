@@ -5,8 +5,20 @@ import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
 
+export interface DownloadLogger {
+  debug: (msg: string) => void;
+}
+
+export interface DownloadOptions {
+  logger?: DownloadLogger;
+}
+
 export interface Downloader {
-  download(distribution: Distribution, target?: string): Promise<string>;
+  download(
+    distribution: Distribution,
+    target?: string,
+    options?: DownloadOptions
+  ): Promise<string>;
 }
 
 export class LastModifiedDownloader implements Downloader {
@@ -14,12 +26,16 @@ export class LastModifiedDownloader implements Downloader {
 
   public async download(
     distribution: Distribution,
-    target = join(this.path, filenamifyUrl(distribution.accessUrl))
+    target = join(this.path, filenamifyUrl(distribution.accessUrl)),
+    options?: DownloadOptions
   ): Promise<string> {
     const downloadUrl = distribution.accessUrl;
     const filePath = resolve(target);
 
-    if (await this.localFileIsUpToDate(filePath, distribution.lastModified)) {
+    if (await this.localFileIsUpToDate(filePath, distribution)) {
+      options?.logger?.debug(
+        `File ${filePath} is up to date, skipping download.`
+      );
       return filePath;
     }
 
@@ -38,6 +54,7 @@ export class LastModifiedDownloader implements Downloader {
 
     const stats = await stat(filePath);
     if (stats.size <= 1) {
+      options?.logger?.debug(`Distribution download ${downloadUrl} is empty`);
       throw new Error('Distribution download is empty');
     }
 
@@ -46,9 +63,9 @@ export class LastModifiedDownloader implements Downloader {
 
   private async localFileIsUpToDate(
     filePath: string,
-    lastModified?: Date
+    distribution: Distribution
   ): Promise<boolean> {
-    if (undefined === lastModified) {
+    if (undefined === distribution.lastModified) {
       return false;
     }
 
@@ -58,8 +75,15 @@ export class LastModifiedDownloader implements Downloader {
       return false;
     }
     const stats = await stat(filePath);
-    const fileDate = stats.mtime;
 
-    return fileDate >= lastModified;
+    // Check if file size matches expected size to detect incomplete downloads.
+    if (
+      distribution.byteSize !== undefined &&
+      stats.size !== distribution.byteSize
+    ) {
+      return false;
+    }
+
+    return stats.mtime >= distribution.lastModified;
   }
 }
