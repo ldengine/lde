@@ -1,7 +1,6 @@
 {
   "name": "@lde/distribution-downloader",
   "version": "0.2.7",
-  "homepage": "https://github.com/ldengine/lde/tree/main/packages/distribution-downloader",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/distribution-downloader"

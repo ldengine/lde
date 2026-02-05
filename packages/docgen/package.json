@@ -8,7 +8,6 @@
     "documentation",
     "generator"
   ],
-  "homepage": "https://github.com/ldengine/lde/tree/main/packages/docgen",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/docgen"

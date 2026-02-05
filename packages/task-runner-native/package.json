@@ -1,7 +1,6 @@
 {
   "name": "@lde/task-runner-native",
   "version": "0.0.5",
-  "homepage": "https://github.com/ldengine/lde/tree/main/packages/task-runner-native",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/task-runner-native"

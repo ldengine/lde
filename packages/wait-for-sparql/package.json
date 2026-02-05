@@ -1,7 +1,6 @@
 {
   "name": "@lde/wait-for-sparql",
   "version": "0.0.5",
-  "homepage": "https://github.com/ldengine/lde/tree/main/packages/wait-for-sparql",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/wait-for-sparql"

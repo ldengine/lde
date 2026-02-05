@@ -1,7 +1,6 @@
 {
   "name": "@lde/sparql-server",
   "version": "0.2.2",
-  "homepage": "https://github.com/ldengine/lde/tree/main/packages/sparql-server",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/sparql-server"
