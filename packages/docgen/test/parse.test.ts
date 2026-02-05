@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseRdfToJsonLd } from '../src/parse.js';
 import { resolve } from 'path';
 
