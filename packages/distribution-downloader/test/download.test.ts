@@ -19,6 +19,10 @@ describe('LastModifiedDownloader', () => {
 
   describe('download', () => {
     beforeEach(async () => {
+      // Reset distribution state between tests.
+      distribution.lastModified = undefined;
+      distribution.byteSize = undefined;
+
       try {
         await fs.unlink(localFile);
       } catch {
