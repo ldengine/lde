@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      eslint:
+        patterns:
+          - '@typescript-eslint/*'
+          - 'eslint'
+          - 'eslint-plugin-svelte'
+      fastify:
+        patterns:
+          - '@fastify/*'
+          - 'fastify'
+      vitest:
+        patterns:
+          - '@vitest/*'
+          - 'vitest'
+    ignore:
+      # Upgrade Nx manually with `nx migrate latest`
+      - dependency-name: '@nx/*'
+      - dependency-name: 'nx'
