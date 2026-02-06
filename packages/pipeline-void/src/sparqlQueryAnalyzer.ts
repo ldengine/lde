@@ -2,14 +2,18 @@ import { Dataset } from '@lde/dataset';
 import {
   SparqlConstructExecutor,
   collect,
-  NotSupported as PipelineNotSupported,
   type ExecutableDataset,
 } from '@lde/pipeline';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BaseAnalyzer, Success, Failure, NotSupported } from './analyzer.js';
+import {
+  BaseAnalyzer,
+  Success,
+  Failure,
+  NotSupported,
+} from '@lde/pipeline/analyzer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -94,8 +98,8 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
 
     try {
       const result = await this.executor.execute(dataset as ExecutableDataset);
-      if (result instanceof PipelineNotSupported) {
-        return new NotSupported(result.message);
+      if (result instanceof NotSupported) {
+        return result;
       }
 
       const store = await collect(result);

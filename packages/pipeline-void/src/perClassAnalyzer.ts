@@ -1,15 +1,16 @@
 import { Distribution } from '@lde/dataset';
-import {
-  SparqlConstructExecutor,
-  NotSupported as PipelineNotSupported,
-  type ExecutableDataset,
-} from '@lde/pipeline';
+import { SparqlConstructExecutor, type ExecutableDataset } from '@lde/pipeline';
 import { Store } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BaseAnalyzer, Success, Failure, NotSupported } from './analyzer.js';
+import {
+  BaseAnalyzer,
+  Success,
+  Failure,
+  NotSupported,
+} from '@lde/pipeline/analyzer';
 import { AnalyzableDataset } from './sparqlQueryAnalyzer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -111,8 +112,8 @@ export class PerClassAnalyzer extends BaseAnalyzer {
           dataset as ExecutableDataset,
           { bindings: { '<#class#>': `<${classIri}>` } }
         );
-        if (result instanceof PipelineNotSupported) {
-          return new NotSupported(result.message);
+        if (result instanceof NotSupported) {
+          return result;
         }
         for await (const quad of result) {
           store.addQuad(quad);

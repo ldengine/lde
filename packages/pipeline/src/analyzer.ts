@@ -1,5 +1,8 @@
 import { Dataset } from '@lde/dataset';
 import type { DatasetCore } from '@rdfjs/types';
+import { NotSupported } from './step.js';
+
+export { NotSupported } from './step.js';
 
 /**
  * Result of a successful analysis.
@@ -19,14 +22,7 @@ export class Failure {
 }
 
 /**
- * Analysis is not supported for this dataset (e.g., no SPARQL distribution).
- */
-export class NotSupported {
-  constructor(public readonly message: string) {}
-}
-
-/**
- * Interface for VOiD analyzers.
+ * Interface for analyzers.
  */
 export interface Analyzer {
   readonly name: string;

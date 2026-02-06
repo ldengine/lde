@@ -13,6 +13,12 @@
       "import": "./dist/index.js",
       "development": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./analyzer": {
+      "types": "./dist/analyzer.d.ts",
+      "import": "./dist/analyzer.js",
+      "development": "./src/analyzer.ts",
+      "default": "./dist/analyzer.js"
     }
   },
   "main": "./dist/index.js",

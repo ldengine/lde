@@ -6,7 +6,7 @@ import {
   Success,
   type Failure,
   type NotSupported,
-} from './analyzer.js';
+} from '@lde/pipeline/analyzer';
 
 const { namedNode, quad } = DataFactory;
 
