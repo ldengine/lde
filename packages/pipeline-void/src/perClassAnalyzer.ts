@@ -1,4 +1,9 @@
 import { Distribution } from '@lde/dataset';
+import {
+  SparqlConstructExecutor,
+  NotSupported as PipelineNotSupported,
+  type ExecutableDataset,
+} from '@lde/pipeline';
 import { Store } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { readFile } from 'node:fs/promises';
@@ -40,11 +45,12 @@ export interface PerClassAnalyzerOptions {
  */
 export class PerClassAnalyzer extends BaseAnalyzer {
   private readonly fetcher: SparqlEndpointFetcher;
+  private readonly executor: SparqlConstructExecutor;
   private readonly maxClasses: number;
 
   constructor(
     public readonly name: string,
-    private readonly query: string,
+    query: string,
     options?: PerClassAnalyzerOptions
   ) {
     super();
@@ -54,6 +60,11 @@ export class PerClassAnalyzer extends BaseAnalyzer {
         timeout: options?.timeout ?? 300_000,
       });
     this.maxClasses = options?.maxClasses ?? 1000;
+    this.executor = new SparqlConstructExecutor({
+      query,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetcher: this.fetcher as any,
+    });
   }
 
   /**
@@ -94,14 +105,16 @@ export class PerClassAnalyzer extends BaseAnalyzer {
       // Phase 1: Get all classes.
       const classes = await this.getClasses(sparqlDistribution, dataset);
 
-      // Phase 2: Run query for each class.
+      // Phase 2: Run query for each class via SparqlConstructExecutor.
       for (const classIri of classes) {
-        const stream = await this.executeQuery(
-          sparqlDistribution,
-          dataset,
-          classIri
+        const result = await this.executor.execute(
+          dataset as ExecutableDataset,
+          { bindings: { '<#class#>': `<${classIri}>` } }
         );
-        for await (const quad of stream) {
+        if (result instanceof PipelineNotSupported) {
+          return new NotSupported(result.message);
+        }
+        for await (const quad of result) {
           store.addQuad(quad);
         }
       }
@@ -120,7 +133,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     distribution: Distribution,
     dataset: AnalyzableDataset
   ): Promise<string[]> {
-    const classQuery = this.substituteTemplates(
+    const classQuery = this.substituteSelectTemplates(
       `SELECT DISTINCT ?class
        #namedGraph#
        WHERE {
@@ -129,8 +142,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
        }
        LIMIT ${this.maxClasses}`,
       distribution,
-      dataset,
-      ''
+      dataset
     );
 
     const bindings = await this.fetcher.fetchBindings(
@@ -152,28 +164,10 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     return classes;
   }
 
-  private async executeQuery(
-    distribution: Distribution,
-    dataset: AnalyzableDataset,
-    classIri: string
-  ) {
-    const query = this.substituteTemplates(
-      this.query,
-      distribution,
-      dataset,
-      classIri
-    );
-    return await this.fetcher.fetchTriples(
-      distribution.accessUrl!.toString(),
-      query
-    );
-  }
-
-  private substituteTemplates(
+  private substituteSelectTemplates(
     query: string,
     distribution: Distribution,
-    dataset: AnalyzableDataset,
-    classIri: string
+    dataset: AnalyzableDataset
   ): string {
     return query
       .replace('#subjectFilter#', dataset.subjectFilter ?? '')
@@ -181,7 +175,6 @@ export class PerClassAnalyzer extends BaseAnalyzer {
       .replace(
         '#namedGraph#',
         distribution.namedGraph ? `FROM <${distribution.namedGraph}>` : ''
-      )
-      .replaceAll('<#class#>', `<${classIri}>`);
+      );
   }
 }
