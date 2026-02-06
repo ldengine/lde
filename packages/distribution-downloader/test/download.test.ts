@@ -90,7 +90,16 @@ describe('LastModifiedDownloader', () => {
 
       distribution.lastModified = new Date('2001-01-01');
       const debugMessages: string[] = [];
-      const logger = { debug: (msg: string) => debugMessages.push(msg) };
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const noop = () => {};
+      const logger = {
+        fatal: noop,
+        error: noop,
+        warn: noop,
+        info: noop,
+        debug: (msg: string) => debugMessages.push(msg),
+        trace: noop,
+      };
 
       await downloader.download(distribution, undefined, { logger });
       expect(debugMessages.some((msg) => msg.includes('is up to date'))).toBe(
