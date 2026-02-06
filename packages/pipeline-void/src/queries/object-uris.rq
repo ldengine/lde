@@ -1,14 +1,13 @@
 PREFIX void: <http://rdfs.org/ns/void#>
-PREFIX nde: <https://www.netwerkdigitaalerfgoed.nl/def#>
+PREFIX void-ext: <http://ldf.fi/void-ext#>
 
 CONSTRUCT {
     ?dataset a void:Dataset ;
-        nde:objectsURI ?objectsUri ;
-        nde:distinctObjectsURI ?distinctObjectsUri .
+        void-ext:distinctIRIReferenceObjects ?distinctIRIReferenceObjects .
 }
 #namedGraph#
 WHERE {
-    SELECT (COUNT(?o) AS ?objectsUri) (COUNT(DISTINCT ?o) AS ?distinctObjectsUri) {
+    SELECT (COUNT(DISTINCT ?o) AS ?distinctIRIReferenceObjects) {
         #subjectFilter#
         ?s ?p ?o .
         FILTER(ISIRI(?o))
