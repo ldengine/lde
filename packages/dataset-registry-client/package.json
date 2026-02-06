@@ -1,6 +1,6 @@
 {
   "name": "@lde/dataset-registry-client",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/dataset-registry-client"
@@ -23,7 +23,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.4.2",
+    "@lde/dataset": "0.5.0",
     "ldkit": "^2.5.2",
     "n3": "^1.26.0",
     "sparqljs": "^3.7.3",
