@@ -1,8 +1,7 @@
-import { DataEmittingStep, NotSupported } from './../step.js';
+import { DataEmittingStep } from './../step.js';
 import { Dataset } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { SparqlConstructExecutor, readQueryFile } from '../sparql/index.js';
 
 /**
  * Arguments for the SparqlQuery step.
@@ -18,48 +17,38 @@ export interface Args {
 }
 
 /**
- * Executes a SPARQL CONSTRUCT query and emits the resulting
+ * Executes a SPARQL CONSTRUCT query and emits the resulting quads.
+ *
+ * This step wraps the SparqlConstructExecutor to provide the DataEmittingStep interface
+ * for use in pipelines.
  */
 export class SparqlQuery implements DataEmittingStep {
   public readonly identifier;
-  private readonly query;
-  private readonly fetcher;
+  private readonly executor: SparqlConstructExecutor;
 
   constructor({ identifier, query, fetcher }: Args) {
     this.identifier = identifier;
-    this.query = query;
-    this.fetcher = fetcher ?? new SparqlEndpointFetcher();
+    this.executor = new SparqlConstructExecutor({
+      query,
+      fetcher,
+    });
   }
 
   async execute(dataset: Dataset) {
-    const distribution = dataset.getSparqlDistribution();
-
-    if (null === distribution || !distribution.isValid) {
-      return new NotSupported('No SPARQL distribution available');
-    }
-
-    const query = this.query
-      .replace('#subjectFilter#', distribution.subjectFilter ?? '')
-      .replace('?dataset', `<${dataset.iri}>`)
-      .replace(
-        '#namedGraph#',
-        distribution.namedGraph ? `FROM <${distribution.namedGraph}>` : ''
-      );
-
-    return await this.fetcher.fetchTriples(
-      distribution.accessUrl.toString(),
-      query
-    );
+    return await this.executor.execute(dataset);
   }
 
   public static async fromFile(filename: string) {
     return new this({
       identifier: filename,
-      query: await fromFile(filename),
+      query: await readQueryFile(filename),
     });
   }
 }
 
+/**
+ * @deprecated Use readQueryFile from '@lde/pipeline/sparql' instead.
+ */
 export async function fromFile(filename: string) {
-  return (await readFile(resolve(filename))).toString();
+  return readQueryFile(filename);
 }

@@ -1,5 +1,10 @@
-import { Dataset, Distribution } from '@lde/dataset';
-import { Store } from 'n3';
+import { Dataset } from '@lde/dataset';
+import {
+  SparqlConstructExecutor,
+  collect,
+  NotSupported as PipelineNotSupported,
+  type ExecutableDataset,
+} from '@lde/pipeline';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
@@ -38,21 +43,30 @@ export interface SparqlQueryAnalyzerOptions {
  * - `#subjectFilter#` — replaced with the dataset's subject filter (if any)
  * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
  * - `?dataset` — replaced with the dataset IRI
+ *
+ * This class wraps the SparqlConstructExecutor from @lde/pipeline.
  */
 export class SparqlQueryAnalyzer extends BaseAnalyzer {
-  private readonly fetcher: SparqlEndpointFetcher;
+  private readonly executor: SparqlConstructExecutor;
 
   constructor(
     public readonly name: string,
-    private readonly query: string,
+    query: string,
     options?: SparqlQueryAnalyzerOptions
   ) {
     super();
-    this.fetcher =
+
+    const fetcher =
       options?.fetcher ??
       new SparqlEndpointFetcher({
         timeout: options?.timeout ?? 300_000,
       });
+
+    this.executor = new SparqlConstructExecutor({
+      query,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetcher: fetcher as any, // Types differ between package instances
+    });
   }
 
   /**
@@ -78,45 +92,19 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
       return new NotSupported('No SPARQL distribution available');
     }
 
-    const store = new Store();
     try {
-      const stream = await this.executeQuery(sparqlDistribution, dataset);
-      for await (const quad of stream) {
-        store.addQuad(quad);
+      const result = await this.executor.execute(dataset as ExecutableDataset);
+      if (result instanceof PipelineNotSupported) {
+        return new NotSupported(result.message);
       }
+
+      const store = await collect(result);
+      return new Success(store);
     } catch (e) {
-      const accessUrl = sparqlDistribution.accessUrl;
       return new Failure(
-        accessUrl ?? new URL('unknown://'),
+        sparqlDistribution.accessUrl ?? new URL('unknown://'),
         e instanceof Error ? e.message : undefined
       );
     }
-
-    return new Success(store);
-  }
-
-  private async executeQuery(
-    distribution: Distribution,
-    dataset: AnalyzableDataset
-  ) {
-    const query = this.substituteTemplates(this.query, distribution, dataset);
-    return await this.fetcher.fetchTriples(
-      distribution.accessUrl!.toString(),
-      query
-    );
-  }
-
-  private substituteTemplates(
-    query: string,
-    distribution: Distribution,
-    dataset: AnalyzableDataset
-  ): string {
-    return query
-      .replace('#subjectFilter#', dataset.subjectFilter ?? '')
-      .replaceAll('?dataset', `<${dataset.iri}>`)
-      .replace(
-        '#namedGraph#',
-        distribution.namedGraph ? `FROM <${distribution.namedGraph}>` : ''
-      );
   }
 }

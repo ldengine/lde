@@ -25,6 +25,7 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.4.2",
+    "@lde/pipeline": "0.5.0",
     "@rdfjs/types": "^2.0.1",
     "fetch-sparql-endpoint": "^6.0.0",
     "n3": "^1.17.0",
