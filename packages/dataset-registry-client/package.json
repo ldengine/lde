@@ -24,7 +24,7 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.4.2",
-    "ldkit": "^2.5.1",
+    "ldkit": "^2.5.2",
     "n3": "^1.26.0",
     "sparqljs": "^3.7.3",
     "tslib": "^2.3.0"
