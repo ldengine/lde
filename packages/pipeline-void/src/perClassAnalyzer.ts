@@ -57,6 +57,16 @@ export class PerClassAnalyzer extends BaseAnalyzer {
   }
 
   /**
+   * Load a query file from the queries directory.
+   *
+   * @param filename Query filename (e.g., 'class-property-datatypes.rq')
+   */
+  public static async loadQuery(filename: string): Promise<string> {
+    const queryPath = resolve(__dirname, 'queries', filename);
+    return (await readFile(queryPath)).toString();
+  }
+
+  /**
    * Create an analyzer from a query file in the queries directory.
    *
    * @param filename Query filename (e.g., 'class-property-datatypes.rq')
@@ -66,8 +76,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     filename: string,
     options?: PerClassAnalyzerOptions
   ): Promise<PerClassAnalyzer> {
-    const queryPath = resolve(__dirname, 'queries', filename);
-    const query = (await readFile(queryPath)).toString();
+    const query = await PerClassAnalyzer.loadQuery(filename);
     return new PerClassAnalyzer(filename, query, options);
   }
 
