@@ -1,5 +1,9 @@
 import { Distribution } from '@lde/dataset';
-import { SparqlConstructExecutor, type ExecutableDataset } from '@lde/pipeline';
+import {
+  SparqlConstructExecutor,
+  substituteQueryTemplates,
+  type ExecutableDataset,
+} from '@lde/pipeline';
 import { Store } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { readFile } from 'node:fs/promises';
@@ -11,7 +15,6 @@ import {
   Failure,
   NotSupported,
 } from '@lde/pipeline/analyzer';
-import { AnalyzableDataset } from './sparqlQueryAnalyzer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -93,7 +96,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
   }
 
   public async execute(
-    dataset: AnalyzableDataset
+    dataset: ExecutableDataset
   ): Promise<Success | Failure | NotSupported> {
     const sparqlDistribution = dataset.getSparqlDistribution();
     if (sparqlDistribution === null) {
@@ -108,10 +111,9 @@ export class PerClassAnalyzer extends BaseAnalyzer {
 
       // Phase 2: Run query for each class via SparqlConstructExecutor.
       for (const classIri of classes) {
-        const result = await this.executor.execute(
-          dataset as ExecutableDataset,
-          { bindings: { '<#class#>': `<${classIri}>` } }
-        );
+        const result = await this.executor.execute(dataset, {
+          bindings: { '<#class#>': `<${classIri}>` },
+        });
         if (result instanceof NotSupported) {
           return result;
         }
@@ -132,9 +134,9 @@ export class PerClassAnalyzer extends BaseAnalyzer {
 
   private async getClasses(
     distribution: Distribution,
-    dataset: AnalyzableDataset
+    dataset: ExecutableDataset
   ): Promise<string[]> {
-    const classQuery = this.substituteSelectTemplates(
+    const classQuery = substituteQueryTemplates(
       `SELECT DISTINCT ?class
        #namedGraph#
        WHERE {
@@ -163,19 +165,5 @@ export class PerClassAnalyzer extends BaseAnalyzer {
       }
     }
     return classes;
-  }
-
-  private substituteSelectTemplates(
-    query: string,
-    distribution: Distribution,
-    dataset: AnalyzableDataset
-  ): string {
-    return query
-      .replace('#subjectFilter#', dataset.subjectFilter ?? '')
-      .replaceAll('?dataset', `<${dataset.iri}>`)
-      .replace(
-        '#namedGraph#',
-        distribution.namedGraph ? `FROM <${distribution.namedGraph}>` : ''
-      );
   }
 }

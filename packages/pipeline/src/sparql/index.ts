@@ -1,5 +1,6 @@
 export {
   SparqlConstructExecutor,
+  substituteQueryTemplates,
   NotSupported,
   readQueryFile,
   type ExecutableDataset,

@@ -1,4 +1,3 @@
-import { Dataset } from '@lde/dataset';
 import {
   SparqlConstructExecutor,
   collect,
@@ -16,17 +15,6 @@ import {
 } from '@lde/pipeline/analyzer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-/**
- * Extended dataset with optional SPARQL filtering options.
- */
-export interface AnalyzableDataset extends Dataset {
-  /**
-   * Optional SPARQL filter clause to restrict analysis to a subset of the data.
-   * This is substituted for `#subjectFilter#` in queries.
-   */
-  subjectFilter?: string;
-}
 
 export interface SparqlQueryAnalyzerOptions {
   /**
@@ -89,7 +77,7 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
   }
 
   public async execute(
-    dataset: AnalyzableDataset
+    dataset: ExecutableDataset
   ): Promise<Success | Failure | NotSupported> {
     const sparqlDistribution = dataset.getSparqlDistribution();
     if (sparqlDistribution === null) {
@@ -97,7 +85,7 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
     }
 
     try {
-      const result = await this.executor.execute(dataset as ExecutableDataset);
+      const result = await this.executor.execute(dataset);
       if (result instanceof NotSupported) {
         return result;
       }

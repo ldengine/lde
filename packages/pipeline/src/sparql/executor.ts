@@ -150,19 +150,7 @@ export class SparqlConstructExecutor {
     distribution: Distribution | null,
     dataset: ExecutableDataset
   ): string {
-    // Subject filter: prefer distribution's subjectFilter, fall back to dataset's
-    const subjectFilter =
-      distribution?.subjectFilter ?? dataset.subjectFilter ?? '';
-
-    // Named graph clause
-    const namedGraph = distribution?.namedGraph
-      ? `FROM <${distribution.namedGraph}>`
-      : '';
-
-    return query
-      .replace('#subjectFilter#', subjectFilter)
-      .replaceAll('?dataset', `<${dataset.iri}>`)
-      .replace('#namedGraph#', namedGraph);
+    return substituteQueryTemplates(query, distribution, dataset);
   }
 
   /**
@@ -178,6 +166,31 @@ export class SparqlConstructExecutor {
     const query = await readQueryFile(filename);
     return new SparqlConstructExecutor({ ...options, query });
   }
+}
+
+/**
+ * Substitute template variables in a SPARQL query.
+ *
+ * - `#subjectFilter#` — replaced with the distribution's or dataset's subject filter
+ * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
+ * - `?dataset` — replaced with the dataset IRI
+ */
+export function substituteQueryTemplates(
+  query: string,
+  distribution: Distribution | null,
+  dataset: ExecutableDataset
+): string {
+  const subjectFilter =
+    distribution?.subjectFilter ?? dataset.subjectFilter ?? '';
+
+  const namedGraph = distribution?.namedGraph
+    ? `FROM <${distribution.namedGraph}>`
+    : '';
+
+  return query
+    .replace('#subjectFilter#', subjectFilter)
+    .replaceAll('?dataset', `<${dataset.iri}>`)
+    .replace('#namedGraph#', namedGraph);
 }
 
 /**
