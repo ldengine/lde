@@ -14,7 +14,7 @@ describe('SparqlUpdateWriter', () => {
       ok: true,
       status: 200,
       text: () => Promise.resolve(''),
-    });
+    } as Partial<Response>);
   });
 
   function createDataset(iri: string): Dataset {
@@ -34,7 +34,7 @@ describe('SparqlUpdateWriter', () => {
     it('writes quads to SPARQL endpoint', async () => {
       const writer = new SparqlUpdateWriter({
         endpoint,
-        fetch: mockFetch,
+        fetch: mockFetch as typeof globalThis.fetch,
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
@@ -56,7 +56,7 @@ describe('SparqlUpdateWriter', () => {
         })
       );
 
-      const body = mockFetch.mock.calls[0][1].body as string;
+      const body = mockFetch.mock.calls[0]![1]!.body as string;
       expect(body).toContain('INSERT DATA');
       expect(body).toContain('GRAPH <http://example.com/dataset/1>');
       expect(body).toContain('<http://example.com/subject>');
@@ -67,7 +67,7 @@ describe('SparqlUpdateWriter', () => {
     it('does not make request for empty data', async () => {
       const writer = new SparqlUpdateWriter({
         endpoint,
-        fetch: mockFetch,
+        fetch: mockFetch as typeof globalThis.fetch,
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
@@ -81,7 +81,7 @@ describe('SparqlUpdateWriter', () => {
     it('batches large datasets', async () => {
       const writer = new SparqlUpdateWriter({
         endpoint,
-        fetch: mockFetch,
+        fetch: mockFetch as typeof globalThis.fetch,
         batchSize: 2,
       });
 
@@ -118,7 +118,7 @@ describe('SparqlUpdateWriter', () => {
 
       const writer = new SparqlUpdateWriter({
         endpoint,
-        fetch: mockFetch,
+        fetch: mockFetch as typeof globalThis.fetch,
       });
 
       const dataset = createDataset('http://example.com/dataset/1');

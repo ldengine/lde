@@ -4,9 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../dataset"
-    },
-    {
       "path": "./tsconfig.lib.json"
     },
     {

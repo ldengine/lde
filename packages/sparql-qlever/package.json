@@ -28,7 +28,7 @@
     "@lde/sparql-importer": "0.1.0",
     "@lde/sparql-server": "0.3.0",
     "@lde/task-runner": "0.1.0",
-    "@lde/wait-for-sparql": "0.0.5",
+    "@lde/wait-for-sparql": "0.1.0",
     "tslib": "^2.3.0"
   }
 }

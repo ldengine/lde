@@ -4,21 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../local-sparql-endpoint"
-    },
-    {
-      "path": "../sparql-server"
-    },
-    {
-      "path": "../sparql-importer"
-    },
-    {
-      "path": "../dataset-registry-client"
-    },
-    {
-      "path": "../dataset"
-    },
-    {
       "path": "./tsconfig.lib.json"
     },
     {
