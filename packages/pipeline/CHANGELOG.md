@@ -1,3 +1,21 @@
+## 0.6.0 (2026-02-07)
+
+### 🚀 Features
+
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.0
+- Updated @lde/local-sparql-endpoint to 0.2.0
+- Updated @lde/sparql-importer to 0.2.0
+- Updated @lde/sparql-server to 0.4.0
+- Updated @lde/dataset to 0.6.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.1 (2026-02-06)
 
 ### 🧱 Updated Dependencies

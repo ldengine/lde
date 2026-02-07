@@ -1,6 +1,6 @@
 {
   "name": "@lde/dataset",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/dataset"

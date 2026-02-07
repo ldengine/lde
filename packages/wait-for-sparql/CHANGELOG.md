@@ -1,3 +1,13 @@
+## 0.2.0 (2026-02-07)
+
+### 🚀 Features
+
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.1.0 (2026-02-06)
 
 This was a version bump only for @lde/wait-for-sparql to align it with other projects, there were no code changes.

@@ -1,6 +1,6 @@
 {
   "name": "@lde/pipeline",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/pipeline"
@@ -35,10 +35,10 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.5.0",
-    "@lde/dataset-registry-client": "0.5.0",
-    "@lde/sparql-importer": "0.1.0",
-    "@lde/sparql-server": "0.3.0",
+    "@lde/dataset": "0.6.0",
+    "@lde/dataset-registry-client": "0.6.0",
+    "@lde/sparql-importer": "0.2.0",
+    "@lde/sparql-server": "0.4.0",
     "@rdfjs/types": "^2.0.1",
     "c12": "^3.0.2",
     "fetch-sparql-endpoint": "^6.0.0",
