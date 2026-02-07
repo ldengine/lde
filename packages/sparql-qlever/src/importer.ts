@@ -120,7 +120,7 @@ export class Importer implements ImporterInterface {
     const indexTask = await this.taskRunner.run(
       `(zcat '${basename(file)}' 2>/dev/null || cat '${basename(
         file
-      )}') | qlever-index -i ${
+      )}') | IndexBuilderMain -i ${
         this.indexName
       } -s ${settingsFile} -F ${format} -f -`
     );

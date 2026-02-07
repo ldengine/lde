@@ -4,6 +4,27 @@
   "include": [],
   "references": [
     {
+      "path": "../wait-for-sparql"
+    },
+    {
+      "path": "../task-runner-docker"
+    },
+    {
+      "path": "../dataset"
+    },
+    {
+      "path": "../task-runner"
+    },
+    {
+      "path": "../sparql-server"
+    },
+    {
+      "path": "../sparql-importer"
+    },
+    {
+      "path": "../distribution-downloader"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {
