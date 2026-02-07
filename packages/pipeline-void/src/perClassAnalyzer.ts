@@ -73,15 +73,6 @@ export class PerClassAnalyzer extends BaseAnalyzer {
   }
 
   /**
-   * Load a query file from the queries directory.
-   *
-   * @param filename Query filename (e.g., 'class-property-datatypes.rq')
-   */
-  public static async loadQuery(filename: string): Promise<string> {
-    return readQueryFile(resolve(__dirname, 'queries', filename));
-  }
-
-  /**
    * Create an analyzer from a query file in the queries directory.
    *
    * @param filename Query filename (e.g., 'class-property-datatypes.rq')
@@ -91,7 +82,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     filename: string,
     options?: PerClassAnalyzerOptions
   ): Promise<PerClassAnalyzer> {
-    const query = await PerClassAnalyzer.loadQuery(filename);
+    const query = await readQueryFile(resolve(__dirname, 'queries', filename));
     return new PerClassAnalyzer(filename, query, options);
   }
 
@@ -164,4 +155,22 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     }
     return classes;
   }
+}
+
+export function createDatatypeAnalyzer(
+  options?: PerClassAnalyzerOptions
+): Promise<PerClassAnalyzer> {
+  return PerClassAnalyzer.fromFile('class-property-datatypes.rq', options);
+}
+
+export function createLanguageAnalyzer(
+  options?: PerClassAnalyzerOptions
+): Promise<PerClassAnalyzer> {
+  return PerClassAnalyzer.fromFile('class-property-languages.rq', options);
+}
+
+export function createObjectClassAnalyzer(
+  options?: PerClassAnalyzerOptions
+): Promise<PerClassAnalyzer> {
+  return PerClassAnalyzer.fromFile('class-property-object-classes.rq', options);
 }

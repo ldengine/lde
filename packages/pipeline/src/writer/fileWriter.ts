@@ -1,10 +1,10 @@
 import { Dataset } from '@lde/dataset';
-import type { DatasetCore, Quad } from '@rdfjs/types';
-import { Writer as N3Writer } from 'n3';
+import type { DatasetCore } from '@rdfjs/types';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import filenamifyUrl from 'filenamify-url';
 import { Writer } from './writer.js';
+import { serializeQuads, type SerializationFormat } from './serialize.js';
 
 export interface FileWriterOptions {
   /**
@@ -23,6 +23,12 @@ export interface FileWriterOptions {
  *
  * Files are named based on the dataset IRI using filenamify-url.
  */
+const formatMap: Record<string, SerializationFormat> = {
+  turtle: 'Turtle',
+  'n-triples': 'N-Triples',
+  'n-quads': 'N-Quads',
+};
+
 export class FileWriter implements Writer {
   private readonly outputDir: string;
   private readonly format: 'turtle' | 'n-triples' | 'n-quads';
@@ -45,7 +51,7 @@ export class FileWriter implements Writer {
     // Ensure the output directory exists.
     await mkdir(dirname(filePath), { recursive: true });
 
-    const content = await this.serialize(quads);
+    const content = await serializeQuads(quads, formatMap[this.format]);
     await writeFile(filePath, content, 'utf-8');
   }
 
@@ -66,29 +72,5 @@ export class FileWriter implements Writer {
       case 'n-quads':
         return 'nq';
     }
-  }
-
-  private serialize(quads: Quad[]): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const formatMap = {
-        turtle: 'Turtle',
-        'n-triples': 'N-Triples',
-        'n-quads': 'N-Quads',
-      } as const;
-
-      const writer = new N3Writer({ format: formatMap[this.format] });
-
-      for (const quad of quads) {
-        writer.addQuad(quad);
-      }
-
-      writer.end((error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      });
-    });
   }
 }

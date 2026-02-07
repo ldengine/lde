@@ -1,7 +1,7 @@
 import { Dataset } from '@lde/dataset';
 import type { DatasetCore, Quad } from '@rdfjs/types';
-import { Writer as N3Writer } from 'n3';
 import { Writer } from './writer.js';
+import { serializeQuads } from './serialize.js';
 
 export interface SparqlWriterOptions {
   /**
@@ -53,7 +53,7 @@ export class SparqlUpdateWriter implements Writer {
   }
 
   private async insertBatch(graphUri: string, quads: Quad[]): Promise<void> {
-    const turtleData = await this.quadsToTurtle(quads);
+    const turtleData = await serializeQuads(quads, 'N-Triples');
     const query = `INSERT DATA { GRAPH <${graphUri}> { ${turtleData} } }`;
 
     const response = await this.fetch(this.endpoint.toString(), {
@@ -70,23 +70,5 @@ export class SparqlUpdateWriter implements Writer {
         `SPARQL UPDATE failed with status ${response.status}: ${body}`
       );
     }
-  }
-
-  private quadsToTurtle(quads: Quad[]): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const writer = new N3Writer({ format: 'N-Triples' });
-
-      for (const quad of quads) {
-        writer.addQuad(quad);
-      }
-
-      writer.end((error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      });
-    });
   }
 }
