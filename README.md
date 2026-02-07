@@ -21,14 +21,14 @@ LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 - [ ] [@lde/dataset-analyzer-pipeline](packages/dataset-analyzer-pipeline): statistical analysis of datasets
 - [x] [@lde/dataset-registry-client](packages/dataset-registry-client): retrieve dataset descriptions from DCAT-AP 3.0 registries
 - [x] [@lde/distribution-download](packages/distribution-download): download distributions for processing locally
-- [x] [@lde/local-sparql-endpoint](packages/pipeline): quickly start a local SPARQL endpoint for testing and development
-- [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
 - [x] [@lde/docgen](packages/docgen): generate documentation from RDF such as SHACL shapes
 - [x] [@lde/fastify-rdf](packages/fastify-rdf): Fastify plugin for serving RDF data with content negotiation
+- [x] [@lde/local-sparql-endpoint](packages/pipeline): quickly start a local SPARQL endpoint for testing and development
+- [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
+- [x] [@lde/pipeline-void](packages/pipeline-void): VOiD statistical analysis for RDF datasets
 - [x] [@lde/sparql-importer](packages/sparql-importer): import data dumps to a local SPARQL endpoint for querying
 - [x] [@lde/sparql-monitor](packages/sparql-monitor): monitor SPARQL endpoints with periodic checks
 - [x] [@lde/sparql-qlever](packages/sparql-qlever): QLever SPARQL adapter for importing and serving data
-- [x] [@lde/pipeline-void](packages/pipeline-void): VOiD statistical analysis for RDF datasets
 - [x] [@lde/task-runner](packages/task-runner): task runner core classes and interfaces
 - [x] [@lde/task-runner-docker](packages/task-runner-docker): run tasks in Docker containers
 - [x] [@lde/task-runner-native](packages/task-runner-native): run tasks natively on the host system
