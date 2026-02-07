@@ -5,6 +5,7 @@
     "types": ["node"]
   },
   "include": [
+    "vite.config.ts",
     "vitest.config.ts",
     "vitest.config.mts",
     "test/**/*.test.ts",
