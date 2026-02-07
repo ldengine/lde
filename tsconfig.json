@@ -48,9 +48,6 @@
       "path": "./packages/fastify-rdf"
     },
     {
-      "path": "./packages/sparql-writer"
-    },
-    {
       "path": "./packages/pipeline-void"
     }
   ]

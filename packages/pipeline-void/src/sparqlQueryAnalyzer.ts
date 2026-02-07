@@ -1,10 +1,10 @@
 import {
   SparqlConstructExecutor,
   collect,
+  readQueryFile,
   type ExecutableDataset,
 } from '@lde/pipeline';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -71,8 +71,7 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
     filename: string,
     options?: SparqlQueryAnalyzerOptions
   ): Promise<SparqlQueryAnalyzer> {
-    const queryPath = resolve(__dirname, 'queries', filename);
-    const query = (await readFile(queryPath)).toString();
+    const query = await readQueryFile(resolve(__dirname, 'queries', filename));
     return new SparqlQueryAnalyzer(filename, query, options);
   }
 

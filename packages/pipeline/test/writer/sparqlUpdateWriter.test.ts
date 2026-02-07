@@ -1,4 +1,4 @@
-import { SparqlUpdateWriter } from '../src/sparqlUpdateWriter.js';
+import { SparqlUpdateWriter } from '../../src/writer/sparqlUpdateWriter.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import { Store, DataFactory } from 'n3';
 import { describe, it, expect, vi, beforeEach } from 'vitest';

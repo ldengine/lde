@@ -1,4 +1,4 @@
-import { FileWriter } from '../src/fileWriter.js';
+import { FileWriter } from '../../src/writer/fileWriter.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import { Store, DataFactory } from 'n3';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

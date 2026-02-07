@@ -16,6 +16,7 @@ Framework for building RDF data processing pipelines with SPARQL.
 | ------------------------ | ------------------------------------------------------------- |
 | `@lde/pipeline`          | Steps, pipeline, builder, config, SPARQL                      |
 | `@lde/pipeline/analyzer` | Analyzer contracts (`Analyzer`, `BaseAnalyzer`, result types) |
+| `@lde/pipeline/writer`   | Write RDF data to files or SPARQL endpoints                   |
 
 ## Usage
 

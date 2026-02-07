@@ -2,11 +2,12 @@ import { Distribution } from '@lde/dataset';
 import {
   SparqlConstructExecutor,
   substituteQueryTemplates,
+  readQueryFile,
+  collect,
   type ExecutableDataset,
 } from '@lde/pipeline';
 import { Store } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -77,8 +78,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
    * @param filename Query filename (e.g., 'class-property-datatypes.rq')
    */
   public static async loadQuery(filename: string): Promise<string> {
-    const queryPath = resolve(__dirname, 'queries', filename);
-    return (await readFile(queryPath)).toString();
+    return readQueryFile(resolve(__dirname, 'queries', filename));
   }
 
   /**
@@ -117,9 +117,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
         if (result instanceof NotSupported) {
           return result;
         }
-        for await (const quad of result) {
-          store.addQuad(quad);
-        }
+        store.addQuads([...(await collect(result))]);
       }
     } catch (e) {
       const accessUrl = sparqlDistribution.accessUrl;

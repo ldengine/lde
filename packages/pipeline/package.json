@@ -14,6 +14,12 @@
       "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./writer": {
+      "types": "./dist/writer/index.d.ts",
+      "import": "./dist/writer/index.js",
+      "development": "./src/writer/index.ts",
+      "default": "./dist/writer/index.js"
+    },
     "./analyzer": {
       "types": "./dist/analyzer.d.ts",
       "import": "./dist/analyzer.js",
@@ -36,6 +42,7 @@
     "@rdfjs/types": "^2.0.1",
     "c12": "^3.0.2",
     "fetch-sparql-endpoint": "^6.0.0",
+    "filenamify-url": "^3.0.0",
     "n3": "^1.17.0",
     "tslib": "^2.3.0"
   }
