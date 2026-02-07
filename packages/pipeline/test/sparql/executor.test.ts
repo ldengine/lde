@@ -12,7 +12,7 @@ import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 
 describe('SparqlConstructExecutor', () => {
-  const port = 3002;
+  const port = 3003;
 
   beforeAll(async () => {
     await startSparqlEndpoint(port, 'test/fixtures/analysisTarget.trig');

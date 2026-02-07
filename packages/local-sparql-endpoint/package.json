@@ -23,6 +23,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
+    "@lde/wait-for-sparql": "0.1.0",
     "jest-dev-server": "11.0.0",
     "spawnd": "11.0.0",
     "tslib": "^2.3.0"
