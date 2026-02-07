@@ -1,0 +1,26 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+
+CONSTRUCT {
+    ?linkset a void:Linkset ;
+        void:subjectsTarget ?dataset ;
+        void:objectsTarget ?prefix ;
+        void:triples ?count .
+}
+#namedGraph#
+WHERE {
+    {
+        SELECT ?prefix (SUM(?ocount) AS ?count) {
+            {
+                SELECT ?o (COUNT(*) AS ?ocount) {
+                    #subjectFilter#
+                    ?s ?p ?o .
+                    FILTER(ISIRI(?o))
+                }
+                GROUP BY ?o
+            }
+            BIND(REPLACE(STR(?o), "([^/]+$)", "") AS ?prefix)
+        }
+        GROUP BY ?prefix ORDER BY DESC(?count) LIMIT 1000
+    }
+    BIND(URI(CONCAT(STR(?dataset), "/.well-known/void#linkset-", MD5(CONCAT(STR(?dataset), ?prefix)))) AS ?linkset)
+}

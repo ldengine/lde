@@ -1,0 +1,15 @@
+PREFIX void: <http://rdfs.org/ns/void#>
+PREFIX void-ext: <http://ldf.fi/void-ext#>
+
+CONSTRUCT {
+    ?dataset a void:Dataset ;
+        void-ext:distinctIRIReferenceObjects ?distinctIRIReferenceObjects .
+}
+#namedGraph#
+WHERE {
+    SELECT (COUNT(DISTINCT ?o) AS ?distinctIRIReferenceObjects) {
+        #subjectFilter#
+        ?s ?p ?o .
+        FILTER(ISIRI(?o))
+    }
+}

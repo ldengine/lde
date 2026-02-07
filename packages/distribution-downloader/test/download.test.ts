@@ -19,6 +19,10 @@ describe('LastModifiedDownloader', () => {
 
   describe('download', () => {
     beforeEach(async () => {
+      // Reset distribution state between tests.
+      distribution.lastModified = undefined;
+      distribution.byteSize = undefined;
+
       try {
         await fs.unlink(localFile);
       } catch {
@@ -60,6 +64,46 @@ describe('LastModifiedDownloader', () => {
       nock('https://example.com').get('/file.nt').reply(200, '');
       await expect(downloader.download(distribution)).rejects.toThrow(
         'Distribution download is empty'
+      );
+    });
+
+    it('re-downloads file if local file size does not match byteSize', async () => {
+      // First download creates incomplete file.
+      nock('https://example.com').get('/file.nt').reply(200, 'partial');
+      await downloader.download(distribution);
+
+      // Set distribution metadata indicating file should be larger.
+      distribution.lastModified = new Date('2001-01-01');
+      distribution.byteSize = 100;
+
+      // Second download should re-fetch because size doesn't match.
+      nock('https://example.com').get('/file.nt').reply(200, 'complete file');
+      await downloader.download(distribution);
+
+      const fileContent = await fs.readFile(localFile, 'utf8');
+      expect(fileContent).toBe('complete file');
+    });
+
+    it('logs debug messages when logger is provided', async () => {
+      nock('https://example.com').get('/file.nt').reply(200, 'mock file');
+      await downloader.download(distribution);
+
+      distribution.lastModified = new Date('2001-01-01');
+      const debugMessages: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const noop = () => {};
+      const logger = {
+        fatal: noop,
+        error: noop,
+        warn: noop,
+        info: noop,
+        debug: (msg: string) => debugMessages.push(msg),
+        trace: noop,
+      };
+
+      await downloader.download(distribution, undefined, { logger });
+      expect(debugMessages.some((msg) => msg.includes('is up to date'))).toBe(
+        true
       );
     });
   });

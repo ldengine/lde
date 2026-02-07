@@ -1,0 +1,38 @@
+PREFIX void-ext: <http://ldf.fi/void-ext#>
+
+CONSTRUCT {
+  ?dataset void-ext:datatypes ?count ;
+    void-ext:datatype ?datatype .
+}
+#namedGraph#
+WHERE {
+  {
+    # Count distinct datatypes
+    SELECT (COUNT(DISTINCT ?dt) AS ?count) WHERE {
+      {
+        # Pre-filter to distinct literals to minimize DATATYPE calls
+        SELECT DISTINCT ?o WHERE {
+          #subjectFilter#
+          ?s ?p ?o .
+          FILTER(ISLITERAL(?o))
+        }
+      }
+      BIND(DATATYPE(?o) AS ?dt)
+    }
+  }
+  {
+    # Get distinct datatypes
+    SELECT DISTINCT ?datatype WHERE {
+      {
+        # Pre-filter to distinct literals to minimize DATATYPE calls
+        SELECT DISTINCT ?o WHERE {
+          #subjectFilter#
+          ?s ?p ?o .
+          FILTER(ISLITERAL(?o))
+        }
+      }
+      BIND(DATATYPE(?o) AS ?datatype)
+    }
+  }
+}
+LIMIT 1000

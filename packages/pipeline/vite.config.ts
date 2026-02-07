@@ -1,5 +1,4 @@
-/// <reference types='vitest' />
-import { defineConfig, mergeConfig } from 'vite';
+import { defineConfig, mergeConfig } from 'vitest/config';
 import baseConfig from '../../vite.base.config.js';
 
 export default mergeConfig(
@@ -8,12 +7,13 @@ export default mergeConfig(
     root: __dirname,
     cacheDir: '../../node_modules/.vite/packages/pipeline',
     test: {
+      fileParallelism: false,
       coverage: {
         thresholds: {
-          functions: 71.42,
-          lines: 67.79,
-          branches: 66.66,
-          statements: 68.33,
+          functions: 90.66,
+          lines: 89.73,
+          branches: 79.28,
+          statements: 89.88,
         },
       },
     },
