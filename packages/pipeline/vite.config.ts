@@ -10,10 +10,10 @@ export default mergeConfig(
       fileParallelism: false,
       coverage: {
         thresholds: {
-          functions: 90.66,
-          lines: 89.73,
-          branches: 79.28,
-          statements: 89.88,
+          functions: 91.02,
+          lines: 90.18,
+          branches: 80.13,
+          statements: 90.32,
         },
       },
     },
