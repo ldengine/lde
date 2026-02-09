@@ -1,4 +1,4 @@
-import type { Quad } from '@rdfjs/types';
+import type { NamedNode, Quad } from '@rdfjs/types';
 import type { ExecutableDataset, Executor } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
 
@@ -45,3 +45,10 @@ async function* mergeStreams(
     yield* stream;
   }
 }
+
+/** A single row of variable bindings from a selector query. */
+export type StageSelectorBindings = Record<string, NamedNode>;
+
+/** Stage-level selector that yields variable bindings for use in executor queries. Pagination is an implementation detail. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
+export interface StageSelector extends AsyncIterable<StageSelectorBindings> {}
