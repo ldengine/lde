@@ -1,6 +1,4 @@
-/// <reference types='vitest' />
-import { defineConfig } from 'vite';
-import { configDefaults } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {

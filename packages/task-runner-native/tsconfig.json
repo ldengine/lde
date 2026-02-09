@@ -4,9 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../task-runner"
-    },
-    {
       "path": "./tsconfig.lib.json"
     },
     {
