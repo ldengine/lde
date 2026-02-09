@@ -1,5 +1,6 @@
 export * from './pipeline.js';
 export * from './selector.js';
+export * from './stage.js';
 export * from './step.js';
 export * from './step/sparqlQuery.js';
 export * from './builder.js';
