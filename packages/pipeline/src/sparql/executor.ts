@@ -11,8 +11,7 @@ export { NotSupported } from '../step.js';
 
 export interface Executor {
   execute(
-    dataset: ExecutableDataset,
-    options?: ExecuteOptions
+    dataset: ExecutableDataset
   ): Promise<AsyncIterable<Quad> | NotSupported>;
 }
 
@@ -57,7 +56,7 @@ export interface SparqlConstructExecutorOptions {
 /**
  * Options for `execute()`.
  */
-export interface ExecuteOptions {
+export interface SparqlConstructExecuteOptions {
   /**
    * Explicit SPARQL endpoint URL. If not provided, uses the dataset's SPARQL distribution.
    */
@@ -123,7 +122,7 @@ export class SparqlConstructExecutor implements Executor {
    */
   async execute(
     dataset: ExecutableDataset,
-    options?: ExecuteOptions
+    options?: SparqlConstructExecuteOptions
   ): Promise<QuadStream | NotSupported> {
     const distribution = dataset.getSparqlDistribution();
     let endpoint = options?.endpoint;
