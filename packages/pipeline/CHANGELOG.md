@@ -1,3 +1,21 @@
+## 0.6.12 (2026-02-09)
+
+### 🚀 Features
+
+- **pipeline:** add StageSelector interface and SparqlSelector ([#68](https://github.com/ldengine/lde/pull/68))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.12
+- Updated @lde/local-sparql-endpoint to 0.2.7
+- Updated @lde/sparql-importer to 0.2.6
+- Updated @lde/sparql-server to 0.4.6
+- Updated @lde/dataset to 0.6.6
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.11 (2026-02-09)
 
 ### 🚀 Features
