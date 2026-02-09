@@ -1,3 +1,13 @@
+## 0.6.13 (2026-02-09)
+
+### 🚀 Features
+
+- **pipeline:** AST-based query manipulation for SparqlConstructExecutor ([#69](https://github.com/ldengine/lde/pull/69))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.12 (2026-02-09)
 
 ### 🚀 Features
