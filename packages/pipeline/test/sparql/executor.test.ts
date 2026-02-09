@@ -22,6 +22,17 @@ describe('SparqlConstructExecutor', () => {
     await teardownSparqlEndpoint();
   });
 
+  describe('constructor', () => {
+    it('throws on a non-CONSTRUCT query', () => {
+      expect(
+        () =>
+          new SparqlConstructExecutor({
+            query: 'SELECT ?s WHERE { ?s ?p ?o }',
+          })
+      ).toThrow('Query must be a CONSTRUCT query');
+    });
+  });
+
   describe('execute', () => {
     it('returns NotSupported when no SPARQL distribution is available', async () => {
       const executor = new SparqlConstructExecutor({
@@ -68,7 +79,6 @@ describe('SparqlConstructExecutor', () => {
         query: `CONSTRUCT {
           ?dataset ?p ?o .
         }
-        #namedGraph#
         WHERE {
           <${datasetIri}> ?p ?o .
         }`,
@@ -94,7 +104,7 @@ describe('SparqlConstructExecutor', () => {
       expect(quads.length).toBe(2);
     });
 
-    it('substitutes template variables in query', async () => {
+    it('adds FROM clause via withDefaultGraph when distribution has a named graph', async () => {
       const fetcher = new SparqlEndpointFetcher();
       const querySpy = vi.spyOn(fetcher, 'fetchTriples');
 
@@ -102,9 +112,8 @@ describe('SparqlConstructExecutor', () => {
         query: `CONSTRUCT {
           ?dataset ?p ?o .
         }
-        #namedGraph#
         WHERE {
-          #subjectFilter# ?p ?o .
+          ?dataset ?p ?o .
         }`,
         fetcher,
       });
@@ -113,7 +122,6 @@ describe('SparqlConstructExecutor', () => {
         new URL(`http://localhost:${port}/sparql`),
         'http://foo.org/id/graph/foo'
       );
-      distribution.subjectFilter = '<http://example.org/foo>';
 
       const datasetIri = 'http://foo.org/id/dataset/foo';
       const dataset = new Dataset({
@@ -123,46 +131,40 @@ describe('SparqlConstructExecutor', () => {
 
       await executor.execute(dataset);
 
-      const expectedQuery = `CONSTRUCT {
-          <${datasetIri}> ?p ?o .
-        }
-        FROM <http://foo.org/id/graph/foo>
-        WHERE {
-          <http://example.org/foo> ?p ?o .
-        }`;
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
-        expect.stringContaining(expectedQuery)
+        expect.stringContaining('FROM <http://foo.org/id/graph/foo>')
       );
     });
 
-    it('uses dataset subjectFilter when distribution has none', async () => {
+    it('substitutes ?dataset with dataset IRI', async () => {
       const fetcher = new SparqlEndpointFetcher();
       const querySpy = vi.spyOn(fetcher, 'fetchTriples');
 
       const executor = new SparqlConstructExecutor({
-        query: `CONSTRUCT { ?s ?p ?o } WHERE { #subjectFilter# ?p ?o }`,
+        query: `CONSTRUCT { ?dataset ?p ?o } WHERE { ?dataset ?p ?o }`,
         fetcher,
       });
 
       const distribution = Distribution.sparql(
         new URL(`http://localhost:${port}/sparql`)
       );
-      // No subjectFilter on distribution
 
+      const datasetIri = 'http://foo.org/id/dataset/foo';
       const dataset = new Dataset({
-        iri: new URL('http://example.org/dataset'),
+        iri: new URL(datasetIri),
         distributions: [distribution],
       });
-      // Add subjectFilter at dataset level
-      (dataset as { subjectFilter?: string }).subjectFilter =
-        '<http://example.org/subject>';
 
       await executor.execute(dataset);
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('<http://example.org/subject>')
+        expect.stringContaining(`<${datasetIri}>`)
+      );
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.not.stringContaining('?dataset')
       );
     });
 
@@ -188,38 +190,6 @@ describe('SparqlConstructExecutor', () => {
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
         expect.any(String)
-      );
-    });
-
-    it('substitutes bindings before template variables', async () => {
-      const fetcher = new SparqlEndpointFetcher();
-      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
-
-      const executor = new SparqlConstructExecutor({
-        query: `CONSTRUCT { <#class#> ?p ?o } WHERE { <#class#> ?p ?o }`,
-        fetcher,
-      });
-
-      const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
-      );
-
-      const dataset = new Dataset({
-        iri: new URL('http://example.org/dataset'),
-        distributions: [distribution],
-      });
-
-      await executor.execute(dataset, {
-        bindings: { '<#class#>': '<http://schema.org/Person>' },
-      });
-
-      expect(querySpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('<http://schema.org/Person>')
-      );
-      expect(querySpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.not.stringContaining('<#class#>')
       );
     });
   });

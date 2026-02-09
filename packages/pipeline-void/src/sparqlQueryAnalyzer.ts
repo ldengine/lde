@@ -1,5 +1,6 @@
 import {
   SparqlConstructExecutor,
+  substituteQueryTemplates,
   collect,
   readQueryFile,
   type ExecutableDataset,
@@ -31,7 +32,7 @@ export interface SparqlQueryAnalyzerOptions {
 /**
  * Analyzer that executes a SPARQL CONSTRUCT query against a dataset's SPARQL endpoint.
  *
- * Supports template substitution:
+ * Supports legacy template substitution:
  * - `#subjectFilter#` — replaced with the dataset's subject filter (if any)
  * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
  * - `?dataset` — replaced with the dataset IRI
@@ -39,7 +40,8 @@ export interface SparqlQueryAnalyzerOptions {
  * This class wraps the SparqlConstructExecutor from @lde/pipeline.
  */
 export class SparqlQueryAnalyzer extends BaseAnalyzer {
-  private readonly executor: SparqlConstructExecutor;
+  private readonly query: string;
+  private readonly fetcher: SparqlEndpointFetcher;
 
   constructor(
     public readonly name: string,
@@ -47,18 +49,12 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
     options?: SparqlQueryAnalyzerOptions
   ) {
     super();
-
-    const fetcher =
+    this.query = query;
+    this.fetcher =
       options?.fetcher ??
       new SparqlEndpointFetcher({
         timeout: options?.timeout ?? 300_000,
       });
-
-    this.executor = new SparqlConstructExecutor({
-      query,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fetcher: fetcher as any, // Types differ between package instances
-    });
   }
 
   /**
@@ -84,7 +80,17 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
     }
 
     try {
-      const result = await this.executor.execute(dataset);
+      const substituted = substituteQueryTemplates(
+        this.query,
+        sparqlDistribution,
+        dataset
+      );
+      const executor = new SparqlConstructExecutor({
+        query: substituted,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        fetcher: this.fetcher as any,
+      });
+      const result = await executor.execute(dataset);
       if (result instanceof NotSupported) {
         return result;
       }

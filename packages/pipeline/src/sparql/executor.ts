@@ -4,7 +4,9 @@ import type { Quad, Stream } from '@rdfjs/types';
 import type { Readable } from 'node:stream';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { Generator, Parser, type ConstructQuery } from 'sparqljs';
 import { NotSupported } from '../step.js';
+import { withDefaultGraph } from './graph.js';
 
 // Re-export for convenience
 export { NotSupported } from '../step.js';
@@ -61,29 +63,15 @@ export interface SparqlConstructExecuteOptions {
    * Explicit SPARQL endpoint URL. If not provided, uses the dataset's SPARQL distribution.
    */
   endpoint?: URL;
-
-  /**
-   * Variable bindings to substitute in the query before standard template substitution.
-   * Each key is a literal string to replace, each value is its replacement.
-   *
-   * @example
-   * ```typescript
-   * await executor.execute(dataset, {
-   *   bindings: { '<#class#>': '<http://schema.org/Person>' },
-   * });
-   * ```
-   */
-  bindings?: Record<string, string>;
 }
 
 /**
- * A streaming SPARQL CONSTRUCT executor with template substitution.
+ * A streaming SPARQL CONSTRUCT executor that parses the query once (in the
+ * constructor) and operates on the AST for graph and VALUES injection.
  *
- * Supports template substitution (applied in order):
- * 1. `bindings` — any provided variable bindings
- * 2. `#subjectFilter#` — replaced with the distribution's subject filter or dataset's subjectFilter
- * 3. `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
- * 4. `?dataset` — replaced with the dataset IRI
+ * Template substitution (applied in order):
+ * 1. `FROM <graph>` — set via `withDefaultGraph` if the distribution has a named graph
+ * 2. `?dataset` — replaced with the dataset IRI (string substitution on the serialised query)
  *
  * @example
  * ```typescript
@@ -101,11 +89,17 @@ export interface SparqlConstructExecuteOptions {
  * ```
  */
 export class SparqlConstructExecutor implements Executor {
-  private readonly query: string;
+  private readonly query: ConstructQuery;
   private readonly fetcher: SparqlEndpointFetcher;
+  private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
-    this.query = options.query;
+    const parser = new Parser();
+    const parsed = parser.parse(options.query);
+    if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
+      throw new Error('Query must be a CONSTRUCT query');
+    }
+    this.query = parsed as ConstructQuery;
     this.fetcher =
       options.fetcher ??
       new SparqlEndpointFetcher({
@@ -117,7 +111,7 @@ export class SparqlConstructExecutor implements Executor {
    * Execute the SPARQL CONSTRUCT query against the dataset's SPARQL endpoint.
    *
    * @param dataset The dataset to execute against.
-   * @param options Optional endpoint override and variable bindings.
+   * @param options Optional endpoint override.
    * @returns AsyncIterable<Quad> stream of results, or NotSupported if no SPARQL endpoint available.
    */
   async execute(
@@ -134,29 +128,16 @@ export class SparqlConstructExecutor implements Executor {
       endpoint = distribution.accessUrl;
     }
 
-    let query = this.query;
+    const ast = structuredClone(this.query);
 
-    // Apply bindings first.
-    if (options?.bindings) {
-      for (const [variable, value] of Object.entries(options.bindings)) {
-        query = query.replaceAll(variable, value);
-      }
+    if (distribution?.namedGraph) {
+      withDefaultGraph(ast, distribution.namedGraph);
     }
 
-    query = this.substituteTemplates(query, distribution, dataset);
+    let query = this.generator.stringify(ast);
+    query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
     return await this.fetcher.fetchTriples(endpoint.toString(), query);
-  }
-
-  /**
-   * Substitute template variables in the query.
-   */
-  private substituteTemplates(
-    query: string,
-    distribution: Distribution | null,
-    dataset: ExecutableDataset
-  ): string {
-    return substituteQueryTemplates(query, distribution, dataset);
   }
 
   /**
