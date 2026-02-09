@@ -1,3 +1,18 @@
+## 0.6.11 (2026-02-09)
+
+### 🚀 Features
+
+- **pipeline:** add Stage abstraction for pipeline composition ([#67](https://github.com/ldengine/lde/pull/67))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.11
+- Updated @lde/local-sparql-endpoint to 0.2.6
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.10 (2026-02-09)
 
 ### 🧱 Updated Dependencies
