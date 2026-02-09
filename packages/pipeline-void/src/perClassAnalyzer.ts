@@ -42,7 +42,7 @@ export interface PerClassAnalyzerOptions {
  * This approach prevents timeouts and OOM errors on large datasets by splitting
  * the analysis into smaller queries per class.
  *
- * Supports template substitution:
+ * Supports legacy template substitution:
  * - `#subjectFilter#` — replaced with the dataset's subject filter (if any)
  * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
  * - `?dataset` — replaced with the dataset IRI
@@ -50,7 +50,7 @@ export interface PerClassAnalyzerOptions {
  */
 export class PerClassAnalyzer extends BaseAnalyzer {
   private readonly fetcher: SparqlEndpointFetcher;
-  private readonly executor: SparqlConstructExecutor;
+  private readonly query: string;
   private readonly maxClasses: number;
 
   constructor(
@@ -59,17 +59,13 @@ export class PerClassAnalyzer extends BaseAnalyzer {
     options?: PerClassAnalyzerOptions
   ) {
     super();
+    this.query = query;
     this.fetcher =
       options?.fetcher ??
       new SparqlEndpointFetcher({
         timeout: options?.timeout ?? 300_000,
       });
     this.maxClasses = options?.maxClasses ?? 1000;
-    this.executor = new SparqlConstructExecutor({
-      query,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fetcher: this.fetcher as any,
-    });
   }
 
   /**
@@ -100,11 +96,19 @@ export class PerClassAnalyzer extends BaseAnalyzer {
       // Phase 1: Get all classes.
       const classes = await this.getClasses(sparqlDistribution, dataset);
 
-      // Phase 2: Run query for each class via SparqlConstructExecutor.
+      // Phase 2: Run query for each class.
       for (const classIri of classes) {
-        const result = await this.executor.execute(dataset, {
-          bindings: { '<#class#>': `<${classIri}>` },
+        const substituted = substituteQueryTemplates(
+          this.query.replaceAll('<#class#>', `<${classIri}>`),
+          sparqlDistribution,
+          dataset
+        );
+        const executor = new SparqlConstructExecutor({
+          query: substituted,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          fetcher: this.fetcher as any,
         });
+        const result = await executor.execute(dataset);
         if (result instanceof NotSupported) {
           return result;
         }

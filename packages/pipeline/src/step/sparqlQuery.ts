@@ -1,7 +1,11 @@
-import { DataEmittingStep } from './../step.js';
+import { DataEmittingStep, NotSupported } from './../step.js';
 import { Dataset } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { SparqlConstructExecutor, readQueryFile } from '../sparql/index.js';
+import {
+  SparqlConstructExecutor,
+  substituteQueryTemplates,
+  readQueryFile,
+} from '../sparql/index.js';
 
 /**
  * Arguments for the SparqlQuery step.
@@ -20,22 +24,35 @@ export interface Args {
  * Executes a SPARQL CONSTRUCT query and emits the resulting quads.
  *
  * This step wraps the SparqlConstructExecutor to provide the DataEmittingStep interface
- * for use in pipelines.
+ * for use in pipelines. Supports legacy template substitution (`#namedGraph#`,
+ * `#subjectFilter#`, `?dataset`); for new code prefer the AST-based executor directly.
  */
 export class SparqlQuery implements DataEmittingStep {
   public readonly identifier;
-  private readonly executor: SparqlConstructExecutor;
+  private readonly query: string;
+  private readonly fetcher?: SparqlEndpointFetcher;
 
   constructor({ identifier, query, fetcher }: Args) {
     this.identifier = identifier;
-    this.executor = new SparqlConstructExecutor({
-      query,
-      fetcher,
-    });
+    this.query = query;
+    this.fetcher = fetcher;
   }
 
   async execute(dataset: Dataset) {
-    return await this.executor.execute(dataset);
+    const distribution = dataset.getSparqlDistribution();
+    if (distribution === null || !distribution.isValid) {
+      return new NotSupported('No SPARQL distribution available');
+    }
+    const substituted = substituteQueryTemplates(
+      this.query,
+      distribution,
+      dataset
+    );
+    const executor = new SparqlConstructExecutor({
+      query: substituted,
+      fetcher: this.fetcher,
+    });
+    return await executor.execute(dataset);
   }
 
   public static async fromFile(filename: string) {

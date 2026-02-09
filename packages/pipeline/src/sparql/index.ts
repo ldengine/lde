@@ -13,3 +13,7 @@ export {
 export { collect } from './collect.js';
 
 export { SparqlSelector, type SparqlSelectorOptions } from './selector.js';
+
+export { injectValues } from './values.js';
+
+export { withDefaultGraph } from './graph.js';

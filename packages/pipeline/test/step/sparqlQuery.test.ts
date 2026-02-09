@@ -71,16 +71,17 @@ describe('SparqlQuery', () => {
 
       await sparqlQuery.execute(dataset);
 
-      const expectedQuery = `CONSTRUCT {
-          <${datasetIri}> ?p ?o .
-        }
-        FROM <http://foo.org/id/graph/foo>
-        WHERE {
-          <http://example.org/foo> ?p ?o .
-        }`;
-      expect(querySpy).toBeCalledWith(
+      expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
-        expect.stringContaining(expectedQuery)
+        expect.stringContaining(`<${datasetIri}>`)
+      );
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('FROM <http://foo.org/id/graph/foo>')
+      );
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('<http://example.org/foo>')
       );
     });
 

@@ -6,11 +6,9 @@ CONSTRUCT {
     ?classPartition void:class ?type ;
     void:entities ?entities .
 }
-#namedGraph#
 WHERE {
     {
         SELECT (COUNT(?type) AS ?entities) ?type {
-            #subjectFilter#
             ?s a ?type .
         }
         GROUP BY ?type
