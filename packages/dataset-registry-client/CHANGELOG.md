@@ -1,3 +1,17 @@
+## 0.6.1 (2026-02-09)
+
+### 🩹 Fixes
+
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/local-sparql-endpoint to 0.2.1
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.0 (2026-02-07)
 
 ### 🚀 Features
