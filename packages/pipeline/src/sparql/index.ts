@@ -4,6 +4,7 @@ export {
   NotSupported,
   readQueryFile,
   type ExecutableDataset,
+  type Executor,
   type ExecuteOptions,
   type SparqlConstructExecutorOptions,
   type QuadStream,
