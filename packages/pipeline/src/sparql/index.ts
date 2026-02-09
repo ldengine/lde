@@ -11,3 +11,5 @@ export {
 } from './executor.js';
 
 export { collect } from './collect.js';
+
+export { SparqlSelector, type SparqlSelectorOptions } from './selector.js';
