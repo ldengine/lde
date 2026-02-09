@@ -1,3 +1,42 @@
+## 0.6.7 (2026-02-09)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.7
+- Updated @lde/local-sparql-endpoint to 0.2.4
+
+## 0.6.6 (2026-02-09)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.6
+- Updated @lde/sparql-importer to 0.2.3
+- Updated @lde/sparql-server to 0.4.3
+- Updated @lde/dataset to 0.6.3
+
+## 0.6.5 (2026-02-09)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.5
+- Updated @lde/local-sparql-endpoint to 0.2.3
+
+## 0.6.4 (2026-02-09)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.4
+- Updated @lde/sparql-importer to 0.2.2
+- Updated @lde/sparql-server to 0.4.2
+- Updated @lde/dataset to 0.6.2
+
+## 0.6.3 (2026-02-09)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.3
+- Updated @lde/local-sparql-endpoint to 0.2.2
+
 ## 0.6.2 (2026-02-09)
 
 ### 🧱 Updated Dependencies

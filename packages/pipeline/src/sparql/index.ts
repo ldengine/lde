@@ -4,7 +4,8 @@ export {
   NotSupported,
   readQueryFile,
   type ExecutableDataset,
-  type ExecuteOptions,
+  type Executor,
+  type SparqlConstructExecuteOptions,
   type SparqlConstructExecutorOptions,
   type QuadStream,
 } from './executor.js';

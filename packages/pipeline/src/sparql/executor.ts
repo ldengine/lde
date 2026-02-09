@@ -9,6 +9,12 @@ import { NotSupported } from '../step.js';
 // Re-export for convenience
 export { NotSupported } from '../step.js';
 
+export interface Executor {
+  execute(
+    dataset: ExecutableDataset
+  ): Promise<AsyncIterable<Quad> | NotSupported>;
+}
+
 /**
  * A quad stream that is both an RDFJS Stream and Node.js Readable (async iterable).
  * This is the actual return type from SparqlEndpointFetcher.fetchTriples().
@@ -50,7 +56,7 @@ export interface SparqlConstructExecutorOptions {
 /**
  * Options for `execute()`.
  */
-export interface ExecuteOptions {
+export interface SparqlConstructExecuteOptions {
   /**
    * Explicit SPARQL endpoint URL. If not provided, uses the dataset's SPARQL distribution.
    */
@@ -94,7 +100,7 @@ export interface ExecuteOptions {
  * }
  * ```
  */
-export class SparqlConstructExecutor {
+export class SparqlConstructExecutor implements Executor {
   private readonly query: string;
   private readonly fetcher: SparqlEndpointFetcher;
 
@@ -116,7 +122,7 @@ export class SparqlConstructExecutor {
    */
   async execute(
     dataset: ExecutableDataset,
-    options?: ExecuteOptions
+    options?: SparqlConstructExecuteOptions
   ): Promise<QuadStream | NotSupported> {
     const distribution = dataset.getSparqlDistribution();
     let endpoint = options?.endpoint;
