@@ -7,7 +7,8 @@ import {
   type Variable,
   type VariableTerm,
 } from 'sparqljs';
-import type { StageSelectorBindings, StageSelector } from '../stage.js';
+import type { StageSelector } from '../stage.js';
+import type { VariableBindings } from './executor.js';
 
 const parser = new Parser();
 const generator = new Generator();
@@ -57,7 +58,7 @@ export class SparqlSelector implements StageSelector {
     this.fetcher = options.fetcher ?? new SparqlEndpointFetcher();
   }
 
-  async *[Symbol.asyncIterator](): AsyncIterableIterator<StageSelectorBindings> {
+  async *[Symbol.asyncIterator](): AsyncIterableIterator<VariableBindings> {
     let offset = 0;
 
     while (true) {
@@ -76,7 +77,7 @@ export class SparqlSelector implements StageSelector {
           Object.entries(record).filter(
             ([, term]) => term.termType === 'NamedNode'
           )
-        ) as StageSelectorBindings;
+        ) as VariableBindings;
 
         if (Object.keys(row).length > 0) {
           yield row;

@@ -1,5 +1,5 @@
 import type { ConstructQuery, ValuesPattern } from 'sparqljs';
-import type { StageSelectorBindings } from '../stage.js';
+import type { VariableBindings } from './executor.js';
 
 /**
  * Inject a VALUES clause into a parsed CONSTRUCT query for the given binding rows.
@@ -12,7 +12,7 @@ import type { StageSelectorBindings } from '../stage.js';
  */
 export function injectValues(
   query: ConstructQuery,
-  bindings: StageSelectorBindings[]
+  bindings: VariableBindings[]
 ): ConstructQuery {
   const valuesPattern: ValuesPattern = {
     type: 'values',

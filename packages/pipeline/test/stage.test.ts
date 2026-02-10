@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { Stage } from '../src/stage.js';
-import type { Executor, ExecutableDataset } from '../src/sparql/executor.js';
+import type { StageSelector } from '../src/stage.js';
+import type {
+  Executor,
+  ExecutableDataset,
+  SparqlConstructExecuteOptions,
+} from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset } from '@lde/dataset';
 
@@ -26,7 +31,10 @@ const q3 = quad(
 
 function mockExecutor(quads: Quad[]): Executor {
   return {
-    async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
+    async execute(
+      _dataset: ExecutableDataset,
+      _options?: SparqlConstructExecuteOptions
+    ): Promise<AsyncIterable<Quad> | NotSupported> {
       return (async function* () {
         yield* quads;
       })();
@@ -34,10 +42,38 @@ function mockExecutor(quads: Quad[]): Executor {
   };
 }
 
+function capturingExecutor(quads: Quad[]): Executor & {
+  execute: ReturnType<typeof vi.fn>;
+} {
+  const executor = {
+    execute: vi.fn(
+      async (
+        _dataset: ExecutableDataset,
+        _options?: SparqlConstructExecuteOptions
+      ): Promise<AsyncIterable<Quad> | NotSupported> => {
+        return (async function* () {
+          yield* quads;
+        })();
+      }
+    ),
+  };
+  return executor;
+}
+
 function notSupportedExecutor(message = 'not supported'): Executor {
   return {
     async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
       return new NotSupported(message);
+    },
+  };
+}
+
+function mockSelector(
+  rows: Record<string, ReturnType<typeof namedNode>>[]
+): StageSelector {
+  return {
+    async *[Symbol.asyncIterator]() {
+      yield* rows;
     },
   };
 }
@@ -123,5 +159,57 @@ describe('Stage', () => {
     expect((result as NotSupported).message).toBe(
       'All executors returned NotSupported'
     );
+  });
+
+  it('passes selector bindings to executors', async () => {
+    const executor = capturingExecutor([q1]);
+    const bindings = [
+      { class: namedNode('http://example.org/Person') },
+      { class: namedNode('http://example.org/Book') },
+    ];
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      selector: mockSelector(bindings),
+    });
+
+    const result = await stage.run(dataset);
+    expect(result).not.toBeInstanceOf(NotSupported);
+
+    expect(executor.execute).toHaveBeenCalledWith(dataset, {
+      bindings,
+    });
+  });
+
+  it('does not pass bindings when selector yields nothing', async () => {
+    const executor = capturingExecutor([q1]);
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      selector: mockSelector([]),
+    });
+
+    const result = await stage.run(dataset);
+    expect(result).not.toBeInstanceOf(NotSupported);
+
+    expect(executor.execute).toHaveBeenCalledWith(dataset, undefined);
+  });
+
+  it('works without a selector (backward compatibility)', async () => {
+    const executor = capturingExecutor([q1, q2]);
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+    });
+
+    const result = await stage.run(dataset);
+    expect(result).not.toBeInstanceOf(NotSupported);
+
+    const quads = await collectQuads(result as AsyncIterable<Quad>);
+    expect(quads).toEqual([q1, q2]);
+    expect(executor.execute).toHaveBeenCalledWith(dataset, undefined);
   });
 });

@@ -8,8 +8,11 @@ import {
   startSparqlEndpoint,
   teardownSparqlEndpoint,
 } from '@lde/local-sparql-endpoint';
+import { DataFactory } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+
+const { namedNode } = DataFactory;
 
 describe('SparqlConstructExecutor', () => {
   const port = 3003;
@@ -190,6 +193,92 @@ describe('SparqlConstructExecutor', () => {
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
         expect.any(String)
+      );
+    });
+  });
+
+  describe('bindings', () => {
+    it('injects a VALUES clause when bindings are provided', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }`,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, {
+        bindings: [{ s: namedNode('http://example.org/subject') }],
+      });
+
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('VALUES')
+      );
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('<http://example.org/subject>')
+      );
+    });
+
+    it('does not inject a VALUES clause without bindings', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }`,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset);
+
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.not.stringContaining('VALUES')
+      );
+    });
+
+    it('does not inject a VALUES clause when bindings array is empty', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }`,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, { bindings: [] });
+
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.not.stringContaining('VALUES')
       );
     });
   });

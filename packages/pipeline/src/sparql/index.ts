@@ -8,6 +8,7 @@ export {
   type SparqlConstructExecuteOptions,
   type SparqlConstructExecutorOptions,
   type QuadStream,
+  type VariableBindings,
 } from './executor.js';
 
 export { collect } from './collect.js';

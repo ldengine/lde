@@ -1,19 +1,24 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import type { Quad, Stream } from '@rdfjs/types';
+import type { NamedNode, Quad, Stream } from '@rdfjs/types';
 import type { Readable } from 'node:stream';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Generator, Parser, type ConstructQuery } from 'sparqljs';
 import { NotSupported } from '../step.js';
 import { withDefaultGraph } from './graph.js';
+import { injectValues } from './values.js';
 
 // Re-export for convenience
 export { NotSupported } from '../step.js';
 
+/** A single row of variable bindings (variable name → NamedNode). */
+export type VariableBindings = Record<string, NamedNode>;
+
 export interface Executor {
   execute(
-    dataset: ExecutableDataset
+    dataset: ExecutableDataset,
+    options?: SparqlConstructExecuteOptions
   ): Promise<AsyncIterable<Quad> | NotSupported>;
 }
 
@@ -63,6 +68,12 @@ export interface SparqlConstructExecuteOptions {
    * Explicit SPARQL endpoint URL. If not provided, uses the dataset's SPARQL distribution.
    */
   endpoint?: URL;
+
+  /**
+   * Variable bindings to inject as a VALUES clause into the query.
+   * When non-empty, a VALUES block is prepended to the WHERE clause.
+   */
+  bindings?: VariableBindings[];
 }
 
 /**
@@ -128,10 +139,15 @@ export class SparqlConstructExecutor implements Executor {
       endpoint = distribution.accessUrl;
     }
 
-    const ast = structuredClone(this.query);
+    let ast = structuredClone(this.query);
 
     if (distribution?.namedGraph) {
       withDefaultGraph(ast, distribution.namedGraph);
+    }
+
+    const bindings = options?.bindings;
+    if (bindings !== undefined && bindings.length > 0) {
+      ast = injectValues(ast, bindings);
     }
 
     let query = this.generator.stringify(ast);
