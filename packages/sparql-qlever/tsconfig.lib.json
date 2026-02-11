@@ -15,21 +15,6 @@
     },
     {
       "path": "../task-runner-docker/tsconfig.lib.json"
-    },
-    {
-      "path": "../dataset/tsconfig.lib.json"
-    },
-    {
-      "path": "../task-runner/tsconfig.lib.json"
-    },
-    {
-      "path": "../sparql-server/tsconfig.lib.json"
-    },
-    {
-      "path": "../sparql-importer/tsconfig.lib.json"
-    },
-    {
-      "path": "../distribution-downloader/tsconfig.lib.json"
     }
   ],
   "exclude": [
