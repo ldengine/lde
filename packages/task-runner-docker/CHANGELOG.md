@@ -1,3 +1,9 @@
+## 0.2.8 (2026-02-11)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner to 0.2.8
+
 ## 0.2.7 (2026-02-11)
 
 ### 🧱 Updated Dependencies

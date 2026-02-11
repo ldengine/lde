@@ -1,6 +1,6 @@
 {
   "name": "@lde/task-runner-docker",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/task-runner-docker"
@@ -23,7 +23,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/task-runner": "0.2.7",
+    "@lde/task-runner": "0.2.8",
     "dockerode": "^4.0.7",
     "tslib": "^2.3.0"
   },
