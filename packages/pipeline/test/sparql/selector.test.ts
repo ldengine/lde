@@ -1,5 +1,6 @@
 import { SparqlSelector } from '../../src/sparql/selector.js';
-import type { StageSelector, StageSelectorBindings } from '../../src/stage.js';
+import type { StageSelector } from '../../src/stage.js';
+import type { VariableBindings } from '../../src/sparql/executor.js';
 import { describe, it, expect, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import { DataFactory } from 'n3';
@@ -45,7 +46,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
@@ -79,7 +80,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
@@ -163,7 +164,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
@@ -266,7 +267,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
@@ -294,7 +295,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
@@ -341,7 +342,7 @@ describe('SparqlSelector', () => {
       fetcher: mockFetcher as never,
     });
 
-    const rows: StageSelectorBindings[] = [];
+    const rows: VariableBindings[] = [];
     for await (const row of selector) {
       rows.push(row);
     }
