@@ -13,6 +13,7 @@ import {
   DataDumpProbeResult,
   type ProbeResultType,
 } from './probe.js';
+import { NoDistributionAvailable } from './resolver.js';
 
 export type { Importer };
 export { ImportFailed, ImportSuccessful, NotSupported };
@@ -44,13 +45,6 @@ export interface DistributionAnalyzerOptions {
    * @default 5000
    */
   timeout?: number;
-}
-
-/**
- * Result indicating the analyzer could not find a usable distribution.
- */
-export class NoDistributionAvailable {
-  constructor(public readonly message: string) {}
 }
 
 /**
@@ -107,6 +101,7 @@ export class DistributionAnalyzer {
 
     if (dataset.getSparqlDistribution() === null) {
       return new NoDistributionAvailable(
+        dataset,
         'No SPARQL endpoint or importable data dump available'
       );
     }

@@ -10,7 +10,14 @@ export {
   DistributionAnalyzer,
   ImportSuccessful,
   ImportFailed,
-  NoDistributionAvailable,
   type Importer,
   type DistributionAnalyzerOptions,
 } from './analyzer.js';
+
+export {
+  ResolvedDistribution,
+  NoDistributionAvailable,
+  SparqlDistributionResolver,
+  type DistributionResolver,
+  type SparqlDistributionResolverOptions,
+} from './resolver.js';
