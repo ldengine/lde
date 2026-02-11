@@ -35,10 +35,10 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.6.6",
-    "@lde/dataset-registry-client": "0.6.12",
-    "@lde/sparql-importer": "0.2.6",
-    "@lde/sparql-server": "0.4.6",
+    "@lde/dataset": "0.6.7",
+    "@lde/dataset-registry-client": "0.6.13",
+    "@lde/sparql-importer": "0.2.7",
+    "@lde/sparql-server": "0.4.7",
     "@rdfjs/types": "^2.0.1",
     "c12": "^3.0.2",
     "fetch-sparql-endpoint": "^6.0.0",

@@ -24,7 +24,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.6.6",
+    "@lde/dataset": "0.6.7",
     "@lde/pipeline": "0.6.13",
     "@rdfjs/types": "^2.0.1",
     "fetch-sparql-endpoint": "^6.0.0",
