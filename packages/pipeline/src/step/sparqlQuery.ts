@@ -1,5 +1,5 @@
-import { DataEmittingStep, NotSupported } from './../step.js';
-import { Dataset } from '@lde/dataset';
+import { DataEmittingStep } from './../step.js';
+import { Dataset, Distribution } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import {
   SparqlConstructExecutor,
@@ -38,11 +38,7 @@ export class SparqlQuery implements DataEmittingStep {
     this.fetcher = fetcher;
   }
 
-  async execute(dataset: Dataset) {
-    const distribution = dataset.getSparqlDistribution();
-    if (distribution === null || !distribution.isValid) {
-      return new NotSupported('No SPARQL distribution available');
-    }
+  async execute(dataset: Dataset, distribution: Distribution) {
     const substituted = substituteQueryTemplates(
       this.query,
       distribution,
@@ -52,7 +48,7 @@ export class SparqlQuery implements DataEmittingStep {
       query: substituted,
       fetcher: this.fetcher,
     });
-    return await executor.execute(dataset);
+    return await executor.execute(dataset, distribution);
   }
 
   public static async fromFile(filename: string) {

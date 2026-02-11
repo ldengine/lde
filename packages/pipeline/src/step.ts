@@ -12,14 +12,20 @@ export type Step = DataEmittingStep | SingleStep;
  * Failure is expressed by emitting an error event; success by the end event.
  */
 export interface DataEmittingStep extends AbstractStep {
-  execute(dataset: Dataset): Promise<Stream | NotSupported>;
+  execute(
+    dataset: Dataset,
+    distribution: Distribution
+  ): Promise<Stream | NotSupported>;
 }
 
 /**
  * A pipeline step that executes an operation without emitting data.
  */
 export interface SingleStep extends AbstractStep {
-  execute(dataset: Dataset): Promise<NotSupported | Failure | Success>;
+  execute(
+    dataset: Dataset,
+    distribution?: Distribution
+  ): Promise<NotSupported | Failure | Success>;
 }
 
 export interface Finishable {

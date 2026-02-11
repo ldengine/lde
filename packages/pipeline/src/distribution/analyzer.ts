@@ -59,7 +59,6 @@ export class NoDistributionAvailable {
  * - Probes SPARQL endpoints with a simple SELECT query
  * - Probes data dumps with HEAD/GET requests
  * - Records probe results as RDF (schema:Action)
- * - Updates distribution metadata (isValid, lastModified, byteSize)
  * - Optionally imports data dumps if no SPARQL endpoint is available
  */
 export class DistributionAnalyzer {
@@ -78,13 +77,16 @@ export class DistributionAnalyzer {
    * @returns Store with probe results as RDF, or NoDistributionAvailable if no usable distribution found
    */
   async execute(dataset: Dataset): Promise<Store | NoDistributionAvailable> {
-    const results = await Promise.all(
+    const probeResults = await Promise.all(
       dataset.distributions.map((distribution) =>
         probe(distribution, this.timeout)
       )
     );
 
-    const store = this.buildProbeResultsRdf(results, dataset);
+    // Apply probe results to distributions (isValid, lastModified, byteSize).
+    this.applyProbeResults(dataset.distributions, probeResults);
+
+    const store = this.buildProbeResultsRdf(probeResults, dataset);
 
     // If no SPARQL endpoint available, try to import a data dump
     if (dataset.getSparqlDistribution() === null && this.importer) {
@@ -117,6 +119,31 @@ export class DistributionAnalyzer {
    */
   async finish(): Promise<void> {
     await this.importer?.finish?.();
+  }
+
+  /**
+   * Apply probe results to distributions so `getSparqlDistribution()` works.
+   */
+  private applyProbeResults(
+    distributions: Distribution[],
+    results: ProbeResultType[]
+  ): void {
+    for (let i = 0; i < distributions.length; i++) {
+      const distribution = distributions[i];
+      const result = results[i];
+
+      if (result instanceof NetworkError) {
+        distribution.isValid = false;
+        continue;
+      }
+
+      distribution.isValid = result.isSuccess();
+
+      if (result instanceof DataDumpProbeResult) {
+        distribution.lastModified ??= result.lastModified ?? undefined;
+        distribution.byteSize ??= result.contentSize ?? undefined;
+      }
+    }
   }
 
   private buildProbeResultsRdf(

@@ -1,10 +1,9 @@
-import { Distribution } from '@lde/dataset';
+import { Dataset, Distribution } from '@lde/dataset';
 import {
   SparqlConstructExecutor,
   substituteQueryTemplates,
   readQueryFile,
   collect,
-  type ExecutableDataset,
 } from '@lde/pipeline';
 import { Store } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
@@ -83,7 +82,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
   }
 
   public async execute(
-    dataset: ExecutableDataset
+    dataset: Dataset
   ): Promise<Success | Failure | NotSupported> {
     const sparqlDistribution = dataset.getSparqlDistribution();
     if (sparqlDistribution === null) {
@@ -108,11 +107,8 @@ export class PerClassAnalyzer extends BaseAnalyzer {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           fetcher: this.fetcher as any,
         });
-        const result = await executor.execute(dataset);
-        if (result instanceof NotSupported) {
-          return result;
-        }
-        store.addQuads([...(await collect(result))]);
+        const stream = await executor.execute(dataset, sparqlDistribution);
+        store.addQuads([...(await collect(stream))]);
       }
     } catch (e) {
       const accessUrl = sparqlDistribution.accessUrl;
@@ -127,7 +123,7 @@ export class PerClassAnalyzer extends BaseAnalyzer {
 
   private async getClasses(
     distribution: Distribution,
-    dataset: ExecutableDataset
+    dataset: Dataset
   ): Promise<string[]> {
     const classQuery = substituteQueryTemplates(
       `SELECT DISTINCT ?class

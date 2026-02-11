@@ -3,13 +3,9 @@ import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { Stage } from '../src/stage.js';
 import type { StageSelector } from '../src/stage.js';
-import type {
-  Executor,
-  ExecutableDataset,
-  SparqlConstructExecuteOptions,
-} from '../src/sparql/executor.js';
+import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
-import { Dataset } from '@lde/dataset';
+import { Dataset, Distribution } from '@lde/dataset';
 
 const { namedNode, quad } = DataFactory;
 
@@ -32,8 +28,9 @@ const q3 = quad(
 function mockExecutor(quads: Quad[]): Executor {
   return {
     async execute(
-      _dataset: ExecutableDataset,
-      _options?: SparqlConstructExecuteOptions
+      _dataset: Dataset,
+      _distribution: Distribution,
+      _options?: ExecuteOptions
     ): Promise<AsyncIterable<Quad> | NotSupported> {
       return (async function* () {
         yield* quads;
@@ -48,8 +45,9 @@ function capturingExecutor(quads: Quad[]): Executor & {
   const executor = {
     execute: vi.fn(
       async (
-        _dataset: ExecutableDataset,
-        _options?: SparqlConstructExecuteOptions
+        _dataset: Dataset,
+        _distribution: Distribution,
+        _options?: ExecuteOptions
       ): Promise<AsyncIterable<Quad> | NotSupported> => {
         return (async function* () {
           yield* quads;
@@ -78,10 +76,12 @@ function mockSelector(
   };
 }
 
-const dataset: ExecutableDataset = new Dataset({
+const dataset = new Dataset({
   iri: new URL('http://example.org/dataset'),
   distributions: [],
 });
+
+const distribution = Distribution.sparql(new URL('http://example.org/sparql'));
 
 async function collectQuads(iterable: AsyncIterable<Quad>): Promise<Quad[]> {
   const result: Quad[] = [];
@@ -98,7 +98,7 @@ describe('Stage', () => {
       executors: mockExecutor([q1, q2]),
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     const quads = await collectQuads(result as AsyncIterable<Quad>);
@@ -111,7 +111,7 @@ describe('Stage', () => {
       executors: notSupportedExecutor(),
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
       'All executors returned NotSupported'
@@ -124,7 +124,7 @@ describe('Stage', () => {
       executors: [mockExecutor([q1]), mockExecutor([q2, q3])],
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     const quads = await collectQuads(result as AsyncIterable<Quad>);
@@ -141,7 +141,7 @@ describe('Stage', () => {
       ],
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     const quads = await collectQuads(result as AsyncIterable<Quad>);
@@ -154,7 +154,7 @@ describe('Stage', () => {
       executors: [notSupportedExecutor('a'), notSupportedExecutor('b')],
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
       'All executors returned NotSupported'
@@ -174,10 +174,10 @@ describe('Stage', () => {
       selector: mockSelector(bindings),
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
-    expect(executor.execute).toHaveBeenCalledWith(dataset, {
+    expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
       bindings,
     });
   });
@@ -191,10 +191,14 @@ describe('Stage', () => {
       selector: mockSelector([]),
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
-    expect(executor.execute).toHaveBeenCalledWith(dataset, undefined);
+    expect(executor.execute).toHaveBeenCalledWith(
+      dataset,
+      distribution,
+      undefined
+    );
   });
 
   it('works without a selector (backward compatibility)', async () => {
@@ -205,11 +209,36 @@ describe('Stage', () => {
       executors: executor,
     });
 
-    const result = await stage.run(dataset);
+    const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     const quads = await collectQuads(result as AsyncIterable<Quad>);
     expect(quads).toEqual([q1, q2]);
-    expect(executor.execute).toHaveBeenCalledWith(dataset, undefined);
+    expect(executor.execute).toHaveBeenCalledWith(
+      dataset,
+      distribution,
+      undefined
+    );
+  });
+
+  it('forwards distribution to executors', async () => {
+    const executor = capturingExecutor([q1]);
+    const namedGraphDistribution = Distribution.sparql(
+      new URL('http://example.org/sparql'),
+      'http://example.org/graph'
+    );
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+    });
+
+    await stage.run(dataset, namedGraphDistribution);
+
+    expect(executor.execute).toHaveBeenCalledWith(
+      dataset,
+      namedGraphDistribution,
+      undefined
+    );
   });
 });
