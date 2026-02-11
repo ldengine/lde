@@ -5,7 +5,16 @@ VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets.
 ## Analyzers
 
 - **SparqlQueryAnalyzer** — Execute SPARQL CONSTRUCT queries with template substitution
-- **PerClassAnalyzer** — Two-phase analyzer that iterates over classes to avoid timeouts
+
+## Per-class stages
+
+Factory functions that create `Stage` instances for per-class analysis.
+Each stage first selects classes from the endpoint, then runs a CONSTRUCT query
+with `?class` bound via VALUES:
+
+- `createDatatypeStage` — per-class datatype partitions
+- `createLanguageStage` — per-class language tags
+- `createObjectClassStage` — per-class object class partitions
 
 ## SPARQL Queries
 
@@ -33,14 +42,30 @@ Generic VOiD analysis queries included:
 ## Usage
 
 ```typescript
-import { SparqlQueryAnalyzer } from '@lde/pipeline-void';
+import {
+  SparqlQueryAnalyzer,
+  Success,
+  createDatatypeStage,
+} from '@lde/pipeline-void';
+import { Distribution } from '@lde/dataset';
 
-// Load a query from file
+// Simple CONSTRUCT query analyzer
 const analyzer = await SparqlQueryAnalyzer.fromFile('triples.rq');
-
-// Execute against a dataset
 const result = await analyzer.execute(dataset);
 if (result instanceof Success) {
   // result.data contains the VOiD statistics as RDF
 }
+
+// Per-class stage (streaming)
+const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
+const stage = await createDatatypeStage(distribution);
+const quads = await stage.run(dataset, distribution);
+```
+
+## Validation
+
+```sh
+npx nx test pipeline-void
+npx nx lint pipeline-void
+npx nx typecheck pipeline-void
 ```

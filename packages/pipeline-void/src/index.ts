@@ -1,3 +1,4 @@
+export { Stage } from '@lde/pipeline';
 export {
   type Analyzer,
   BaseAnalyzer,
