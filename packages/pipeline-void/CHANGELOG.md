@@ -1,3 +1,10 @@
+## 0.2.14 (2026-02-11)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.6.14
+- Updated @lde/dataset to 0.6.8
+
 ## 0.2.13 (2026-02-09)
 
 ### 🚀 Features
