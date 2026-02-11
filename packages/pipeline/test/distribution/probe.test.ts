@@ -33,7 +33,6 @@ describe('probe', () => {
 
       expect(result).toBeInstanceOf(SparqlProbeResult);
       expect((result as SparqlProbeResult).isSuccess()).toBe(true);
-      expect(distribution.isValid).toBe(true);
     });
 
     it('returns unsuccessful SparqlProbeResult on wrong content type', async () => {
@@ -52,7 +51,6 @@ describe('probe', () => {
 
       expect(result).toBeInstanceOf(SparqlProbeResult);
       expect((result as SparqlProbeResult).isSuccess()).toBe(false);
-      expect(distribution.isValid).toBe(false);
     });
 
     it('returns unsuccessful SparqlProbeResult on HTTP error', async () => {
@@ -100,8 +98,28 @@ describe('probe', () => {
       expect(dumpResult.isSuccess()).toBe(true);
       expect(dumpResult.contentSize).toBe(12345);
       expect(dumpResult.lastModified).toBeInstanceOf(Date);
-      expect(distribution.isValid).toBe(true);
-      expect(distribution.byteSize).toBe(12345);
+    });
+
+    it('does not mutate the distribution', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('', {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/n-triples',
+            'Content-Length': '12345',
+          },
+        })
+      );
+
+      const distribution = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples'
+      );
+
+      await probe(distribution);
+
+      expect(distribution.isValid).toBeUndefined();
+      expect(distribution.byteSize).toBeUndefined();
     });
 
     it('retries with GET if HEAD returns no Content-Length', async () => {

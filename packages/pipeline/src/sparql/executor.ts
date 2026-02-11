@@ -15,10 +15,19 @@ export { NotSupported } from '../step.js';
 /** A single row of variable bindings (variable name → NamedNode). */
 export type VariableBindings = Record<string, NamedNode>;
 
+export interface ExecuteOptions {
+  /**
+   * Variable bindings to inject as a VALUES clause into the query.
+   * When non-empty, a VALUES block is prepended to the WHERE clause.
+   */
+  bindings?: VariableBindings[];
+}
+
 export interface Executor {
   execute(
-    dataset: ExecutableDataset,
-    options?: SparqlConstructExecuteOptions
+    dataset: Dataset,
+    distribution: Distribution,
+    options?: ExecuteOptions
   ): Promise<AsyncIterable<Quad> | NotSupported>;
 }
 
@@ -27,17 +36,6 @@ export interface Executor {
  * This is the actual return type from SparqlEndpointFetcher.fetchTriples().
  */
 export type QuadStream = Readable & Stream<Quad>;
-
-/**
- * Extended dataset with optional SPARQL filtering options.
- */
-export interface ExecutableDataset extends Dataset {
-  /**
-   * Optional SPARQL filter clause to restrict analysis to a subset of the data.
-   * This is substituted for `#subjectFilter#` in queries.
-   */
-  subjectFilter?: string;
-}
 
 /**
  * Options for SparqlConstructExecutor.
@@ -61,22 +59,6 @@ export interface SparqlConstructExecutorOptions {
 }
 
 /**
- * Options for `execute()`.
- */
-export interface SparqlConstructExecuteOptions {
-  /**
-   * Explicit SPARQL endpoint URL. If not provided, uses the dataset's SPARQL distribution.
-   */
-  endpoint?: URL;
-
-  /**
-   * Variable bindings to inject as a VALUES clause into the query.
-   * When non-empty, a VALUES block is prepended to the WHERE clause.
-   */
-  bindings?: VariableBindings[];
-}
-
-/**
  * A streaming SPARQL CONSTRUCT executor that parses the query once (in the
  * constructor) and operates on the AST for graph and VALUES injection.
  *
@@ -89,7 +71,7 @@ export interface SparqlConstructExecuteOptions {
  * const executor = new SparqlConstructExecutor({
  *   query: 'CONSTRUCT { ?dataset ?p ?o } WHERE { ?s ?p ?o }',
  * });
- * const result = await executor.execute(dataset);
+ * const result = await executor.execute(dataset, distribution);
  * if (result instanceof NotSupported) {
  *   console.log(result.message);
  * } else {
@@ -119,29 +101,23 @@ export class SparqlConstructExecutor implements Executor {
   }
 
   /**
-   * Execute the SPARQL CONSTRUCT query against the dataset's SPARQL endpoint.
+   * Execute the SPARQL CONSTRUCT query against the distribution's endpoint.
    *
    * @param dataset The dataset to execute against.
-   * @param options Optional endpoint override.
-   * @returns AsyncIterable<Quad> stream of results, or NotSupported if no SPARQL endpoint available.
+   * @param distribution The distribution providing the SPARQL endpoint.
+   * @param options Optional execution options (bindings).
+   * @returns AsyncIterable<Quad> stream of results.
    */
   async execute(
-    dataset: ExecutableDataset,
-    options?: SparqlConstructExecuteOptions
-  ): Promise<QuadStream | NotSupported> {
-    const distribution = dataset.getSparqlDistribution();
-    let endpoint = options?.endpoint;
-
-    if (endpoint === undefined) {
-      if (distribution === null || !distribution.isValid) {
-        return new NotSupported('No SPARQL distribution available');
-      }
-      endpoint = distribution.accessUrl;
-    }
+    dataset: Dataset,
+    distribution: Distribution,
+    options?: ExecuteOptions
+  ): Promise<QuadStream> {
+    const endpoint = distribution.accessUrl;
 
     let ast = structuredClone(this.query);
 
-    if (distribution?.namedGraph) {
+    if (distribution.namedGraph) {
       withDefaultGraph(ast, distribution.namedGraph);
     }
 
@@ -174,17 +150,16 @@ export class SparqlConstructExecutor implements Executor {
 /**
  * Substitute template variables in a SPARQL query.
  *
- * - `#subjectFilter#` — replaced with the distribution's or dataset's subject filter
+ * - `#subjectFilter#` — replaced with the distribution's subject filter
  * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
  * - `?dataset` — replaced with the dataset IRI
  */
 export function substituteQueryTemplates(
   query: string,
   distribution: Distribution | null,
-  dataset: ExecutableDataset
+  dataset: Dataset
 ): string {
-  const subjectFilter =
-    distribution?.subjectFilter ?? dataset.subjectFilter ?? '';
+  const subjectFilter = distribution?.subjectFilter ?? '';
 
   const namedGraph = distribution?.namedGraph
     ? `FROM <${distribution.namedGraph}>`

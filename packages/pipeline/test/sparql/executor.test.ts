@@ -1,6 +1,5 @@
 import {
   SparqlConstructExecutor,
-  NotSupported,
   readQueryFile,
 } from '../../src/sparql/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
@@ -37,44 +36,6 @@ describe('SparqlConstructExecutor', () => {
   });
 
   describe('execute', () => {
-    it('returns NotSupported when no SPARQL distribution is available', async () => {
-      const executor = new SparqlConstructExecutor({
-        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
-      });
-
-      const dataset = new Dataset({
-        iri: new URL('http://example.org/dataset'),
-        distributions: [],
-      });
-
-      const result = await executor.execute(dataset);
-
-      expect(result).toBeInstanceOf(NotSupported);
-      expect((result as NotSupported).message).toBe(
-        'No SPARQL distribution available'
-      );
-    });
-
-    it('returns NotSupported when SPARQL distribution is not valid', async () => {
-      const executor = new SparqlConstructExecutor({
-        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
-      });
-
-      const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
-      );
-      distribution.isValid = false;
-
-      const dataset = new Dataset({
-        iri: new URL('http://example.org/dataset'),
-        distributions: [distribution],
-      });
-
-      const result = await executor.execute(dataset);
-
-      expect(result).toBeInstanceOf(NotSupported);
-    });
-
     it('executes query and returns stream', async () => {
       const datasetIri = 'http://foo.org/id/dataset/foo';
 
@@ -97,11 +58,10 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      const result = await executor.execute(dataset);
-      expect(result).not.toBeInstanceOf(NotSupported);
+      const result = await executor.execute(dataset, distribution);
 
       const quads = [];
-      for await (const quad of result as Exclude<typeof result, NotSupported>) {
+      for await (const quad of result) {
         quads.push(quad);
       }
       expect(quads.length).toBe(2);
@@ -132,7 +92,7 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      await executor.execute(dataset);
+      await executor.execute(dataset, distribution);
 
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
@@ -159,7 +119,7 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      await executor.execute(dataset);
+      await executor.execute(dataset, distribution);
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
@@ -171,7 +131,7 @@ describe('SparqlConstructExecutor', () => {
       );
     });
 
-    it('allows explicit endpoint override', async () => {
+    it('uses distribution accessUrl as endpoint', async () => {
       const fetcher = new SparqlEndpointFetcher();
       const querySpy = vi.spyOn(fetcher, 'fetchTriples');
 
@@ -180,15 +140,16 @@ describe('SparqlConstructExecutor', () => {
         fetcher,
       });
 
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+
       const dataset = new Dataset({
         iri: new URL('http://example.org/dataset'),
-        distributions: [], // No distribution
+        distributions: [distribution],
       });
 
-      // Provide explicit endpoint
-      await executor.execute(dataset, {
-        endpoint: new URL(`http://localhost:${port}/sparql`),
-      });
+      await executor.execute(dataset, distribution);
 
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
@@ -216,7 +177,7 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      await executor.execute(dataset, {
+      await executor.execute(dataset, distribution, {
         bindings: [{ s: namedNode('http://example.org/subject') }],
       });
 
@@ -248,7 +209,7 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      await executor.execute(dataset);
+      await executor.execute(dataset, distribution);
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
@@ -274,7 +235,7 @@ describe('SparqlConstructExecutor', () => {
         distributions: [distribution],
       });
 
-      await executor.execute(dataset, { bindings: [] });
+      await executor.execute(dataset, distribution, { bindings: [] });
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),

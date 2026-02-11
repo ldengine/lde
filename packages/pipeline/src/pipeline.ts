@@ -9,8 +9,9 @@ export class Pipeline {
   public async run() {
     const datasets = await this.config.selector.select();
     for await (const dataset of datasets) {
+      const distribution = dataset.getSparqlDistribution() ?? undefined;
       for (const step of this.config.steps) {
-        const result = await step.execute(dataset);
+        const result = await step.execute(dataset, distribution!);
         if (result instanceof NotSupported) {
           console.error(result);
         } else if (result instanceof Readable) {

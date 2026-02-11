@@ -1,9 +1,9 @@
+import { Dataset } from '@lde/dataset';
 import {
   SparqlConstructExecutor,
   substituteQueryTemplates,
   collect,
   readQueryFile,
-  type ExecutableDataset,
 } from '@lde/pipeline';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { resolve, dirname } from 'node:path';
@@ -72,7 +72,7 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
   }
 
   public async execute(
-    dataset: ExecutableDataset
+    dataset: Dataset
   ): Promise<Success | Failure | NotSupported> {
     const sparqlDistribution = dataset.getSparqlDistribution();
     if (sparqlDistribution === null) {
@@ -90,12 +90,8 @@ export class SparqlQueryAnalyzer extends BaseAnalyzer {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fetcher: this.fetcher as any,
       });
-      const result = await executor.execute(dataset);
-      if (result instanceof NotSupported) {
-        return result;
-      }
-
-      const store = await collect(result);
+      const stream = await executor.execute(dataset, sparqlDistribution);
+      const store = await collect(stream);
       return new Success(store);
     } catch (e) {
       return new Failure(

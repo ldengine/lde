@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { NotSupported, SparqlQuery } from '../../src/index.js';
+import { SparqlQuery } from '../../src/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import {
   startSparqlEndpoint,
@@ -27,21 +27,6 @@ describe('SparqlQuery', () => {
   });
 
   describe('execute', () => {
-    it('should return a NotSupported when no SPARQL distribution is available', async () => {
-      const sparqlQuery = new SparqlQuery({
-        identifier: 'foo',
-        query: 'bar',
-      });
-      const dataset = new Dataset({
-        iri: new URL('http://example.org/dataset'),
-        distributions: [],
-      });
-
-      const result = await sparqlQuery.execute(dataset);
-
-      expect(result).toBeInstanceOf(NotSupported);
-    });
-
     it('should apply named graph and subject filter in SPARQL query', async () => {
       const fetcher = new SparqlEndpointFetcher();
       const querySpy = vi.spyOn(fetcher, 'fetchTriples');
@@ -69,7 +54,7 @@ describe('SparqlQuery', () => {
         distributions: [distribution],
       });
 
-      await sparqlQuery.execute(dataset);
+      await sparqlQuery.execute(dataset, distribution);
 
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
@@ -107,14 +92,10 @@ describe('SparqlQuery', () => {
         distributions: [distribution],
       });
 
-      const result = await sparqlQuery.execute(dataset);
-      expect(result).not.toBeInstanceOf(NotSupported);
+      const result = await sparqlQuery.execute(dataset, distribution);
 
       const statements = [];
-      for await (const statement of result as Exclude<
-        typeof result,
-        NotSupported
-      >) {
+      for await (const statement of result) {
         statements.push(statement);
       }
       expect(statements.length).toBe(2);

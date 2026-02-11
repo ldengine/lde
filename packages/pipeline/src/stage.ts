@@ -1,7 +1,8 @@
+import { Dataset, Distribution } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
 import type {
-  ExecutableDataset,
   Executor,
+  ExecuteOptions,
   VariableBindings,
 } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
@@ -26,15 +27,21 @@ export class Stage {
   }
 
   async run(
-    dataset: ExecutableDataset
+    dataset: Dataset,
+    distribution: Distribution
   ): Promise<AsyncIterable<Quad> | NotSupported> {
     const bindings = await this.collectBindings();
-    const executeOptions = bindings.length > 0 ? { bindings } : undefined;
+    const executeOptions: ExecuteOptions | undefined =
+      bindings.length > 0 ? { bindings } : undefined;
 
     const streams: AsyncIterable<Quad>[] = [];
 
     for (const executor of this.executors) {
-      const result = await executor.execute(dataset, executeOptions);
+      const result = await executor.execute(
+        dataset,
+        distribution,
+        executeOptions
+      );
       if (!(result instanceof NotSupported)) {
         streams.push(result);
       }

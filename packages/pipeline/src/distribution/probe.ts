@@ -71,7 +71,7 @@ export type ProbeResultType =
  * For SPARQL endpoints, sends a simple SELECT query.
  * For data dumps, sends HEAD (or GET if HEAD returns no Content-Length).
  *
- * Updates the distribution's isValid, lastModified, and byteSize properties.
+ * Returns pure probe results without mutating the distribution.
  */
 export async function probe(
   distribution: Distribution,
@@ -105,9 +105,7 @@ async function probeSparqlEndpoint(
     body: `query=${encodeURIComponent('SELECT * { ?s ?p ?o } LIMIT 1')}`,
   });
 
-  const result = new SparqlProbeResult(url, response);
-  distribution.isValid = result.isSuccess();
-  return result;
+  return new SparqlProbeResult(url, response);
 }
 
 async function probeDataDump(
@@ -139,9 +137,5 @@ async function probeDataDump(
     });
   }
 
-  const result = new DataDumpProbeResult(url, response);
-  distribution.isValid = result.isSuccess();
-  distribution.lastModified ??= result.lastModified ?? undefined;
-  distribution.byteSize ??= result.contentSize ?? undefined;
-  return result;
+  return new DataDumpProbeResult(url, response);
 }
