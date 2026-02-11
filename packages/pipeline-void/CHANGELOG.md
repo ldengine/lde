@@ -1,3 +1,17 @@
+## 0.2.15 (2026-02-11)
+
+### 🚀 Features
+
+- **pipeline:** extract DistributionResolver, pass distribution explicitly ([#73](https://github.com/ldengine/lde/pull/73))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.6.15
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.14 (2026-02-11)
 
 ### 🧱 Updated Dependencies
