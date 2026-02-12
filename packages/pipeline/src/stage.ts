@@ -1,22 +1,22 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
-import type {
-  Executor,
-  ExecuteOptions,
-  VariableBindings,
-} from './sparql/executor.js';
+import type { Executor, VariableBindings } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
+import { batch } from './batch.js';
 
 export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
   selector?: StageSelector;
+  /** Maximum number of bindings per executor call. @default 10 */
+  batchSize?: number;
 }
 
 export class Stage {
   readonly name: string;
   private readonly executors: Executor[];
   private readonly selector?: StageSelector;
+  private readonly batchSize: number;
 
   constructor(options: StageOptions) {
     this.name = options.name;
@@ -24,26 +24,26 @@ export class Stage {
       ? options.executors
       : [options.executors];
     this.selector = options.selector;
+    this.batchSize = options.batchSize ?? 10;
   }
 
   async run(
     dataset: Dataset,
     distribution: Distribution
   ): Promise<AsyncIterable<Quad> | NotSupported> {
-    const bindings = await this.collectBindings();
-    const executeOptions: ExecuteOptions | undefined =
-      bindings.length > 0 ? { bindings } : undefined;
+    if (!this.selector) {
+      return this.executeAll(dataset, distribution);
+    }
 
     const streams: AsyncIterable<Quad>[] = [];
-
-    for (const executor of this.executors) {
-      const result = await executor.execute(
-        dataset,
-        distribution,
-        executeOptions
-      );
-      if (!(result instanceof NotSupported)) {
-        streams.push(result);
+    for await (const bindings of batch(this.selector, this.batchSize)) {
+      for (const executor of this.executors) {
+        const result = await executor.execute(dataset, distribution, {
+          bindings,
+        });
+        if (!(result instanceof NotSupported)) {
+          streams.push(result);
+        }
       }
     }
 
@@ -54,16 +54,23 @@ export class Stage {
     return mergeStreams(streams);
   }
 
-  private async collectBindings(): Promise<VariableBindings[]> {
-    if (this.selector === undefined) {
-      return [];
+  private async executeAll(
+    dataset: Dataset,
+    distribution: Distribution
+  ): Promise<AsyncIterable<Quad> | NotSupported> {
+    const streams: AsyncIterable<Quad>[] = [];
+    for (const executor of this.executors) {
+      const result = await executor.execute(dataset, distribution);
+      if (!(result instanceof NotSupported)) {
+        streams.push(result);
+      }
     }
 
-    const bindings: VariableBindings[] = [];
-    for await (const row of this.selector) {
-      bindings.push(row);
+    if (streams.length === 0) {
+      return new NotSupported('All executors returned NotSupported');
     }
-    return bindings;
+
+    return mergeStreams(streams);
   }
 }
 

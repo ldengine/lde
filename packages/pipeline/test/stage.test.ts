@@ -161,7 +161,7 @@ describe('Stage', () => {
     );
   });
 
-  it('passes selector bindings to executors', async () => {
+  it('passes selector bindings to executors in a single batch', async () => {
     const executor = capturingExecutor([q1]);
     const bindings = [
       { class: namedNode('http://example.org/Person') },
@@ -177,12 +177,60 @@ describe('Stage', () => {
     const result = await stage.run(dataset, distribution);
     expect(result).not.toBeInstanceOf(NotSupported);
 
+    expect(executor.execute).toHaveBeenCalledOnce();
     expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
       bindings,
     });
   });
 
-  it('does not pass bindings when selector yields nothing', async () => {
+  it('batches bindings across multiple executor calls', async () => {
+    const executor = capturingExecutor([q1]);
+    const bindings = [
+      { class: namedNode('http://example.org/A') },
+      { class: namedNode('http://example.org/B') },
+      { class: namedNode('http://example.org/C') },
+    ];
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      selector: mockSelector(bindings),
+      batchSize: 2,
+    });
+
+    const result = await stage.run(dataset, distribution);
+    expect(result).not.toBeInstanceOf(NotSupported);
+
+    expect(executor.execute).toHaveBeenCalledTimes(2);
+    expect(executor.execute).toHaveBeenNthCalledWith(1, dataset, distribution, {
+      bindings: [bindings[0], bindings[1]],
+    });
+    expect(executor.execute).toHaveBeenNthCalledWith(2, dataset, distribution, {
+      bindings: [bindings[2]],
+    });
+  });
+
+  it('uses custom batchSize', async () => {
+    const executor = capturingExecutor([q1]);
+    const bindings = [
+      { class: namedNode('http://example.org/A') },
+      { class: namedNode('http://example.org/B') },
+      { class: namedNode('http://example.org/C') },
+    ];
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      selector: mockSelector(bindings),
+      batchSize: 1,
+    });
+
+    await stage.run(dataset, distribution);
+
+    expect(executor.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns NotSupported when selector yields nothing', async () => {
     const executor = capturingExecutor([q1]);
 
     const stage = new Stage({
@@ -192,13 +240,8 @@ describe('Stage', () => {
     });
 
     const result = await stage.run(dataset, distribution);
-    expect(result).not.toBeInstanceOf(NotSupported);
-
-    expect(executor.execute).toHaveBeenCalledWith(
-      dataset,
-      distribution,
-      undefined
-    );
+    expect(result).toBeInstanceOf(NotSupported);
+    expect(executor.execute).not.toHaveBeenCalled();
   });
 
   it('works without a selector (backward compatibility)', async () => {
@@ -214,11 +257,7 @@ describe('Stage', () => {
 
     const quads = await collectQuads(result as AsyncIterable<Quad>);
     expect(quads).toEqual([q1, q2]);
-    expect(executor.execute).toHaveBeenCalledWith(
-      dataset,
-      distribution,
-      undefined
-    );
+    expect(executor.execute).toHaveBeenCalledWith(dataset, distribution);
   });
 
   it('forwards distribution to executors', async () => {
@@ -237,8 +276,7 @@ describe('Stage', () => {
 
     expect(executor.execute).toHaveBeenCalledWith(
       dataset,
-      namedGraphDistribution,
-      undefined
+      namedGraphDistribution
     );
   });
 });

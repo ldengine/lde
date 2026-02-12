@@ -1,3 +1,4 @@
+export * from './batch.js';
 export * from './pipeline.js';
 export * from './selector.js';
 export * from './stage.js';
