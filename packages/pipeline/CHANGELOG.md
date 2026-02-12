@@ -1,3 +1,13 @@
+## 0.6.23 (2026-02-12)
+
+### 🚀 Features
+
+- **pipeline:** support authentication in SparqlUpdateWriter ([#91](https://github.com/ldengine/lde/pull/91))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.22 (2026-02-12)
 
 This was a version bump only for @lde/pipeline to align it with other projects, there were no code changes.
