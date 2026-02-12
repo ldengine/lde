@@ -4,7 +4,6 @@ CONSTRUCT {
     ?dataset a void:Dataset ;
         void:properties ?count .
 }
-#namedGraph#
 WHERE {
     SELECT (COUNT(DISTINCT ?p) as ?count) {
         #subjectFilter#

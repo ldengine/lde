@@ -1,202 +1,136 @@
-import { VocabularyAnalyzer, Success, NotSupported } from '../src/index.js';
-import type { Analyzer } from '../src/index.js';
-import { Dataset, Distribution } from '@lde/dataset';
-import { describe, it, expect, vi } from 'vitest';
-import { DataFactory, Store } from 'n3';
+import { withVocabularies } from '../src/index.js';
+import { describe, it, expect } from 'vitest';
+import { DataFactory } from 'n3';
+import type { Quad } from '@rdfjs/types';
 
 const { namedNode, quad } = DataFactory;
 
 const VOID = 'http://rdfs.org/ns/void#';
 
-describe('VocabularyAnalyzer', () => {
-  function createDataset(sparqlEndpoint?: string): Dataset {
-    const distributions: Distribution[] = [];
-    if (sparqlEndpoint) {
-      distributions.push(Distribution.sparql(new URL(sparqlEndpoint)));
-    }
-    return new Dataset({
-      iri: new URL('http://example.com/dataset/1'),
-      distributions,
-    });
+async function* toAsync(...quads: Quad[]): AsyncIterable<Quad> {
+  yield* quads;
+}
+
+async function collect(stream: AsyncIterable<Quad>): Promise<Quad[]> {
+  const result: Quad[] = [];
+  for await (const q of stream) {
+    result.push(q);
   }
+  return result;
+}
 
-  function createMockAnalyzer(result: Success | NotSupported): Analyzer {
-    return {
-      name: 'inner',
-      execute: vi.fn().mockResolvedValue(result),
-    };
-  }
+describe('withVocabularies', () => {
+  const datasetIri = 'http://example.com/dataset/1';
 
-  describe('execute', () => {
-    it('passes through NotSupported from inner analyzer', async () => {
-      const inner = createMockAnalyzer(new NotSupported('not supported'));
-      const analyzer = new VocabularyAnalyzer(inner);
+  it('passes through all input quads', async () => {
+    const input = quad(
+      namedNode(datasetIri),
+      namedNode(`${VOID}triples`),
+      namedNode('http://example.com/100')
+    );
 
-      const result = await analyzer.execute(createDataset());
+    const result = await collect(withVocabularies(toAsync(input), datasetIri));
 
-      expect(result).toBeInstanceOf(NotSupported);
-    });
-
-    it('adds void:vocabulary for schema.org properties', async () => {
-      const store = new Store();
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://schema.org/name')
-        )
-      );
-
-      const inner = createMockAnalyzer(new Success(store));
-      const analyzer = new VocabularyAnalyzer(inner);
-
-      const result = await analyzer.execute(
-        createDataset('http://example.com/sparql')
-      );
-
-      expect(result).toBeInstanceOf(Success);
-      const data = (result as Success).data;
-      const vocabQuads = [...data].filter(
-        (q) => q.predicate.value === `${VOID}vocabulary`
-      );
-      expect(vocabQuads).toHaveLength(1);
-      expect(vocabQuads[0].object.value).toBe('http://schema.org/');
-    });
-
-    it('adds void:vocabulary for https schema.org properties', async () => {
-      const store = new Store();
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('https://schema.org/name')
-        )
-      );
-
-      const inner = createMockAnalyzer(new Success(store));
-      const analyzer = new VocabularyAnalyzer(inner);
-
-      const result = await analyzer.execute(
-        createDataset('http://example.com/sparql')
-      );
-
-      expect(result).toBeInstanceOf(Success);
-      const data = (result as Success).data;
-      const vocabQuads = [...data].filter(
-        (q) => q.predicate.value === `${VOID}vocabulary`
-      );
-      expect(vocabQuads).toHaveLength(1);
-      expect(vocabQuads[0].object.value).toBe('https://schema.org/');
-    });
-
-    it('adds void:vocabulary for Dublin Core properties', async () => {
-      const store = new Store();
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://purl.org/dc/terms/title')
-        )
-      );
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://purl.org/dc/elements/1.1/creator')
-        )
-      );
-
-      const inner = createMockAnalyzer(new Success(store));
-      const analyzer = new VocabularyAnalyzer(inner);
-
-      const result = await analyzer.execute(
-        createDataset('http://example.com/sparql')
-      );
-
-      expect(result).toBeInstanceOf(Success);
-      const data = (result as Success).data;
-      const vocabQuads = [...data].filter(
-        (q) => q.predicate.value === `${VOID}vocabulary`
-      );
-      expect(vocabQuads).toHaveLength(2);
-      const vocabUris = vocabQuads.map((q) => q.object.value).sort();
-      expect(vocabUris).toEqual([
-        'http://purl.org/dc/elements/1.1/',
-        'http://purl.org/dc/terms/',
-      ]);
-    });
-
-    it('does not add duplicates for same vocabulary', async () => {
-      const store = new Store();
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://schema.org/name')
-        )
-      );
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://schema.org/description')
-        )
-      );
-
-      const inner = createMockAnalyzer(new Success(store));
-      const analyzer = new VocabularyAnalyzer(inner);
-
-      const result = await analyzer.execute(
-        createDataset('http://example.com/sparql')
-      );
-
-      expect(result).toBeInstanceOf(Success);
-      const data = (result as Success).data;
-      const vocabQuads = [...data].filter(
-        (q) => q.predicate.value === `${VOID}vocabulary`
-      );
-      expect(vocabQuads).toHaveLength(1);
-    });
-
-    it('does not add vocabulary for unknown prefixes', async () => {
-      const store = new Store();
-      store.addQuad(
-        quad(
-          namedNode('http://example.com/dataset/1'),
-          namedNode(`${VOID}property`),
-          namedNode('http://example.com/custom/property')
-        )
-      );
-
-      const inner = createMockAnalyzer(new Success(store));
-      const analyzer = new VocabularyAnalyzer(inner);
-
-      const result = await analyzer.execute(
-        createDataset('http://example.com/sparql')
-      );
-
-      expect(result).toBeInstanceOf(Success);
-      const data = (result as Success).data;
-      const vocabQuads = [...data].filter(
-        (q) => q.predicate.value === `${VOID}vocabulary`
-      );
-      expect(vocabQuads).toHaveLength(0);
-    });
+    expect(result[0]).toBe(input);
   });
 
-  describe('finish', () => {
-    it('delegates finish to inner analyzer', async () => {
-      const finish = vi.fn();
-      const inner: Analyzer = {
-        name: 'inner',
-        execute: vi.fn().mockResolvedValue(new Success(new Store())),
-        finish,
-      };
-      const analyzer = new VocabularyAnalyzer(inner);
+  it('adds void:vocabulary for schema.org properties', async () => {
+    const input = quad(
+      namedNode(datasetIri),
+      namedNode(`${VOID}property`),
+      namedNode('http://schema.org/name')
+    );
 
-      await analyzer.finish();
+    const result = await collect(withVocabularies(toAsync(input), datasetIri));
 
-      expect(finish).toHaveBeenCalled();
-    });
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`
+    );
+    expect(vocabQuads).toHaveLength(1);
+    expect(vocabQuads[0].object.value).toBe('http://schema.org/');
+  });
+
+  it('adds void:vocabulary for https schema.org properties', async () => {
+    const input = quad(
+      namedNode(datasetIri),
+      namedNode(`${VOID}property`),
+      namedNode('https://schema.org/name')
+    );
+
+    const result = await collect(withVocabularies(toAsync(input), datasetIri));
+
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`
+    );
+    expect(vocabQuads).toHaveLength(1);
+    expect(vocabQuads[0].object.value).toBe('https://schema.org/');
+  });
+
+  it('adds void:vocabulary for Dublin Core properties', async () => {
+    const input = [
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://purl.org/dc/terms/title')
+      ),
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://purl.org/dc/elements/1.1/creator')
+      ),
+    ];
+
+    const result = await collect(
+      withVocabularies(toAsync(...input), datasetIri)
+    );
+
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`
+    );
+    expect(vocabQuads).toHaveLength(2);
+    const vocabUris = vocabQuads.map((q) => q.object.value).sort();
+    expect(vocabUris).toEqual([
+      'http://purl.org/dc/elements/1.1/',
+      'http://purl.org/dc/terms/',
+    ]);
+  });
+
+  it('does not add duplicates for same vocabulary', async () => {
+    const input = [
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://schema.org/name')
+      ),
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://schema.org/description')
+      ),
+    ];
+
+    const result = await collect(
+      withVocabularies(toAsync(...input), datasetIri)
+    );
+
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`
+    );
+    expect(vocabQuads).toHaveLength(1);
+  });
+
+  it('does not add vocabulary for unknown prefixes', async () => {
+    const input = quad(
+      namedNode(datasetIri),
+      namedNode(`${VOID}property`),
+      namedNode('http://example.com/custom/property')
+    );
+
+    const result = await collect(withVocabularies(toAsync(input), datasetIri));
+
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`
+    );
+    expect(vocabQuads).toHaveLength(0);
   });
 });

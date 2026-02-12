@@ -5,7 +5,6 @@ CONSTRUCT {
     ?dataset a void:Dataset ;
         void-ext:distinctIRIReferenceObjects ?distinctIRIReferenceObjects .
 }
-#namedGraph#
 WHERE {
     SELECT (COUNT(DISTINCT ?o) AS ?distinctIRIReferenceObjects) {
         #subjectFilter#

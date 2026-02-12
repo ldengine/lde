@@ -3,7 +3,6 @@ PREFIX void: <http://rdfs.org/ns/void#>
 CONSTRUCT {
     ?propertyPartition void:distinctObjects ?objects .
 }
-#namedGraph#
 WHERE {
     # Object counts only. Subject counts in class-properties-subjects.rq.
     {
