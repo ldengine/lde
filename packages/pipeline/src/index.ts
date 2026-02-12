@@ -8,4 +8,4 @@ export * from './builder.js';
 export * from './config.js';
 export * from './sparql/index.js';
 export * from './distribution/index.js';
-// first test
+export * from './writer/index.js';

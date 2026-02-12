@@ -10,13 +10,37 @@ Framework for building RDF data processing pipelines with SPARQL.
 - **SparqlConstructExecutor** — streaming SPARQL CONSTRUCT with template substitution and variable bindings
 - **Distribution analysis** — probe and analyze dataset distributions
 
-## Subpath exports
+## Components
 
-| Export                   | Description                                                   |
-| ------------------------ | ------------------------------------------------------------- |
-| `@lde/pipeline`          | Steps, pipeline, builder, config, SPARQL                      |
-| `@lde/pipeline/analyzer` | Analyzer contracts (`Analyzer`, `BaseAnalyzer`, result types) |
-| `@lde/pipeline/writer`   | Write RDF data to files or SPARQL endpoints                   |
+A **Pipeline** consists of:
+
+- one **[Dataset Selector](#dataset-selector)**
+- one **[Distribution Resolver](#distribution-resolver)** that resolves the input dataset to a usable SPARQL distribution
+- one or more **Stages**, each consisting of:
+  - an optional **Selector** that filters resources
+  - one or more **Executors** that generate triples for each selected resource
+
+### Dataset Selector
+
+Selects datasets, either manually by the user or dynamically by querying a DCAT Dataset Registry.
+
+### Distribution Resolver
+
+Resolves each selected dataset to a usable distribution.
+
+#### SPARQL Distribution Resolver
+
+If a working SPARQL endpoint is already available for the dataset, that is used.
+If not, and a valid RDF datadump is available, that is imported to a local SPARQL server.
+
+#### Other Distribution Resolvers
+
+### Bindings Selector
+
+Selects resources from the dataset and to fan out queries per result in the executor.
+Bindings are free, and replaced with `VALUES { ... }`.
+
+### Executor
 
 ## Usage
 
