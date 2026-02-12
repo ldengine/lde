@@ -51,24 +51,20 @@ describe('SparqlUpdateWriter', () => {
         )
       );
 
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch).toHaveBeenCalledWith(
-        endpoint.toString(),
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/sparql-update' },
-        })
-      );
+      expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      const body = mockFetch.mock.calls[0]![1]!.body as string;
-      expect(body).toContain('INSERT DATA');
-      expect(body).toContain('GRAPH <http://example.com/dataset/1>');
-      expect(body).toContain('<http://example.com/subject>');
-      expect(body).toContain('<http://example.com/predicate>');
-      expect(body).toContain('"object"');
+      const clearBody = mockFetch.mock.calls[0]![1]!.body as string;
+      expect(clearBody).toBe('CLEAR GRAPH <http://example.com/dataset/1>');
+
+      const insertBody = mockFetch.mock.calls[1]![1]!.body as string;
+      expect(insertBody).toContain('INSERT DATA');
+      expect(insertBody).toContain('GRAPH <http://example.com/dataset/1>');
+      expect(insertBody).toContain('<http://example.com/subject>');
+      expect(insertBody).toContain('<http://example.com/predicate>');
+      expect(insertBody).toContain('"object"');
     });
 
-    it('does not make request for empty data', async () => {
+    it('clears graph even for empty data', async () => {
       const writer = new SparqlUpdateWriter({
         endpoint,
         fetch: mockFetch as typeof globalThis.fetch,
@@ -78,7 +74,9 @@ describe('SparqlUpdateWriter', () => {
 
       await writer.write(dataset, quadsOf());
 
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const body = mockFetch.mock.calls[0]![1]!.body as string;
+      expect(body).toBe('CLEAR GRAPH <http://example.com/dataset/1>');
     });
 
     it('batches large datasets', async () => {
@@ -111,8 +109,17 @@ describe('SparqlUpdateWriter', () => {
         )
       );
 
-      // Should make 2 requests: 2 quads + 1 quad.
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      // 1 clear + 2 insert batches (2 quads + 1 quad).
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      const clearBody = mockFetch.mock.calls[0]![1]!.body as string;
+      expect(clearBody).toContain('CLEAR GRAPH');
+
+      const insertBody1 = mockFetch.mock.calls[1]![1]!.body as string;
+      expect(insertBody1).toContain('INSERT DATA');
+
+      const insertBody2 = mockFetch.mock.calls[2]![1]!.body as string;
+      expect(insertBody2).toContain('INSERT DATA');
     });
 
     it('throws on HTTP error', async () => {

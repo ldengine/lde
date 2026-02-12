@@ -1,5 +1,6 @@
 import { Dataset } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
+import { batch } from '../batch.js';
 import { Writer } from './writer.js';
 import { serializeQuads } from './serialize.js';
 
@@ -24,7 +25,8 @@ export interface SparqlWriterOptions {
 /**
  * Writes RDF data to a SPARQL endpoint using SPARQL UPDATE INSERT DATA queries.
  *
- * Each dataset's data is written to a named graph based on the dataset IRI.
+ * Clears the named graph before writing, then streams quads in batches
+ * to avoid accumulating the entire dataset in memory.
  */
 export class SparqlUpdateWriter implements Writer {
   private readonly endpoint: URL;
@@ -39,26 +41,25 @@ export class SparqlUpdateWriter implements Writer {
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
     const graphUri = dataset.iri.toString();
-    const collected: Quad[] = [];
-    for await (const quad of quads) {
-      collected.push(quad);
-    }
+    await this.clearGraph(graphUri);
 
-    if (collected.length === 0) {
-      return;
+    for await (const chunk of batch(quads, this.batchSize)) {
+      await this.insertBatch(graphUri, chunk);
     }
+  }
 
-    // Process in batches to avoid hitting endpoint size limits.
-    for (let i = 0; i < collected.length; i += this.batchSize) {
-      const batch = collected.slice(i, i + this.batchSize);
-      await this.insertBatch(graphUri, batch);
-    }
+  private async clearGraph(graphUri: string): Promise<void> {
+    await this.executeUpdate(`CLEAR GRAPH <${graphUri}>`);
   }
 
   private async insertBatch(graphUri: string, quads: Quad[]): Promise<void> {
     const turtleData = await serializeQuads(quads, 'N-Triples');
-    const query = `INSERT DATA { GRAPH <${graphUri}> { ${turtleData} } }`;
+    await this.executeUpdate(
+      `INSERT DATA { GRAPH <${graphUri}> { ${turtleData} } }`
+    );
+  }
 
+  private async executeUpdate(query: string): Promise<void> {
     const response = await this.fetch(this.endpoint.toString(), {
       method: 'POST',
       headers: {
