@@ -2,6 +2,9 @@ import {
   SparqlDistributionResolver,
   ResolvedDistribution,
   NoDistributionAvailable,
+  SparqlProbeResult,
+  DataDumpProbeResult,
+  NetworkError,
 } from '../../src/distribution/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import { ImportSuccessful, ImportFailed } from '@lde/sparql-importer';
@@ -36,7 +39,10 @@ describe('SparqlDistributionResolver', () => {
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(ResolvedDistribution);
-    expect((result as ResolvedDistribution).distribution).toBe(distribution);
+    const resolved = result as ResolvedDistribution;
+    expect(resolved.distribution).toBe(distribution);
+    expect(resolved.probeResults).toHaveLength(1);
+    expect(resolved.probeResults[0]).toBeInstanceOf(SparqlProbeResult);
   });
 
   it('uses importer when no SPARQL endpoint is available', async () => {
@@ -79,6 +85,8 @@ describe('SparqlDistributionResolver', () => {
     expect(resolved.distribution.accessUrl.toString()).toBe(
       'http://localhost:7878/sparql'
     );
+    expect(resolved.probeResults).toHaveLength(1);
+    expect(resolved.probeResults[0]).toBeInstanceOf(DataDumpProbeResult);
   });
 
   it('returns NoDistributionAvailable when importer fails', async () => {
@@ -119,6 +127,11 @@ describe('SparqlDistributionResolver', () => {
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
+    const noDistribution = result as NoDistributionAvailable;
+    expect(noDistribution.probeResults).toHaveLength(1);
+    expect(noDistribution.probeResults[0]).toBeInstanceOf(DataDumpProbeResult);
+    expect(noDistribution.importFailed).toBeInstanceOf(ImportFailed);
+    expect(noDistribution.importFailed!.error).toBe('Parse error');
   });
 
   it('returns NoDistributionAvailable when no endpoint and no importer', async () => {
@@ -143,6 +156,10 @@ describe('SparqlDistributionResolver', () => {
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
+    const noDistribution = result as NoDistributionAvailable;
+    expect(noDistribution.probeResults).toHaveLength(1);
+    expect(noDistribution.probeResults[0]).toBeInstanceOf(DataDumpProbeResult);
+    expect(noDistribution.importFailed).toBeUndefined();
   });
 
   it('returns NoDistributionAvailable on network error during probe', async () => {
@@ -159,6 +176,9 @@ describe('SparqlDistributionResolver', () => {
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
+    const noDistribution = result as NoDistributionAvailable;
+    expect(noDistribution.probeResults).toHaveLength(1);
+    expect(noDistribution.probeResults[0]).toBeInstanceOf(NetworkError);
   });
 
   it('does not mutate dataset.distributions', async () => {
