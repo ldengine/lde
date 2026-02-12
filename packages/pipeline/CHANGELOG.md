@@ -1,3 +1,13 @@
+## 0.6.21 (2026-02-12)
+
+### 🚀 Features
+
+- **pipeline:** add CLEAR GRAPH and on-the-fly batching to SparqlUpdateWriter ([#89](https://github.com/ldengine/lde/pull/89))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.20 (2026-02-12)
 
 ### 🚀 Features
