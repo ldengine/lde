@@ -1,103 +1,26 @@
-import { Dataset } from '@lde/dataset';
-import {
-  SparqlConstructExecutor,
-  substituteQueryTemplates,
-  collect,
-  readQueryFile,
-} from '@lde/pipeline';
-import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
+import { Distribution } from '@lde/dataset';
+import { Stage, SparqlConstructExecutor, readQueryFile } from '@lde/pipeline';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  BaseAnalyzer,
-  Success,
-  Failure,
-  NotSupported,
-} from '@lde/pipeline/analyzer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export interface SparqlQueryAnalyzerOptions {
-  /**
-   * Timeout for SPARQL queries in milliseconds.
-   * @default 300000 (5 minutes)
-   */
-  timeout?: number;
-  /**
-   * Custom SparqlEndpointFetcher instance.
-   */
-  fetcher?: SparqlEndpointFetcher;
-}
-
 /**
- * Analyzer that executes a SPARQL CONSTRUCT query against a dataset's SPARQL endpoint.
+ * Create a Stage that executes a SPARQL CONSTRUCT query from the queries directory.
  *
- * Supports legacy template substitution:
- * - `#subjectFilter#` — replaced with the dataset's subject filter (if any)
- * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
- * - `?dataset` — replaced with the dataset IRI
- *
- * This class wraps the SparqlConstructExecutor from @lde/pipeline.
+ * Pre-processes `#subjectFilter#` before the query is parsed as SPARQL;
+ * `?dataset` and `FROM <graph>` are handled at the AST level by the executor.
  */
-export class SparqlQueryAnalyzer extends BaseAnalyzer {
-  private readonly query: string;
-  private readonly fetcher: SparqlEndpointFetcher;
+export async function createQueryStage(
+  filename: string,
+  distribution: Distribution
+): Promise<Stage> {
+  const rawQuery = await readQueryFile(resolve(__dirname, 'queries', filename));
 
-  constructor(
-    public readonly name: string,
-    query: string,
-    options?: SparqlQueryAnalyzerOptions
-  ) {
-    super();
-    this.query = query;
-    this.fetcher =
-      options?.fetcher ??
-      new SparqlEndpointFetcher({
-        timeout: options?.timeout ?? 300_000,
-      });
-  }
+  const subjectFilter = distribution.subjectFilter ?? '';
+  const query = rawQuery.replace('#subjectFilter#', subjectFilter);
 
-  /**
-   * Create an analyzer from a query file in the queries directory.
-   *
-   * @param filename Query filename (e.g., 'triples.rq')
-   * @param options Optional analyzer options
-   */
-  public static async fromFile(
-    filename: string,
-    options?: SparqlQueryAnalyzerOptions
-  ): Promise<SparqlQueryAnalyzer> {
-    const query = await readQueryFile(resolve(__dirname, 'queries', filename));
-    return new SparqlQueryAnalyzer(filename, query, options);
-  }
+  const executor = new SparqlConstructExecutor({ query });
 
-  public async execute(
-    dataset: Dataset
-  ): Promise<Success | Failure | NotSupported> {
-    const sparqlDistribution = dataset.getSparqlDistribution();
-    if (sparqlDistribution === null) {
-      return new NotSupported('No SPARQL distribution available');
-    }
-
-    try {
-      const substituted = substituteQueryTemplates(
-        this.query,
-        sparqlDistribution,
-        dataset
-      );
-      const executor = new SparqlConstructExecutor({
-        query: substituted,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fetcher: this.fetcher as any,
-      });
-      const stream = await executor.execute(dataset, sparqlDistribution);
-      const store = await collect(stream);
-      return new Success(store);
-    } catch (e) {
-      return new Failure(
-        sparqlDistribution.accessUrl ?? new URL('unknown://'),
-        e instanceof Error ? e.message : undefined
-      );
-    }
-  }
+  return new Stage({ name: filename, executors: executor });
 }

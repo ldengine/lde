@@ -4,7 +4,6 @@ CONSTRUCT {
   ?dataset void-ext:datatypes ?count ;
     void-ext:datatype ?datatype .
 }
-#namedGraph#
 WHERE {
   {
     # Count distinct datatypes

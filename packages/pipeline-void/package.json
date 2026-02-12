@@ -27,7 +27,6 @@
     "@lde/dataset": "0.6.8",
     "@lde/pipeline": "0.6.15",
     "@rdfjs/types": "^2.0.1",
-    "fetch-sparql-endpoint": "^6.0.0",
     "n3": "^1.17.0",
     "tslib": "^2.3.0"
   }

@@ -1,12 +1,5 @@
-import { Dataset } from '@lde/dataset';
-import type { DatasetCore } from '@rdfjs/types';
-import { DataFactory, Store } from 'n3';
-import {
-  type Analyzer,
-  Success,
-  type Failure,
-  type NotSupported,
-} from '@lde/pipeline/analyzer';
+import type { Quad } from '@rdfjs/types';
+import { DataFactory } from 'n3';
 
 const { namedNode, quad } = DataFactory;
 
@@ -40,58 +33,35 @@ const vocabularyPrefixes: ReadonlyMap<string, string> = new Map([
 ]);
 
 /**
- * Decorator analyzer that enriches results with `void:vocabulary` triples.
+ * Streaming transformer that passes through all quads and appends
+ * `void:vocabulary` triples for detected vocabulary prefixes.
  *
- * Wraps another analyzer, runs it, then inspects `void:property` triples
- * to detect known vocabulary prefixes and add corresponding `void:vocabulary`
- * triples to the result.
+ * Inspects quads with predicate `void:property` to detect known vocabulary
+ * namespace prefixes, then yields the corresponding `void:vocabulary` quads
+ * after all input quads have been consumed.
  */
-export class VocabularyAnalyzer implements Analyzer {
-  public readonly name: string;
-
-  constructor(private readonly inner: Analyzer) {
-    this.name = inner.name;
-  }
-
-  public async execute(
-    dataset: Dataset
-  ): Promise<Success | Failure | NotSupported> {
-    const result = await this.inner.execute(dataset);
-    if (!(result instanceof Success)) {
-      return result;
-    }
-
-    const enriched = addVocabularyTriples(result.data, dataset.iri.toString());
-    return new Success(enriched);
-  }
-
-  public async finish(): Promise<void> {
-    await this.inner.finish?.();
-  }
-}
-
-function addVocabularyTriples(
-  data: DatasetCore,
+export async function* withVocabularies(
+  quads: AsyncIterable<Quad>,
   datasetIri: string
-): DatasetCore {
-  const store = new Store([...data]);
-  const datasetNode = namedNode(datasetIri);
-
-  // Collect unique vocabulary URIs from void:property triples.
+): AsyncIterable<Quad> {
   const detectedVocabularies = new Set<string>();
-  for (const q of store.match(null, voidProperty, null)) {
-    const propertyUri = q.object.value;
-    for (const [prefix, vocabUri] of vocabularyPrefixes) {
-      if (propertyUri.startsWith(prefix)) {
-        detectedVocabularies.add(vocabUri);
-        break;
+
+  for await (const q of quads) {
+    yield q;
+
+    if (q.predicate.equals(voidProperty)) {
+      const propertyUri = q.object.value;
+      for (const [prefix, vocabUri] of vocabularyPrefixes) {
+        if (propertyUri.startsWith(prefix)) {
+          detectedVocabularies.add(vocabUri);
+          break;
+        }
       }
     }
   }
 
+  const datasetNode = namedNode(datasetIri);
   for (const vocabUri of detectedVocabularies) {
-    store.addQuad(quad(datasetNode, voidVocabulary, namedNode(vocabUri)));
+    yield quad(datasetNode, voidVocabulary, namedNode(vocabUri));
   }
-
-  return store;
 }

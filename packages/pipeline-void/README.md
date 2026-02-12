@@ -2,19 +2,17 @@
 
 VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets.
 
-## Analyzers
+## Query stages
 
-- **SparqlQueryAnalyzer** — Execute SPARQL CONSTRUCT queries with template substitution
+- `createQueryStage(filename, distribution)` — Create a `Stage` from a SPARQL CONSTRUCT query file
+- `createDatatypeStage(distribution)` — Per-class datatype partitions
+- `createLanguageStage(distribution)` — Per-class language tags
+- `createObjectClassStage(distribution)` — Per-class object class partitions
 
-## Per-class stages
+## Streaming transformers
 
-Factory functions that create `Stage` instances for per-class analysis.
-Each stage first selects classes from the endpoint, then runs a CONSTRUCT query
-with `?class` bound via VALUES:
-
-- `createDatatypeStage` — per-class datatype partitions
-- `createLanguageStage` — per-class language tags
-- `createObjectClassStage` — per-class object class partitions
+- `withVocabularies(quads, datasetIri)` — Detect and append `void:vocabulary` triples
+- `withProvenance(quads, iri, startedAt, endedAt)` — Append PROV-O provenance metadata
 
 ## SPARQL Queries
 
@@ -43,23 +41,30 @@ Generic VOiD analysis queries included:
 
 ```typescript
 import {
-  SparqlQueryAnalyzer,
-  Success,
+  createQueryStage,
   createDatatypeStage,
+  withVocabularies,
+  withProvenance,
 } from '@lde/pipeline-void';
 import { Distribution } from '@lde/dataset';
 
-// Simple CONSTRUCT query analyzer
-const analyzer = await SparqlQueryAnalyzer.fromFile('triples.rq');
-const result = await analyzer.execute(dataset);
-if (result instanceof Success) {
-  // result.data contains the VOiD statistics as RDF
-}
+const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
+
+// Simple CONSTRUCT query stage
+const stage = await createQueryStage('triples.rq', distribution);
+const quads = await stage.run(dataset, distribution);
 
 // Per-class stage (streaming)
-const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
-const stage = await createDatatypeStage(distribution);
-const quads = await stage.run(dataset, distribution);
+const datatypeStage = await createDatatypeStage(distribution);
+const datatypeQuads = await datatypeStage.run(dataset, distribution);
+
+// Enrich with vocabulary detection and provenance
+const enriched = withProvenance(
+  withVocabularies(quads, dataset.iri.toString()),
+  dataset.iri.toString(),
+  startedAt,
+  endedAt
+);
 ```
 
 ## Validation

@@ -6,7 +6,6 @@ CONSTRUCT {
     ?subset void:uriSpace ?uriSpace ;
         void:entities ?count .
 }
-#namedGraph#
 WHERE {
     {
         # Pre-group distinct subjects before computing namespace to avoid regex on every triple.

@@ -1,5 +1,5 @@
-import type { DatasetCore } from '@rdfjs/types';
-import { DataFactory, Store } from 'n3';
+import type { Quad } from '@rdfjs/types';
+import { DataFactory } from 'n3';
 
 const { namedNode, literal, blankNode, quad } = DataFactory;
 
@@ -16,47 +16,40 @@ const PROV_ENDED_AT_TIME = namedNode('http://www.w3.org/ns/prov#endedAtTime');
 const XSD_DATE_TIME = namedNode('http://www.w3.org/2001/XMLSchema#dateTime');
 
 /**
- * Add PROV-O provenance metadata to a dataset.
+ * Streaming transformer that passes through all quads and appends
+ * PROV-O provenance metadata.
  *
- * Adds:
+ * Appended quads:
  * - `<iri> a prov:Entity`
  * - `<iri> prov:wasGeneratedBy _:activity`
  * - `_:activity a prov:Activity`
  * - `_:activity prov:startedAtTime "..."^^xsd:dateTime`
  * - `_:activity prov:endedAtTime "..."^^xsd:dateTime`
- *
- * @param data The dataset to add provenance to
- * @param iri The IRI of the entity
- * @param startedAt Start time of the activity
- * @param endedAt End time of the activity
  */
-export function withProvenance(
-  data: DatasetCore,
+export async function* withProvenance(
+  quads: AsyncIterable<Quad>,
   iri: string,
   startedAt: Date,
   endedAt: Date
-): DatasetCore {
-  const store = new Store([...data]);
+): AsyncIterable<Quad> {
+  for await (const q of quads) {
+    yield q;
+  }
+
   const subject = namedNode(iri);
   const activity = blankNode();
 
-  store.addQuad(quad(subject, RDF_TYPE, PROV_ENTITY));
-  store.addQuad(quad(subject, PROV_WAS_GENERATED_BY, activity));
-  store.addQuad(quad(activity, RDF_TYPE, PROV_ACTIVITY));
-  store.addQuad(
-    quad(
-      activity,
-      PROV_STARTED_AT_TIME,
-      literal(startedAt.toISOString(), XSD_DATE_TIME)
-    )
+  yield quad(subject, RDF_TYPE, PROV_ENTITY);
+  yield quad(subject, PROV_WAS_GENERATED_BY, activity);
+  yield quad(activity, RDF_TYPE, PROV_ACTIVITY);
+  yield quad(
+    activity,
+    PROV_STARTED_AT_TIME,
+    literal(startedAt.toISOString(), XSD_DATE_TIME)
   );
-  store.addQuad(
-    quad(
-      activity,
-      PROV_ENDED_AT_TIME,
-      literal(endedAt.toISOString(), XSD_DATE_TIME)
-    )
+  yield quad(
+    activity,
+    PROV_ENDED_AT_TIME,
+    literal(endedAt.toISOString(), XSD_DATE_TIME)
   );
-
-  return store;
 }

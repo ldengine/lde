@@ -5,7 +5,6 @@ CONSTRUCT {
     ?dataset a void:Dataset ;
         void-ext:distinctLiterals ?distinctLiterals .
 }
-#namedGraph#
 WHERE {
     SELECT (COUNT(DISTINCT ?o) AS ?distinctLiterals) {
         #subjectFilter#

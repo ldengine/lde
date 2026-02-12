@@ -6,7 +6,6 @@ CONSTRUCT {
         void:objectsTarget ?prefix ;
         void:triples ?count .
 }
-#namedGraph#
 WHERE {
     {
         SELECT ?prefix (SUM(?ocount) AS ?count) {
