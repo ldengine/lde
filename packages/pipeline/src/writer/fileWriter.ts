@@ -1,5 +1,5 @@
 import { Dataset } from '@lde/dataset';
-import type { DatasetCore } from '@rdfjs/types';
+import type { Quad } from '@rdfjs/types';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import filenamifyUrl from 'filenamify-url';
@@ -38,10 +38,13 @@ export class FileWriter implements Writer {
     this.format = options.format ?? 'turtle';
   }
 
-  async write(dataset: Dataset, data: DatasetCore): Promise<void> {
-    const quads = [...data];
+  async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
+    const collected: Quad[] = [];
+    for await (const quad of quads) {
+      collected.push(quad);
+    }
 
-    if (quads.length === 0) {
+    if (collected.length === 0) {
       return;
     }
 
@@ -51,7 +54,7 @@ export class FileWriter implements Writer {
     // Ensure the output directory exists.
     await mkdir(dirname(filePath), { recursive: true });
 
-    const content = await serializeQuads(quads, formatMap[this.format]);
+    const content = await serializeQuads(collected, formatMap[this.format]);
     await writeFile(filePath, content, 'utf-8');
   }
 

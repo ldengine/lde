@@ -3,6 +3,7 @@ import type { Quad } from '@rdfjs/types';
 import type { Executor, VariableBindings } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
 import { batch } from './batch.js';
+import type { Writer } from './writer/writer.js';
 
 export interface StageOptions {
   name: string;
@@ -29,14 +30,26 @@ export class Stage {
 
   async run(
     dataset: Dataset,
-    distribution: Distribution
-  ): Promise<AsyncIterable<Quad> | NotSupported> {
-    if (!this.selector) {
-      return this.executeAll(dataset, distribution);
+    distribution: Distribution,
+    writer: Writer
+  ): Promise<NotSupported | void> {
+    const streams = this.selector
+      ? await this.executeWithSelector(dataset, distribution)
+      : await this.executeAll(dataset, distribution);
+
+    if (streams instanceof NotSupported) {
+      return streams;
     }
 
+    await writer.write(dataset, mergeStreams(streams));
+  }
+
+  private async executeWithSelector(
+    dataset: Dataset,
+    distribution: Distribution
+  ): Promise<AsyncIterable<Quad>[] | NotSupported> {
     const streams: AsyncIterable<Quad>[] = [];
-    for await (const bindings of batch(this.selector, this.batchSize)) {
+    for await (const bindings of batch(this.selector!, this.batchSize)) {
       for (const executor of this.executors) {
         const result = await executor.execute(dataset, distribution, {
           bindings,
@@ -51,13 +64,13 @@ export class Stage {
       return new NotSupported('All executors returned NotSupported');
     }
 
-    return mergeStreams(streams);
+    return streams;
   }
 
   private async executeAll(
     dataset: Dataset,
     distribution: Distribution
-  ): Promise<AsyncIterable<Quad> | NotSupported> {
+  ): Promise<AsyncIterable<Quad>[] | NotSupported> {
     const streams: AsyncIterable<Quad>[] = [];
     for (const executor of this.executors) {
       const result = await executor.execute(dataset, distribution);
@@ -70,7 +83,7 @@ export class Stage {
       return new NotSupported('All executors returned NotSupported');
     }
 
-    return mergeStreams(streams);
+    return streams;
   }
 }
 
