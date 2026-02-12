@@ -13,18 +13,6 @@
       "import": "./dist/index.js",
       "development": "./src/index.ts",
       "default": "./dist/index.js"
-    },
-    "./writer": {
-      "types": "./dist/writer/index.d.ts",
-      "import": "./dist/writer/index.js",
-      "development": "./src/writer/index.ts",
-      "default": "./dist/writer/index.js"
-    },
-    "./analyzer": {
-      "types": "./dist/analyzer.d.ts",
-      "import": "./dist/analyzer.js",
-      "development": "./src/analyzer.ts",
-      "default": "./dist/analyzer.js"
     }
   },
   "main": "./dist/index.js",
