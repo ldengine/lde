@@ -1,3 +1,17 @@
+## 0.2.22 (2026-02-12)
+
+### 🚀 Features
+
+- **pipeline:** integrate Writer into Stage.run() ([#87](https://github.com/ldengine/lde/pull/87))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.6.20
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.21 (2026-02-12)
 
 ### 🧱 Updated Dependencies
