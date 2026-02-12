@@ -38,6 +38,11 @@ export interface WriterConfig {
   type: 'file' | 'sparql';
   outputDir?: string;
   endpoint?: URL;
+  /**
+   * Value for the Authorization header sent with SPARQL UPDATE requests, e.g.
+   * `"Basic dXNlcjpwYXNz"`, `"Bearer my-token"`, or `"GDB eyJ…"`.
+   */
+  auth?: string;
 }
 
 /**
@@ -173,9 +178,13 @@ export function fileWriter(options: { outputDir: string }): WriterConfig {
 /**
  * Create a SPARQL UPDATE writer configuration.
  */
-export function sparqlWriter(options: { endpoint: URL }): WriterConfig {
+export function sparqlWriter(options: {
+  endpoint: URL;
+  auth?: string;
+}): WriterConfig {
   return {
     type: 'sparql',
     endpoint: options.endpoint,
+    auth: options.auth,
   };
 }

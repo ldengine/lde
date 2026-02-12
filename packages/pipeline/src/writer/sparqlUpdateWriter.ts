@@ -10,6 +10,11 @@ export interface SparqlWriterOptions {
    */
   endpoint: URL;
   /**
+   * Value for the Authorization header, e.g.
+   * `"Basic dXNlcjpwYXNz"`, `"Bearer my-token"`, or `"GDB eyJ…"`.
+   */
+  auth?: string;
+  /**
    * Optional fetch implementation for making HTTP requests.
    * @default globalThis.fetch
    */
@@ -30,11 +35,13 @@ export interface SparqlWriterOptions {
  */
 export class SparqlUpdateWriter implements Writer {
   private readonly endpoint: URL;
+  private readonly auth?: string;
   private readonly fetch: typeof globalThis.fetch;
   private readonly batchSize: number;
 
   constructor(options: SparqlWriterOptions) {
     this.endpoint = options.endpoint;
+    this.auth = options.auth;
     this.fetch = options.fetch ?? globalThis.fetch;
     this.batchSize = options.batchSize ?? 10000;
   }
@@ -60,11 +67,16 @@ export class SparqlUpdateWriter implements Writer {
   }
 
   private async executeUpdate(query: string): Promise<void> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/sparql-update',
+    };
+    if (this.auth) {
+      headers['Authorization'] = this.auth;
+    }
+
     const response = await this.fetch(this.endpoint.toString(), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/sparql-update',
-      },
+      headers,
       body: query,
     });
 

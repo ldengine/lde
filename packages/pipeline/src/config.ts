@@ -28,6 +28,7 @@ export interface RawPipelineConfig {
     type: 'file' | 'sparql';
     outputDir?: string;
     endpoint?: string;
+    auth?: string;
   }>;
 }
 
@@ -166,7 +167,11 @@ function normalizeWriters(
         if (!writer.endpoint) {
           throw new Error('SPARQL writer requires endpoint');
         }
-        return { type: 'sparql' as const, endpoint: new URL(writer.endpoint) };
+        return {
+          type: 'sparql' as const,
+          endpoint: new URL(writer.endpoint),
+          auth: writer.auth,
+        };
 
       default:
         throw new Error(`Unknown writer type: ${writer.type}`);
