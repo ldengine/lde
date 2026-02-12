@@ -1,3 +1,13 @@
+## 0.6.18 (2026-02-12)
+
+### 🚀 Features
+
+- **pipeline:** add resolveDistributions stage function ([#84](https://github.com/ldengine/lde/pull/84), [#76](https://github.com/ldengine/lde/issues/76))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.17 (2026-02-12)
 
 This was a version bump only for @lde/pipeline to align it with other projects, there were no code changes.
