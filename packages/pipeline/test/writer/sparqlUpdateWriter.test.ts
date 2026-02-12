@@ -122,6 +122,48 @@ describe('SparqlUpdateWriter', () => {
       expect(insertBody2).toContain('INSERT DATA');
     });
 
+    it('sends Authorization header when auth is provided', async () => {
+      const writer = new SparqlUpdateWriter({
+        endpoint,
+        fetch: mockFetch as typeof globalThis.fetch,
+        auth: 'Bearer my-token',
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s'),
+            namedNode('http://example.com/p'),
+            literal('o')
+          )
+        )
+      );
+
+      for (const call of mockFetch.mock.calls) {
+        expect(call[1]!.headers).toHaveProperty(
+          'Authorization',
+          'Bearer my-token'
+        );
+      }
+    });
+
+    it('does not send Authorization header when auth is omitted', async () => {
+      const writer = new SparqlUpdateWriter({
+        endpoint,
+        fetch: mockFetch as typeof globalThis.fetch,
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+      await writer.write(dataset, quadsOf());
+
+      for (const call of mockFetch.mock.calls) {
+        expect(call[1]!.headers).not.toHaveProperty('Authorization');
+      }
+    });
+
     it('throws on HTTP error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
