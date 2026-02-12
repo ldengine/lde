@@ -1,3 +1,9 @@
+## 0.2.18 (2026-02-12)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.6.16
+
 ## 0.2.17 (2026-02-12)
 
 This was a version bump only for @lde/pipeline-void to align it with other projects, there were no code changes.
