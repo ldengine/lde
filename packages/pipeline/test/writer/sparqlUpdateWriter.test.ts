@@ -1,9 +1,14 @@
 import { SparqlUpdateWriter } from '../../src/writer/sparqlUpdateWriter.js';
 import { Dataset, Distribution } from '@lde/dataset';
-import { Store, DataFactory } from 'n3';
+import { DataFactory } from 'n3';
+import type { Quad } from '@rdfjs/types';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { namedNode, literal } = DataFactory;
+const { namedNode, literal, quad } = DataFactory;
+
+async function* quadsOf(...quads: Quad[]): AsyncIterable<Quad> {
+  yield* quads;
+}
 
 describe('SparqlUpdateWriter', () => {
   const endpoint = new URL('http://example.com/sparql');
@@ -26,10 +31,6 @@ describe('SparqlUpdateWriter', () => {
     });
   }
 
-  function createStore(): Store {
-    return new Store();
-  }
-
   describe('write', () => {
     it('writes quads to SPARQL endpoint', async () => {
       const writer = new SparqlUpdateWriter({
@@ -38,14 +39,17 @@ describe('SparqlUpdateWriter', () => {
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/subject'),
-        namedNode('http://example.com/predicate'),
-        literal('object')
-      );
 
-      await writer.write(dataset, data);
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/subject'),
+            namedNode('http://example.com/predicate'),
+            literal('object')
+          )
+        )
+      );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -71,9 +75,8 @@ describe('SparqlUpdateWriter', () => {
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
 
-      await writer.write(dataset, data);
+      await writer.write(dataset, quadsOf());
 
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -86,24 +89,27 @@ describe('SparqlUpdateWriter', () => {
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/s1'),
-        namedNode('http://example.com/p'),
-        literal('o1')
-      );
-      data.addQuad(
-        namedNode('http://example.com/s2'),
-        namedNode('http://example.com/p'),
-        literal('o2')
-      );
-      data.addQuad(
-        namedNode('http://example.com/s3'),
-        namedNode('http://example.com/p'),
-        literal('o3')
-      );
 
-      await writer.write(dataset, data);
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s1'),
+            namedNode('http://example.com/p'),
+            literal('o1')
+          ),
+          quad(
+            namedNode('http://example.com/s2'),
+            namedNode('http://example.com/p'),
+            literal('o2')
+          ),
+          quad(
+            namedNode('http://example.com/s3'),
+            namedNode('http://example.com/p'),
+            literal('o3')
+          )
+        )
+      );
 
       // Should make 2 requests: 2 quads + 1 quad.
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -122,16 +128,19 @@ describe('SparqlUpdateWriter', () => {
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/s'),
-        namedNode('http://example.com/p'),
-        literal('o')
-      );
 
-      await expect(writer.write(dataset, data)).rejects.toThrow(
-        'SPARQL UPDATE failed with status 500'
-      );
+      await expect(
+        writer.write(
+          dataset,
+          quadsOf(
+            quad(
+              namedNode('http://example.com/s'),
+              namedNode('http://example.com/p'),
+              literal('o')
+            )
+          )
+        )
+      ).rejects.toThrow('SPARQL UPDATE failed with status 500');
     });
   });
 });

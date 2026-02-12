@@ -1,12 +1,17 @@
 import { FileWriter } from '../../src/writer/fileWriter.js';
 import { Dataset, Distribution } from '@lde/dataset';
-import { Store, DataFactory } from 'n3';
+import { DataFactory } from 'n3';
+import type { Quad } from '@rdfjs/types';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const { namedNode, literal } = DataFactory;
+const { namedNode, literal, quad } = DataFactory;
+
+async function* quadsOf(...quads: Quad[]): AsyncIterable<Quad> {
+  yield* quads;
+}
 
 describe('FileWriter', () => {
   let tempDir: string;
@@ -28,23 +33,22 @@ describe('FileWriter', () => {
     });
   }
 
-  function createStore(): Store {
-    return new Store();
-  }
-
   describe('write', () => {
     it('writes quads to Turtle file', async () => {
       const writer = new FileWriter({ outputDir: tempDir });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/subject'),
-        namedNode('http://example.com/predicate'),
-        literal('object')
-      );
 
-      await writer.write(dataset, data);
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/subject'),
+            namedNode('http://example.com/predicate'),
+            literal('object')
+          )
+        )
+      );
 
       const files = await readFile(
         join(tempDir, 'example.com_dataset_1.ttl'),
@@ -62,14 +66,17 @@ describe('FileWriter', () => {
       });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/subject'),
-        namedNode('http://example.com/predicate'),
-        literal('object')
-      );
 
-      await writer.write(dataset, data);
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/subject'),
+            namedNode('http://example.com/predicate'),
+            literal('object')
+          )
+        )
+      );
 
       const content = await readFile(
         join(tempDir, 'example.com_dataset_1.nt'),
@@ -82,9 +89,8 @@ describe('FileWriter', () => {
       const writer = new FileWriter({ outputDir: tempDir });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
 
-      await writer.write(dataset, data);
+      await writer.write(dataset, quadsOf());
 
       await expect(
         readFile(join(tempDir, 'example.com_dataset_1.ttl'))
@@ -96,14 +102,17 @@ describe('FileWriter', () => {
       const writer = new FileWriter({ outputDir: nestedDir });
 
       const dataset = createDataset('http://example.com/dataset/1');
-      const data = createStore();
-      data.addQuad(
-        namedNode('http://example.com/s'),
-        namedNode('http://example.com/p'),
-        literal('o')
-      );
 
-      await writer.write(dataset, data);
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s'),
+            namedNode('http://example.com/p'),
+            literal('o')
+          )
+        )
+      );
 
       const content = await readFile(
         join(nestedDir, 'example.com_dataset_1.ttl'),

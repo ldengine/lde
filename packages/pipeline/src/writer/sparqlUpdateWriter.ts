@@ -1,5 +1,5 @@
 import { Dataset } from '@lde/dataset';
-import type { DatasetCore, Quad } from '@rdfjs/types';
+import type { Quad } from '@rdfjs/types';
 import { Writer } from './writer.js';
 import { serializeQuads } from './serialize.js';
 
@@ -37,17 +37,20 @@ export class SparqlUpdateWriter implements Writer {
     this.batchSize = options.batchSize ?? 10000;
   }
 
-  async write(dataset: Dataset, data: DatasetCore): Promise<void> {
+  async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
     const graphUri = dataset.iri.toString();
-    const quads = [...data];
+    const collected: Quad[] = [];
+    for await (const quad of quads) {
+      collected.push(quad);
+    }
 
-    if (quads.length === 0) {
+    if (collected.length === 0) {
       return;
     }
 
     // Process in batches to avoid hitting endpoint size limits.
-    for (let i = 0; i < quads.length; i += this.batchSize) {
-      const batch = quads.slice(i, i + this.batchSize);
+    for (let i = 0; i < collected.length; i += this.batchSize) {
+      const batch = collected.slice(i, i + this.batchSize);
       await this.insertBatch(graphUri, batch);
     }
   }

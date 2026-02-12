@@ -1,10 +1,11 @@
 import { Dataset } from '@lde/dataset';
-import type { DatasetCore } from '@rdfjs/types';
-import { mkdir, writeFile } from 'node:fs/promises';
+import type { Quad } from '@rdfjs/types';
+import { createWriteStream } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import filenamifyUrl from 'filenamify-url';
+import { Writer as N3Writer } from 'n3';
 import { Writer } from './writer.js';
-import { serializeQuads, type SerializationFormat } from './serialize.js';
 
 export interface FileWriterOptions {
   /**
@@ -19,11 +20,11 @@ export interface FileWriterOptions {
 }
 
 /**
- * Writes RDF data to files on disk.
+ * Streams RDF quads to files on disk using N3 Writer.
  *
  * Files are named based on the dataset IRI using filenamify-url.
  */
-const formatMap: Record<string, SerializationFormat> = {
+const formatMap: Record<string, string> = {
   turtle: 'Turtle',
   'n-triples': 'N-Triples',
   'n-quads': 'N-Quads',
@@ -38,21 +39,29 @@ export class FileWriter implements Writer {
     this.format = options.format ?? 'turtle';
   }
 
-  async write(dataset: Dataset, data: DatasetCore): Promise<void> {
-    const quads = [...data];
+  async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
+    // Peek at the first quad to avoid creating empty files.
+    const iterator = quads[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    if (first.done) return;
 
-    if (quads.length === 0) {
-      return;
-    }
-
-    const filename = this.getFilename(dataset);
-    const filePath = join(this.outputDir, filename);
-
-    // Ensure the output directory exists.
+    const filePath = join(this.outputDir, this.getFilename(dataset));
     await mkdir(dirname(filePath), { recursive: true });
 
-    const content = await serializeQuads(quads, formatMap[this.format]);
-    await writeFile(filePath, content, 'utf-8');
+    const stream = createWriteStream(filePath);
+    const writer = new N3Writer(stream, { format: formatMap[this.format] });
+
+    writer.addQuad(first.value);
+    for await (const quad of { [Symbol.asyncIterator]: () => iterator }) {
+      writer.addQuad(quad);
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      writer.end((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
   }
 
   private getFilename(dataset: Dataset): string {

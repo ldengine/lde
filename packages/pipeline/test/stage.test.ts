@@ -6,6 +6,7 @@ import type { StageSelector } from '../src/stage.js';
 import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset, Distribution } from '@lde/dataset';
+import type { Writer } from '../src/writer/writer.js';
 
 const { namedNode, quad } = DataFactory;
 
@@ -76,6 +77,18 @@ function mockSelector(
   };
 }
 
+function collectingWriter(): Writer & { quads: Quad[] } {
+  const quads: Quad[] = [];
+  return {
+    quads,
+    async write(_dataset, data) {
+      for await (const quad of data) {
+        quads.push(quad);
+      }
+    },
+  };
+}
+
 const dataset = new Dataset({
   iri: new URL('http://example.org/dataset'),
   distributions: [],
@@ -83,26 +96,17 @@ const dataset = new Dataset({
 
 const distribution = Distribution.sparql(new URL('http://example.org/sparql'));
 
-async function collectQuads(iterable: AsyncIterable<Quad>): Promise<Quad[]> {
-  const result: Quad[] = [];
-  for await (const quad of iterable) {
-    result.push(quad);
-  }
-  return result;
-}
-
 describe('Stage', () => {
-  it('yields quads from a single executor', async () => {
+  it('writes quads from a single executor', async () => {
     const stage = new Stage({
       name: 'test',
       executors: mockExecutor([q1, q2]),
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
-
-    const quads = await collectQuads(result as AsyncIterable<Quad>);
-    expect(quads).toEqual([q1, q2]);
+    expect(writer.quads).toEqual([q1, q2]);
   });
 
   it('returns NotSupported when single executor returns NotSupported', async () => {
@@ -111,27 +115,28 @@ describe('Stage', () => {
       executors: notSupportedExecutor(),
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
       'All executors returned NotSupported'
     );
+    expect(writer.quads).toEqual([]);
   });
 
-  it('yields all quads merged from multiple executors', async () => {
+  it('writes all quads merged from multiple executors', async () => {
     const stage = new Stage({
       name: 'test',
       executors: [mockExecutor([q1]), mockExecutor([q2, q3])],
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
-
-    const quads = await collectQuads(result as AsyncIterable<Quad>);
-    expect(quads).toEqual([q1, q2, q3]);
+    expect(writer.quads).toEqual([q1, q2, q3]);
   });
 
-  it('yields quads only from successful executors when some return NotSupported', async () => {
+  it('writes quads only from successful executors when some return NotSupported', async () => {
     const stage = new Stage({
       name: 'test',
       executors: [
@@ -141,11 +146,10 @@ describe('Stage', () => {
       ],
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
-
-    const quads = await collectQuads(result as AsyncIterable<Quad>);
-    expect(quads).toEqual([q1, q2]);
+    expect(writer.quads).toEqual([q1, q2]);
   });
 
   it('returns NotSupported when all executors return NotSupported', async () => {
@@ -154,11 +158,13 @@ describe('Stage', () => {
       executors: [notSupportedExecutor('a'), notSupportedExecutor('b')],
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
       'All executors returned NotSupported'
     );
+    expect(writer.quads).toEqual([]);
   });
 
   it('passes selector bindings to executors in a single batch', async () => {
@@ -174,7 +180,8 @@ describe('Stage', () => {
       selector: mockSelector(bindings),
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     expect(executor.execute).toHaveBeenCalledOnce();
@@ -198,7 +205,8 @@ describe('Stage', () => {
       batchSize: 2,
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
 
     expect(executor.execute).toHaveBeenCalledTimes(2);
@@ -225,7 +233,8 @@ describe('Stage', () => {
       batchSize: 1,
     });
 
-    await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    await stage.run(dataset, distribution, writer);
 
     expect(executor.execute).toHaveBeenCalledTimes(3);
   });
@@ -239,12 +248,13 @@ describe('Stage', () => {
       selector: mockSelector([]),
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).toBeInstanceOf(NotSupported);
     expect(executor.execute).not.toHaveBeenCalled();
   });
 
-  it('works without a selector (backward compatibility)', async () => {
+  it('works without a selector', async () => {
     const executor = capturingExecutor([q1, q2]);
 
     const stage = new Stage({
@@ -252,11 +262,10 @@ describe('Stage', () => {
       executors: executor,
     });
 
-    const result = await stage.run(dataset, distribution);
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
-
-    const quads = await collectQuads(result as AsyncIterable<Quad>);
-    expect(quads).toEqual([q1, q2]);
+    expect(writer.quads).toEqual([q1, q2]);
     expect(executor.execute).toHaveBeenCalledWith(dataset, distribution);
   });
 
@@ -272,7 +281,8 @@ describe('Stage', () => {
       executors: executor,
     });
 
-    await stage.run(dataset, namedGraphDistribution);
+    const writer = collectingWriter();
+    await stage.run(dataset, namedGraphDistribution, writer);
 
     expect(executor.execute).toHaveBeenCalledWith(
       dataset,

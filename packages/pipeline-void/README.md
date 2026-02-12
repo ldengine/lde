@@ -52,19 +52,11 @@ const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
 
 // Simple CONSTRUCT query stage
 const stage = await createQueryStage('triples.rq', distribution);
-const quads = await stage.run(dataset, distribution);
+await stage.run(dataset, distribution, writer);
 
 // Per-class stage (streaming)
 const datatypeStage = await createDatatypeStage(distribution);
-const datatypeQuads = await datatypeStage.run(dataset, distribution);
-
-// Enrich with vocabulary detection and provenance
-const enriched = withProvenance(
-  withVocabularies(quads, dataset.iri.toString()),
-  dataset.iri.toString(),
-  startedAt,
-  endedAt
-);
+await datatypeStage.run(dataset, distribution, writer);
 ```
 
 ## Validation
