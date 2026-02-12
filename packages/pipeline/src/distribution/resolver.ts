@@ -1,14 +1,22 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Importer } from '@lde/sparql-importer';
-import { ImportSuccessful } from '@lde/sparql-importer';
-import { probe, SparqlProbeResult } from './probe.js';
+import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
+import { probe, SparqlProbeResult, type ProbeResultType } from './probe.js';
 
 export class ResolvedDistribution {
-  constructor(readonly distribution: Distribution) {}
+  constructor(
+    readonly distribution: Distribution,
+    readonly probeResults: ProbeResultType[]
+  ) {}
 }
 
 export class NoDistributionAvailable {
-  constructor(readonly dataset: Dataset, readonly message: string) {}
+  constructor(
+    readonly dataset: Dataset,
+    readonly message: string,
+    readonly probeResults: ProbeResultType[],
+    readonly importFailed?: ImportFailed
+  ) {}
 }
 
 export interface DistributionResolver {
@@ -60,7 +68,7 @@ export class SparqlDistributionResolver implements DistributionResolver {
         result instanceof SparqlProbeResult &&
         result.isSuccess()
       ) {
-        return new ResolvedDistribution(distribution);
+        return new ResolvedDistribution(distribution, results);
       }
     }
 
@@ -72,13 +80,22 @@ export class SparqlDistributionResolver implements DistributionResolver {
           importResult.distribution.accessUrl,
           importResult.identifier
         );
-        return new ResolvedDistribution(distribution);
+        return new ResolvedDistribution(distribution, results);
+      }
+      if (importResult instanceof ImportFailed) {
+        return new NoDistributionAvailable(
+          dataset,
+          'No SPARQL endpoint or importable data dump available',
+          results,
+          importResult
+        );
       }
     }
 
     return new NoDistributionAvailable(
       dataset,
-      'No SPARQL endpoint or importable data dump available'
+      'No SPARQL endpoint or importable data dump available',
+      results
     );
   }
 }

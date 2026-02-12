@@ -15,3 +15,8 @@ export {
   type DistributionResolver,
   type SparqlDistributionResolverOptions,
 } from './resolver.js';
+
+export {
+  resolveDistributions,
+  type DistributionStageResult,
+} from './resolveDistributions.js';
