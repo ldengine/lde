@@ -1,3 +1,13 @@
+## 0.6.19 (2026-02-12)
+
+### 🚀 Features
+
+- **pipeline:** batch selector bindings to executor ([#85](https://github.com/ldengine/lde/pull/85))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.18 (2026-02-12)
 
 ### 🚀 Features
