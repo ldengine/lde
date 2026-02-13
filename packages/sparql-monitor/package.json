@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "c12": "^3.0.2",
-    "commander": "^13.1.0",
+    "commander": "^14.0.3",
     "cron": "^4.1.0",
     "drizzle-kit": "1.0.0-beta.12-a5629fb",
     "drizzle-orm": "1.0.0-beta.12-a5629fb",
