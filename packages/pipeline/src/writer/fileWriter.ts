@@ -32,7 +32,7 @@ const formatMap: Record<string, string> = {
 
 export class FileWriter implements Writer {
   private readonly outputDir: string;
-  private readonly format: 'turtle' | 'n-triples' | 'n-quads';
+  readonly format: 'turtle' | 'n-triples' | 'n-quads';
 
   constructor(options: FileWriterOptions) {
     this.outputDir = options.outputDir;
@@ -64,7 +64,11 @@ export class FileWriter implements Writer {
     });
   }
 
-  private getFilename(dataset: Dataset): string {
+  getOutputPath(dataset: Dataset): string {
+    return join(this.outputDir, this.getFilename(dataset));
+  }
+
+  getFilename(dataset: Dataset): string {
     const extension = this.getExtension();
     const baseName = filenamifyUrl(dataset.iri.toString(), {
       replacement: '_',

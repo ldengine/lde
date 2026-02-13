@@ -5,12 +5,15 @@ import type { Readable } from 'node:stream';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Generator, Parser, type ConstructQuery } from 'sparqljs';
-import { NotSupported } from '../step.js';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
 
-// Re-export for convenience
-export { NotSupported } from '../step.js';
+/**
+ * An executor could not run because the dataset lacks a supported distribution.
+ */
+export class NotSupported {
+  constructor(public readonly message: string) {}
+}
 
 /** A single row of variable bindings (variable name → NamedNode). */
 export type VariableBindings = Record<string, NamedNode>;
