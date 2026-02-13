@@ -1,3 +1,13 @@
+## 0.6.11 (2026-02-13)
+
+### 🩹 Fixes
+
+- **docgen:** embed blank node shapes in all locations ([#104](https://github.com/ldengine/lde/pull/104))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.10 (2026-02-13)
 
 This was a version bump only for @lde/docgen to align it with other projects, there were no code changes.
