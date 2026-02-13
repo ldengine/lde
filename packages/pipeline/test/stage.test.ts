@@ -290,6 +290,25 @@ describe('Stage', () => {
     );
   });
 
+  describe('sub-stages', () => {
+    it('stores sub-stages', () => {
+      const child1 = new Stage({ name: 'child1', executors: mockExecutor([]) });
+      const child2 = new Stage({ name: 'child2', executors: mockExecutor([]) });
+      const parent = new Stage({
+        name: 'parent',
+        executors: mockExecutor([]),
+        stages: [child1, child2],
+      });
+
+      expect(parent.stages).toEqual([child1, child2]);
+    });
+
+    it('defaults to empty stages', () => {
+      const stage = new Stage({ name: 'test', executors: mockExecutor([]) });
+      expect(stage.stages).toEqual([]);
+    });
+  });
+
   describe('concurrent execution', () => {
     function delayExecutor(
       quads: Quad[],

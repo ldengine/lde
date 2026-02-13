@@ -14,6 +14,8 @@ export interface StageOptions {
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
   maxConcurrency?: number;
+  /** Child stages that chain off this stage's output. */
+  stages?: Stage[];
 }
 
 export interface RunOptions {
@@ -22,6 +24,7 @@ export interface RunOptions {
 
 export class Stage {
   readonly name: string;
+  readonly stages: readonly Stage[];
   private readonly executors: Executor[];
   private readonly selector?: StageSelector;
   private readonly batchSize: number;
@@ -29,6 +32,7 @@ export class Stage {
 
   constructor(options: StageOptions) {
     this.name = options.name;
+    this.stages = options.stages ?? [];
     this.executors = Array.isArray(options.executors)
       ? options.executors
       : [options.executors];

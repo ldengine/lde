@@ -79,9 +79,10 @@ function makeStageOutputResolver(): StageOutputResolver & {
 
 function makeStage(
   name: string,
-  result: NotSupported | void = undefined
+  result: NotSupported | void = undefined,
+  subStages: Stage[] = []
 ): Stage {
-  const stage = new Stage({ name, executors: [] });
+  const stage = new Stage({ name, executors: [], stages: subStages });
   vi.spyOn(stage, 'run').mockResolvedValue(result);
   return stage;
 }
@@ -95,7 +96,7 @@ describe('Pipeline', () => {
     writer = makeWriter();
   });
 
-  describe('parallel mode', () => {
+  describe('flat stages', () => {
     it('runs stages with the same distribution and user writer', async () => {
       const stage1 = makeStage('stage1');
       const stage2 = makeStage('stage2');
@@ -175,109 +176,122 @@ describe('Pipeline', () => {
     });
   });
 
-  describe('chained mode', () => {
-    it('uses FileWriter for intermediate stages and resolver for next distribution', async () => {
+  describe('sub-stage chaining', () => {
+    it('runs parent with FileWriter, children chain off parent output', async () => {
       const resolvedDistribution = Distribution.sparql(
         new URL('http://resolved.example.org/sparql')
       );
       const stageOutputResolver = makeStageOutputResolver();
       stageOutputResolver.resolve.mockResolvedValue(resolvedDistribution);
 
-      const stage1 = makeStage('stage1');
-      const stage2 = makeStage('stage2');
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
         name: 'test',
         selector: makeSelector(dataset),
-        stages: [stage1, stage2],
+        stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        chaining: {
-          outputDir: '/tmp/test',
-          format: 'n-triples',
-          stageOutputResolver,
-        },
+        stageOutputResolver,
+        outputDir: '/tmp/test',
+        outputFormat: 'n-triples',
       });
 
       await pipeline.run();
 
-      // Stage 1 should get an auto-created FileWriter, not the user writer.
-      const stage1Writer = (stage1.run as ReturnType<typeof vi.fn>).mock
+      // Parent should get a FileWriter, not the user writer.
+      const parentWriter = (parent.run as ReturnType<typeof vi.fn>).mock
         .calls[0][2];
-      expect(stage1Writer).not.toBe(writer);
-      expect(stage1Writer.constructor.name).toBe('FileWriter');
+      expect(parentWriter).not.toBe(writer);
+      expect(parentWriter.constructor.name).toBe('FileWriter');
 
-      // Resolver should be called with the output path.
+      // Child should receive the resolved distribution.
+      const childDistribution = (child.run as ReturnType<typeof vi.fn>).mock
+        .calls[0][1];
+      expect(childDistribution).toBe(resolvedDistribution);
+
+      // Resolver should be called with the parent's output path.
       expect(stageOutputResolver.resolve).toHaveBeenCalled();
     });
 
-    it('passes resolved distribution to next stage', async () => {
-      const resolvedDistribution = Distribution.sparql(
-        new URL('http://resolved.example.org/sparql')
+    it('calls stageOutputResolver between chained stages', async () => {
+      const dist1 = Distribution.sparql(
+        new URL('http://resolved.example.org/sparql/1')
+      );
+      const dist2 = Distribution.sparql(
+        new URL('http://resolved.example.org/sparql/2')
       );
       const stageOutputResolver = makeStageOutputResolver();
-      stageOutputResolver.resolve.mockResolvedValue(resolvedDistribution);
+      stageOutputResolver.resolve
+        .mockResolvedValueOnce(dist1)
+        .mockResolvedValueOnce(dist2);
 
-      const stage1 = makeStage('stage1');
-      const stage2 = makeStage('stage2');
+      const child1 = makeStage('child1');
+      const child2 = makeStage('child2');
+      const parent = makeStage('parent', undefined, [child1, child2]);
 
       const pipeline = new Pipeline({
         name: 'test',
         selector: makeSelector(dataset),
-        stages: [stage1, stage2],
+        stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        chaining: {
-          outputDir: '/tmp/test',
-          stageOutputResolver,
-        },
+        stageOutputResolver,
+        outputDir: '/tmp/test',
+        outputFormat: 'n-triples',
       });
 
       await pipeline.run();
 
-      // Stage 2 should receive the distribution from the resolver.
-      const stage2Distribution = (stage2.run as ReturnType<typeof vi.fn>).mock
-        .calls[0][1];
-      expect(stage2Distribution).toBe(resolvedDistribution);
+      // resolve() called: once for parent→child1, once for child1→child2.
+      expect(stageOutputResolver.resolve).toHaveBeenCalledTimes(2);
+
+      // child1 gets dist1 (resolved from parent output).
+      expect((child1.run as ReturnType<typeof vi.fn>).mock.calls[0][1]).toBe(
+        dist1
+      );
+      // child2 gets dist2 (resolved from child1 output).
+      expect((child2.run as ReturnType<typeof vi.fn>).mock.calls[0][1]).toBe(
+        dist2
+      );
     });
 
-    it('uses user writer for the last stage', async () => {
+    it('concatenates all output files to user writer', async () => {
       const stageOutputResolver = makeStageOutputResolver();
-      const stage1 = makeStage('stage1');
-      const stage2 = makeStage('stage2');
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
         name: 'test',
         selector: makeSelector(dataset),
-        stages: [stage1, stage2],
+        stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        chaining: {
-          outputDir: '/tmp/test',
-          stageOutputResolver,
-        },
+        stageOutputResolver,
+        outputDir: '/tmp/test',
+        outputFormat: 'n-triples',
       });
 
       await pipeline.run();
 
-      const stage2Writer = (stage2.run as ReturnType<typeof vi.fn>).mock
-        .calls[0][2];
-      expect(stage2Writer).toBe(writer);
+      // writer.write() should have been called with the dataset and an async iterable.
+      expect(writer.write).toHaveBeenCalledWith(dataset, expect.anything());
     });
 
     it('cleans up on success', async () => {
       const stageOutputResolver = makeStageOutputResolver();
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
         name: 'test',
         selector: makeSelector(dataset),
-        stages: [makeStage('stage1')],
+        stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        chaining: {
-          outputDir: '/tmp/test',
-          stageOutputResolver,
-        },
+        stageOutputResolver,
+        outputDir: '/tmp/test',
       });
 
       await pipeline.run();
@@ -287,26 +301,95 @@ describe('Pipeline', () => {
 
     it('cleans up on error', async () => {
       const stageOutputResolver = makeStageOutputResolver();
-      const failingStage = makeStage('failing');
-      vi.spyOn(failingStage, 'run').mockRejectedValue(
+      const child = makeStage('child');
+      const failingParent = makeStage('failing', undefined, [child]);
+      vi.spyOn(failingParent, 'run').mockRejectedValue(
         new Error('Stage failed')
       );
 
       const pipeline = new Pipeline({
         name: 'test',
         selector: makeSelector(dataset),
-        stages: [failingStage],
+        stages: [failingParent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        chaining: {
-          outputDir: '/tmp/test',
-          stageOutputResolver,
-        },
+        stageOutputResolver,
+        outputDir: '/tmp/test',
       });
 
       await pipeline.run();
 
       expect(stageOutputResolver.cleanup).toHaveBeenCalledTimes(1);
+    });
+
+    it('validates stageOutputResolver is required for sub-stages', () => {
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
+
+      expect(
+        () =>
+          new Pipeline({
+            name: 'test',
+            selector: makeSelector(dataset),
+            stages: [parent],
+            writer,
+            distributionResolver: makeResolver(makeResolvedDistribution()),
+          })
+      ).toThrow(
+        'stageOutputResolver is required when any stage has sub-stages'
+      );
+    });
+
+    it('validates outputDir is required for sub-stages', () => {
+      const stageOutputResolver = makeStageOutputResolver();
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
+
+      expect(
+        () =>
+          new Pipeline({
+            name: 'test',
+            selector: makeSelector(dataset),
+            stages: [parent],
+            writer,
+            distributionResolver: makeResolver(makeResolvedDistribution()),
+            stageOutputResolver,
+          })
+      ).toThrow('outputDir is required when any stage has sub-stages');
+    });
+  });
+
+  describe('mixed flat and chained stages', () => {
+    it('runs flat stages with user writer and chained stages through chain', async () => {
+      const stageOutputResolver = makeStageOutputResolver();
+
+      const flatStage = makeStage('flat');
+      const child = makeStage('child');
+      const chainedParent = makeStage('chained', undefined, [child]);
+
+      const pipeline = new Pipeline({
+        name: 'test',
+        selector: makeSelector(dataset),
+        stages: [flatStage, chainedParent],
+        writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+        stageOutputResolver,
+        outputDir: '/tmp/test',
+        outputFormat: 'n-triples',
+      });
+
+      await pipeline.run();
+
+      // Flat stage gets user writer.
+      const flatWriter = (flatStage.run as ReturnType<typeof vi.fn>).mock
+        .calls[0][2];
+      expect(flatWriter).toBe(writer);
+
+      // Chained parent gets FileWriter.
+      const chainedWriter = (chainedParent.run as ReturnType<typeof vi.fn>).mock
+        .calls[0][2];
+      expect(chainedWriter).not.toBe(writer);
+      expect(chainedWriter.constructor.name).toBe('FileWriter');
     });
   });
 
@@ -350,6 +433,37 @@ describe('Pipeline', () => {
       );
       expect(reporter.stageStart).toHaveBeenCalledWith('stage1');
       expect(reporter.pipelineComplete).toHaveBeenCalledWith(
+        expect.objectContaining({ duration: expect.any(Number) })
+      );
+    });
+
+    it('calls reporter hooks for parent and child stages in chain', async () => {
+      const reporter = makeReporter();
+      const stageOutputResolver = makeStageOutputResolver();
+      const child = makeStage('child');
+      const parent = makeStage('parent', undefined, [child]);
+
+      const pipeline = new Pipeline({
+        name: 'test',
+        selector: makeSelector(dataset),
+        stages: [parent],
+        writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+        stageOutputResolver,
+        outputDir: '/tmp/test',
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(reporter.stageStart).toHaveBeenCalledWith('parent');
+      expect(reporter.stageStart).toHaveBeenCalledWith('child');
+      expect(reporter.stageComplete).toHaveBeenCalledWith(
+        'parent',
+        expect.objectContaining({ duration: expect.any(Number) })
+      );
+      expect(reporter.stageComplete).toHaveBeenCalledWith(
+        'child',
         expect.objectContaining({ duration: expect.any(Number) })
       );
     });
