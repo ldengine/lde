@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { Stage } from '../src/stage.js';
-import type { StageSelector } from '../src/stage.js';
+import type { StageSelector, RunOptions } from '../src/stage.js';
 import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset, Distribution } from '@lde/dataset';
@@ -288,5 +288,192 @@ describe('Stage', () => {
       dataset,
       namedGraphDistribution
     );
+  });
+
+  describe('concurrent execution', () => {
+    function delayExecutor(
+      quads: Quad[],
+      delayMs: number,
+      tracker: { current: number; max: number }
+    ): Executor {
+      return {
+        async execute(
+          _dataset: Dataset,
+          _distribution: Distribution,
+          _options?: ExecuteOptions
+        ): Promise<AsyncIterable<Quad> | NotSupported> {
+          tracker.current++;
+          tracker.max = Math.max(tracker.max, tracker.current);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          tracker.current--;
+          return (async function* () {
+            yield* quads;
+          })();
+        },
+      };
+    }
+
+    function failingExecutor(failOnCall: number): Executor {
+      let callCount = 0;
+      return {
+        async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
+          callCount++;
+          if (callCount === failOnCall) {
+            throw new Error('executor failure');
+          }
+          return (async function* () {
+            yield q1;
+          })();
+        },
+      };
+    }
+
+    it('runs executor batches concurrently', async () => {
+      const tracker = { current: 0, max: 0 };
+      const stage = new Stage({
+        name: 'test',
+        executors: delayExecutor([q1], 20, tracker),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+          { class: namedNode('http://example.org/D') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 2,
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(tracker.max).toBe(2);
+      expect(writer.quads).toHaveLength(4);
+    });
+
+    it('bounds parallelism to maxConcurrency', async () => {
+      const tracker = { current: 0, max: 0 };
+      const stage = new Stage({
+        name: 'test',
+        executors: delayExecutor([q1], 10, tracker),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+          { class: namedNode('http://example.org/D') },
+          { class: namedNode('http://example.org/E') },
+          { class: namedNode('http://example.org/F') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 3,
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(tracker.max).toBeLessThanOrEqual(3);
+      expect(writer.quads).toHaveLength(6);
+    });
+
+    it('propagates executor errors', async () => {
+      const stage = new Stage({
+        name: 'test',
+        executors: failingExecutor(2),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 1,
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'executor failure'
+      );
+    });
+
+    it('stops execution when writer throws', async () => {
+      const tracker = { current: 0, max: 0 };
+      const stage = new Stage({
+        name: 'test',
+        executors: delayExecutor([q1, q2], 10, tracker),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 1,
+      });
+
+      let quadsSeen = 0;
+      const failingWriter: Writer = {
+        async write(_dataset, quads) {
+          for await (const _quad of quads) {
+            quadsSeen++;
+            if (quadsSeen >= 1) {
+              throw new Error('writer failure');
+            }
+          }
+        },
+      };
+
+      await expect(
+        stage.run(dataset, distribution, failingWriter)
+      ).rejects.toThrow('writer failure');
+    });
+
+    it('calls onProgress callback', async () => {
+      const progressCalls: Array<{
+        elements: number;
+        quads: number;
+      }> = [];
+
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 1,
+      });
+
+      const writer = collectingWriter();
+      const options: RunOptions = {
+        onProgress: (elements, quads) => {
+          progressCalls.push({ elements, quads });
+        },
+      };
+
+      await stage.run(dataset, distribution, writer, options);
+
+      expect(progressCalls).toHaveLength(3);
+      // With maxConcurrency=1, execution is sequential so progress is monotonic.
+      expect(progressCalls[0].elements).toBe(1);
+      expect(progressCalls[1].elements).toBe(2);
+      expect(progressCalls[2].elements).toBe(3);
+    });
+
+    it('returns NotSupported when all executors return NotSupported with selector', async () => {
+      const stage = new Stage({
+        name: 'test',
+        executors: notSupportedExecutor(),
+        selector: mockSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 2,
+      });
+
+      const writer = collectingWriter();
+      const result = await stage.run(dataset, distribution, writer);
+      expect(result).toBeInstanceOf(NotSupported);
+      expect(writer.quads).toEqual([]);
+    });
   });
 });
