@@ -1,3 +1,18 @@
+## 0.6.24 (2026-02-13)
+
+### 🚀 Features
+
+- **pipeline:** add concurrent executor execution in Stage.run() ([#103](https://github.com/ldengine/lde/pull/103))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.15
+- Updated @lde/local-sparql-endpoint to 0.2.10
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.23 (2026-02-12)
 
 ### 🚀 Features
