@@ -1,3 +1,4 @@
+export * from './asyncQueue.js';
 export * from './batch.js';
 export * from './pipeline.js';
 export * from './selector.js';
