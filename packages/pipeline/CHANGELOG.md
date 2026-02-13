@@ -1,3 +1,20 @@
+## 0.6.25 (2026-02-13)
+
+### 🚀 Features
+
+- **pipeline:** rewrite Pipeline with multi-stage chaining ([#105](https://github.com/ldengine/lde/pull/105))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.16
+- Updated @lde/local-sparql-endpoint to 0.2.11
+- Updated @lde/sparql-importer to 0.2.9
+- Updated @lde/dataset to 0.6.9
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.24 (2026-02-13)
 
 ### 🚀 Features

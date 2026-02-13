@@ -1,3 +1,9 @@
+## 0.2.10 (2026-02-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner to 0.2.9
+
 ## 0.2.9 (2026-02-13)
 
 This was a version bump only for @lde/task-runner-native to align it with other projects, there were no code changes.

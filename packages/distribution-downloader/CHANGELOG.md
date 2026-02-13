@@ -1,3 +1,9 @@
+## 0.4.10 (2026-02-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset to 0.6.9
+
 ## 0.4.9 (2026-02-13)
 
 This was a version bump only for @lde/distribution-downloader to align it with other projects, there were no code changes.
