@@ -1,3 +1,9 @@
+## 0.6.10 (2026-02-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/wait-for-sparql to 0.2.9
+
 ## 0.6.9 (2026-02-11)
 
 ### 🧱 Updated Dependencies
