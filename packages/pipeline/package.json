@@ -29,7 +29,7 @@
     "@lde/sparql-server": "0.4.8",
     "@rdfjs/types": "^2.0.1",
     "c12": "^3.0.2",
-    "fetch-sparql-endpoint": "^6.0.0",
+    "fetch-sparql-endpoint": "^7.1.0",
     "filenamify-url": "^3.0.0",
     "n3": "^1.17.0",
     "sparqljs": "^3.7.3",
