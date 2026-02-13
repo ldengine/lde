@@ -64,7 +64,9 @@
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npx nx run-many -t build",
-      "conventionalCommits": true,
+      "conventionalCommits": {
+        "useCommitScope": false
+      },
       "fallbackCurrentVersionResolver": "disk",
       "versionActionsOptions": {
         "skipLockFileUpdate": true
