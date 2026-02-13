@@ -8,6 +8,7 @@ export async function frame(document: JsonLdArray, frame: string) {
     JSON.parse(await readFile(frame, 'utf8')),
     {
       omitGraph: false,
+      embed: '@always',
     }
   );
 }

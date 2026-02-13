@@ -1,6 +1,7 @@
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -28,4 +29,17 @@
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description "Require description to exist"@en , "Vereist dat beschrijving bestat"@nl ;
+    ] ,
+    [
+        sh:path dct:created ;
+        sh:node _:DateShape ;
+    ] ,
+    [
+        sh:path dct:modified ;
+        sh:node _:DateShape ;
     ] .
+
+_:DateShape sh:or (
+    [ sh:datatype xsd:date ]
+    [ sh:datatype xsd:dateTime ]
+) .

@@ -16,23 +16,36 @@ describe('Integration tests', () => {
       FRAME_PATH
     );
 
-    expect(output.trim()).toBe(`targetClass: http://www.w3.org/ns/dcat#Dataset
-    numOfProperties: 3
+    expect(output.trim().replace(/ +$/gm, ''))
+      .toBe(`targetClass: http://www.w3.org/ns/dcat#Dataset
+    numOfProperties: 5
         path: http://purl.org/dc/terms/title
         minCount: 1
-        severity: 
-        description: 
-    
+        severity:
+        description:
+
         path: http://purl.org/dc/terms/alternative
-        minCount: 
-        severity: 
-        description: 
+        minCount:
+        severity:
+        description:
         datatype: xsd:string
-    
+
         path: http://purl.org/dc/terms/description
         minCount: 1
         severity: Info
         description: Require description to be a multilingual string if it exists
-        datatype: rdf:langString, xsd:string`);
+        datatype: rdf:langString, xsd:string
+
+        path: http://purl.org/dc/terms/created
+        minCount:
+        severity:
+        description:
+        datatype: xsd:date, xsd:dateTime
+
+        path: http://purl.org/dc/terms/modified
+        minCount:
+        severity:
+        description:
+        datatype: xsd:date, xsd:dateTime`);
   });
 });

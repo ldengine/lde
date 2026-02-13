@@ -6,6 +6,6 @@ describe('parseRdfToJsonLd', () => {
   it('should parse SHACL Turtle file to JSON-LD string', async () => {
     const filePath = resolve('./test/fixtures/shacl.ttl');
     const shapes = await parseRdfToJsonLd(filePath);
-    expect(shapes.length).toBe(7);
+    expect(shapes.length).toBe(12);
   });
 });
