@@ -32,7 +32,7 @@
     "cron": "^4.1.0",
     "drizzle-kit": "1.0.0-beta.12-a5629fb",
     "drizzle-orm": "1.0.0-beta.12-a5629fb",
-    "fetch-sparql-endpoint": "^6.0.0",
+    "fetch-sparql-endpoint": "^7.1.0",
     "postgres": "^3.4.5",
     "tslib": "^2.3.0"
   },
