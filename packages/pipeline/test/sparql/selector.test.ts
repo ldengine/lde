@@ -1,11 +1,14 @@
 import { SparqlItemSelector } from '../../src/sparql/selector.js';
 import type { ItemSelector } from '../../src/stage.js';
 import type { VariableBindings } from '../../src/sparql/executor.js';
+import { Distribution } from '@lde/dataset';
 import { describe, it, expect, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import { DataFactory } from 'n3';
 
 const { namedNode, literal, blankNode } = DataFactory;
+
+const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
 
 function bindingsStream(
   records: Record<string, { termType: string; value: string }>[]
@@ -24,7 +27,6 @@ function bindingsStream(
 }
 
 describe('SparqlItemSelector', () => {
-  const endpoint = new URL('http://example.com/sparql');
   const query = 'SELECT ?uri WHERE { ?uri a <http://example.com/Class> }';
 
   it('yields all bindings when results are fewer than pageSize', async () => {
@@ -41,13 +43,12 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       pageSize: 10,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -75,13 +76,12 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       pageSize: 2,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -106,12 +106,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
     const rows: unknown[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -131,12 +130,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       pageSize: 50,
       fetcher: mockFetcher as never,
     });
 
-    for await (const _row of selector) {
+    for await (const _row of selector.select(distribution)) {
       // consume
     }
 
@@ -159,13 +157,12 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       pageSize: 10,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -187,11 +184,10 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
-    for await (const _row of selector) {
+    for await (const _row of selector.select(distribution)) {
       // consume
     }
 
@@ -211,11 +207,10 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query: 'SELECT ?class WHERE { ?s a ?class } LIMIT 25',
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
-    for await (const _row of selector) {
+    for await (const _row of selector.select(distribution)) {
       // consume
     }
 
@@ -236,12 +231,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query: 'SELECT ?class WHERE { ?s a ?class } LIMIT 25',
-      endpoint,
       pageSize: 5,
       fetcher: mockFetcher as never,
     });
 
-    for await (const _row of selector) {
+    for await (const _row of selector.select(distribution)) {
       // consume
     }
 
@@ -263,12 +257,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query: 'SELECT ?class ?property WHERE { ?s a ?class ; ?property ?o }',
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -291,12 +284,11 @@ describe('SparqlItemSelector', () => {
     const selector = new SparqlItemSelector({
       query:
         'SELECT ?class ?label WHERE { ?s a ?class ; <http://www.w3.org/2000/01/rdf-schema#label> ?label }',
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
@@ -311,7 +303,6 @@ describe('SparqlItemSelector', () => {
       () =>
         new SparqlItemSelector({
           query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
-          endpoint,
         })
     ).toThrow('Query must be a SELECT query');
   });
@@ -321,7 +312,6 @@ describe('SparqlItemSelector', () => {
       () =>
         new SparqlItemSelector({
           query: 'SELECT * WHERE { ?s ?p ?o }',
-          endpoint,
         })
     ).toThrow('SELECT * is not supported');
   });
@@ -338,15 +328,34 @@ describe('SparqlItemSelector', () => {
     // Verify SparqlItemSelector satisfies ItemSelector.
     const selector: ItemSelector = new SparqlItemSelector({
       query,
-      endpoint,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector) {
+    for await (const row of selector.select(distribution)) {
       rows.push(row);
     }
 
     expect(rows).toHaveLength(1);
+  });
+
+  it('uses distribution endpoint for SPARQL queries', async () => {
+    const mockFetcher = {
+      fetchBindings: vi.fn().mockImplementation(() => bindingsStream([])),
+    };
+
+    const selector = new SparqlItemSelector({
+      query,
+      fetcher: mockFetcher as never,
+    });
+
+    for await (const _row of selector.select(distribution)) {
+      // consume
+    }
+
+    expect(mockFetcher.fetchBindings).toHaveBeenCalledWith(
+      'http://example.com/sparql',
+      expect.any(String)
+    );
   });
 });

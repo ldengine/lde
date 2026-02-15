@@ -71,7 +71,7 @@ function mockItemSelector(
   rows: Record<string, ReturnType<typeof namedNode>>[]
 ): ItemSelector {
   return {
-    async *[Symbol.asyncIterator]() {
+    async *select() {
       yield* rows;
     },
   };
@@ -290,24 +290,24 @@ describe('Stage', () => {
     );
   });
 
-  it('resolves an item selector factory with the distribution at run time', async () => {
+  it('passes the distribution to the item selector', async () => {
     const executor = capturingExecutor([q1]);
     const bindings = [{ class: namedNode('http://example.org/Person') }];
-    const itemSelectorFactory = vi.fn((_distribution: Distribution) =>
-      mockItemSelector(bindings)
-    );
+    const selectFn = vi.fn(async function* () {
+      yield* bindings;
+    });
 
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      itemSelector: itemSelectorFactory,
+      itemSelector: { select: selectFn },
     });
 
     const writer = collectingWriter();
     const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
 
-    expect(itemSelectorFactory).toHaveBeenCalledWith(distribution);
+    expect(selectFn).toHaveBeenCalledWith(distribution);
     expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
       bindings,
     });

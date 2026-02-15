@@ -2,63 +2,111 @@
 
 Framework for building RDF data processing pipelines with SPARQL.
 
-## Features
-
-- **Pipeline** — orchestrates steps that process DCAT datasets
-- **PipelineBuilder** — fluent API for constructing pipelines from steps and selectors
-- **PipelineConfig** — load pipeline configuration from YAML/JSON files
-- **SparqlConstructExecutor** — streaming SPARQL CONSTRUCT with template substitution and variable bindings
-- **Distribution analysis** — probe and analyze dataset distributions
-
 ## Components
 
 A **Pipeline** consists of:
 
-- one **[Dataset Selector](#dataset-selector)**
-- one **[Distribution Resolver](#distribution-resolver)** that resolves the input dataset to a usable SPARQL distribution
+- a **Dataset Selector** that selects which datasets to process
+- a **Distribution Resolver** that resolves each dataset to a usable SPARQL endpoint
 - one or more **Stages**, each consisting of:
-  - an optional **Selector** that filters resources
-  - one or more **Executors** that generate triples for each selected resource
+  - an optional **Item Selector** that selects resources (as variable bindings) for fan-out
+  - one or more **Executors** that generate triples
 
 ### Dataset Selector
 
-Selects datasets, either manually by the user or dynamically by querying a DCAT Dataset Registry.
+Selects datasets, either manually or by querying a DCAT Dataset Registry:
 
-### Distribution Resolver
+```typescript
+// From a registry
+const selector = new RegistrySelector({
+  registry: new Client(new URL('https://example.com/sparql')),
+});
 
-Resolves each selected dataset to a usable distribution.
+// Manual
+const selector = new ManualDatasetSelection([dataset]);
+```
 
-#### SPARQL Distribution Resolver
+### Item Selector
 
-If a working SPARQL endpoint is already available for the dataset, that is used.
-If not, and a valid RDF datadump is available, that is imported to a local SPARQL server.
+Selects resources from the distribution and fans out executor calls per batch of results. Implements the `ItemSelector` interface:
 
-#### Other Distribution Resolvers
+```typescript
+interface ItemSelector {
+  select(distribution: Distribution): AsyncIterable<VariableBindings>;
+}
+```
 
-### Bindings Selector
+The distribution is received at run time, so selectors don't need the endpoint URL at construction time. Use `SparqlItemSelector` for SPARQL-based selection with automatic pagination:
 
-Selects resources from the dataset and to fan out queries per result in the executor.
-Bindings are free, and replaced with `VALUES { ... }`.
+```typescript
+new SparqlItemSelector({
+  query: 'SELECT DISTINCT ?class WHERE { ?s a ?class }',
+});
+```
+
+For dynamic queries that depend on the distribution, implement `ItemSelector` directly:
+
+```typescript
+const itemSelector: ItemSelector = {
+  select: (distribution) => {
+    const query = buildQuery(distribution);
+    return new SparqlItemSelector({ query }).select(distribution);
+  },
+};
+```
 
 ### Executor
+
+Generates RDF triples. `SparqlConstructExecutor` runs a SPARQL CONSTRUCT query with template substitution and variable bindings:
+
+```typescript
+const executor = new SparqlConstructExecutor({
+  query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+});
+```
+
+### Writer
+
+Writes generated quads to a destination:
+
+- `SparqlUpdateWriter` — writes to a SPARQL endpoint via UPDATE queries
+- `FileWriter` — writes to local files
 
 ## Usage
 
 ```typescript
 import {
-  PipelineBuilder,
+  Pipeline,
+  Stage,
   SparqlConstructExecutor,
-  collect,
+  SparqlItemSelector,
+  SparqlUpdateWriter,
+  ManualDatasetSelection,
+  SparqlDistributionResolver,
 } from '@lde/pipeline';
 
-// Build a pipeline from steps
-const pipeline = new PipelineBuilder().addStep(myStep).build();
-
-// Or use the SPARQL executor directly
-const executor = new SparqlConstructExecutor({
-  query: 'CONSTRUCT { ?dataset ?p ?o } WHERE { ?s ?p ?o }',
+const pipeline = new Pipeline({
+  name: 'example',
+  datasetSelector: new ManualDatasetSelection([dataset]),
+  distributionResolver: new SparqlDistributionResolver(),
+  stages: [
+    new Stage({
+      name: 'per-class',
+      itemSelector: new SparqlItemSelector({
+        query: 'SELECT DISTINCT ?class WHERE { ?s a ?class }',
+      }),
+      executors: new SparqlConstructExecutor({
+        query:
+          'CONSTRUCT { ?class a <http://example.org/Class> } WHERE { ?s a ?class }',
+      }),
+    }),
+  ],
+  writer: new SparqlUpdateWriter({
+    endpoint: new URL('http://localhost:7200/repositories/lde/statements'),
+  }),
 });
-const result = await executor.execute(dataset);
+
+await pipeline.run();
 ```
 
 ## Validation
