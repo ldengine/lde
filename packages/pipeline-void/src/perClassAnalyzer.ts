@@ -3,6 +3,7 @@ import {
   SparqlItemSelector,
   SparqlConstructExecutor,
   readQueryFile,
+  type ItemSelector,
 } from '@lde/pipeline';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,9 +13,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 /**
  * Create a Stage that first selects classes from the endpoint,
  * then runs a per-class CONSTRUCT query with `?class` bound via VALUES.
- *
- * The selector is a factory that receives the runtime distribution,
- * so no distribution is needed at construction time.
  */
 async function createPerClassStage(queryFilename: string): Promise<Stage> {
   const rawQuery = await readQueryFile(
@@ -23,9 +21,8 @@ async function createPerClassStage(queryFilename: string): Promise<Stage> {
 
   const executor = new SparqlConstructExecutor({ query: rawQuery });
 
-  return new Stage({
-    name: queryFilename,
-    itemSelector: (distribution) => {
+  const itemSelector: ItemSelector = {
+    select: (distribution) => {
       const subjectFilter = distribution.subjectFilter ?? '';
       const fromClause = distribution.namedGraph
         ? `FROM <${distribution.namedGraph}>`
@@ -39,10 +36,14 @@ async function createPerClassStage(queryFilename: string): Promise<Stage> {
 
       return new SparqlItemSelector({
         query: selectorQuery,
-        endpoint: distribution.accessUrl!,
         pageSize: 1000,
-      });
+      }).select(distribution);
     },
+  };
+
+  return new Stage({
+    name: queryFilename,
+    itemSelector,
     executors: executor,
   });
 }

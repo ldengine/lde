@@ -6,15 +6,10 @@ import { batch } from './batch.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
-/** An item selector, or a factory that receives the runtime distribution. */
-export type ItemSelectorInput =
-  | ItemSelector
-  | ((distribution: Distribution) => ItemSelector);
-
 export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
-  itemSelector?: ItemSelectorInput;
+  itemSelector?: ItemSelector;
   /** Maximum number of bindings per executor call. @default 10 */
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
@@ -31,7 +26,7 @@ export class Stage {
   readonly name: string;
   readonly stages: readonly Stage[];
   private readonly executors: Executor[];
-  private readonly itemSelectorInput?: ItemSelectorInput;
+  private readonly itemSelector?: ItemSelector;
   private readonly batchSize: number;
   private readonly maxConcurrency: number;
 
@@ -41,7 +36,7 @@ export class Stage {
     this.executors = Array.isArray(options.executors)
       ? options.executors
       : [options.executors];
-    this.itemSelectorInput = options.itemSelector;
+    this.itemSelector = options.itemSelector;
     this.batchSize = options.batchSize ?? 10;
     this.maxConcurrency = options.maxConcurrency ?? 10;
   }
@@ -52,13 +47,9 @@ export class Stage {
     writer: Writer,
     options?: RunOptions
   ): Promise<NotSupported | void> {
-    if (this.itemSelectorInput) {
-      const selector =
-        typeof this.itemSelectorInput === 'function'
-          ? this.itemSelectorInput(distribution)
-          : this.itemSelectorInput;
+    if (this.itemSelector) {
       return this.runWithSelector(
-        selector,
+        this.itemSelector.select(distribution),
         dataset,
         distribution,
         writer,
@@ -75,7 +66,7 @@ export class Stage {
   }
 
   private async runWithSelector(
-    selector: ItemSelector,
+    selector: AsyncIterable<VariableBindings>,
     dataset: Dataset,
     distribution: Distribution,
     writer: Writer,
@@ -217,5 +208,6 @@ async function* mergeStreams(
 }
 
 /** Selects items (as variable bindings) for executors to process. Pagination is an implementation detail. */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
-export interface ItemSelector extends AsyncIterable<VariableBindings> {}
+export interface ItemSelector {
+  select(distribution: Distribution): AsyncIterable<VariableBindings>;
+}

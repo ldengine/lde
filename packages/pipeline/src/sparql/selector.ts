@@ -1,3 +1,4 @@
+import type { Distribution } from '@lde/dataset';
 import type { Term } from '@rdfjs/types';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import {
@@ -16,8 +17,6 @@ const generator = new Generator();
 export interface SparqlItemSelectorOptions {
   /** SELECT query projecting at least one named variable. A LIMIT in the query sets the default page size. */
   query: string;
-  /** SPARQL endpoint URL. */
-  endpoint: URL;
   /** Results per page. Overrides any LIMIT in the query. @default 10 */
   pageSize?: number;
   /** Custom fetcher instance. */
@@ -28,6 +27,7 @@ export interface SparqlItemSelectorOptions {
  * {@link ItemSelector} that pages through SPARQL SELECT results,
  * yielding all projected variable bindings (NamedNode values only) per row.
  *
+ * The endpoint URL comes from the {@link Distribution} passed to {@link select}.
  * Pagination is an internal detail — consumers iterate binding rows directly.
  * If the query contains a LIMIT, it is used as the default page size
  * (can be overridden by the `pageSize` option). Pagination continues
@@ -35,7 +35,6 @@ export interface SparqlItemSelectorOptions {
  */
 export class SparqlItemSelector implements ItemSelector {
   private readonly parsed: SelectQuery;
-  private readonly endpoint: URL;
   private readonly pageSize: number;
   private readonly fetcher: SparqlEndpointFetcher;
 
@@ -53,12 +52,14 @@ export class SparqlItemSelector implements ItemSelector {
     }
 
     this.parsed = parsed;
-    this.endpoint = options.endpoint;
     this.pageSize = options.pageSize ?? parsed.limit ?? 10;
     this.fetcher = options.fetcher ?? new SparqlEndpointFetcher();
   }
 
-  async *[Symbol.asyncIterator](): AsyncIterableIterator<VariableBindings> {
+  async *select(
+    distribution: Distribution
+  ): AsyncIterableIterator<VariableBindings> {
+    const endpoint = distribution.accessUrl!;
     let offset = 0;
 
     while (true) {
@@ -67,7 +68,7 @@ export class SparqlItemSelector implements ItemSelector {
       const paginatedQuery = generator.stringify(this.parsed);
 
       const stream = (await this.fetcher.fetchBindings(
-        this.endpoint.toString(),
+        endpoint.toString(),
         paginatedQuery
       )) as AsyncIterable<Record<string, Term>>;
 
