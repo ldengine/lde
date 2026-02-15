@@ -26,6 +26,7 @@
   "dependencies": {
     "@lde/pipeline": "0.6.28",
     "@rdfjs/types": "^2.0.1",
+    "@zazuko/prefixes": "^2.6.1",
     "n3": "^1.17.0",
     "tslib": "^2.3.0"
   }

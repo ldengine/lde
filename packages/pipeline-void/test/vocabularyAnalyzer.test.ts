@@ -26,7 +26,7 @@ describe('withVocabularies', () => {
     const input = quad(
       namedNode(datasetIri),
       namedNode(`${VOID}triples`),
-      namedNode('http://example.com/100')
+      namedNode('http://example.com/100'),
     );
 
     const result = await collect(withVocabularies(toAsync(input), datasetIri));
@@ -38,32 +38,16 @@ describe('withVocabularies', () => {
     const input = quad(
       namedNode(datasetIri),
       namedNode(`${VOID}property`),
-      namedNode('http://schema.org/name')
+      namedNode('http://schema.org/name'),
     );
 
     const result = await collect(withVocabularies(toAsync(input), datasetIri));
 
     const vocabQuads = result.filter(
-      (q) => q.predicate.value === `${VOID}vocabulary`
+      (q) => q.predicate.value === `${VOID}vocabulary`,
     );
     expect(vocabQuads).toHaveLength(1);
     expect(vocabQuads[0].object.value).toBe('http://schema.org/');
-  });
-
-  it('adds void:vocabulary for https schema.org properties', async () => {
-    const input = quad(
-      namedNode(datasetIri),
-      namedNode(`${VOID}property`),
-      namedNode('https://schema.org/name')
-    );
-
-    const result = await collect(withVocabularies(toAsync(input), datasetIri));
-
-    const vocabQuads = result.filter(
-      (q) => q.predicate.value === `${VOID}vocabulary`
-    );
-    expect(vocabQuads).toHaveLength(1);
-    expect(vocabQuads[0].object.value).toBe('https://schema.org/');
   });
 
   it('adds void:vocabulary for Dublin Core properties', async () => {
@@ -71,21 +55,21 @@ describe('withVocabularies', () => {
       quad(
         namedNode(datasetIri),
         namedNode(`${VOID}property`),
-        namedNode('http://purl.org/dc/terms/title')
+        namedNode('http://purl.org/dc/terms/title'),
       ),
       quad(
         namedNode(datasetIri),
         namedNode(`${VOID}property`),
-        namedNode('http://purl.org/dc/elements/1.1/creator')
+        namedNode('http://purl.org/dc/elements/1.1/creator'),
       ),
     ];
 
     const result = await collect(
-      withVocabularies(toAsync(...input), datasetIri)
+      withVocabularies(toAsync(...input), datasetIri),
     );
 
     const vocabQuads = result.filter(
-      (q) => q.predicate.value === `${VOID}vocabulary`
+      (q) => q.predicate.value === `${VOID}vocabulary`,
     );
     expect(vocabQuads).toHaveLength(2);
     const vocabUris = vocabQuads.map((q) => q.object.value).sort();
@@ -100,21 +84,21 @@ describe('withVocabularies', () => {
       quad(
         namedNode(datasetIri),
         namedNode(`${VOID}property`),
-        namedNode('http://schema.org/name')
+        namedNode('http://schema.org/name'),
       ),
       quad(
         namedNode(datasetIri),
         namedNode(`${VOID}property`),
-        namedNode('http://schema.org/description')
+        namedNode('http://schema.org/description'),
       ),
     ];
 
     const result = await collect(
-      withVocabularies(toAsync(...input), datasetIri)
+      withVocabularies(toAsync(...input), datasetIri),
     );
 
     const vocabQuads = result.filter(
-      (q) => q.predicate.value === `${VOID}vocabulary`
+      (q) => q.predicate.value === `${VOID}vocabulary`,
     );
     expect(vocabQuads).toHaveLength(1);
   });
@@ -123,14 +107,40 @@ describe('withVocabularies', () => {
     const input = quad(
       namedNode(datasetIri),
       namedNode(`${VOID}property`),
-      namedNode('http://example.com/custom/property')
+      namedNode('http://example.com/custom/property'),
     );
 
     const result = await collect(withVocabularies(toAsync(input), datasetIri));
 
     const vocabQuads = result.filter(
-      (q) => q.predicate.value === `${VOID}vocabulary`
+      (q) => q.predicate.value === `${VOID}vocabulary`,
     );
     expect(vocabQuads).toHaveLength(0);
+  });
+
+  it('uses custom vocabularies when provided', async () => {
+    const customVocabularies = ['http://example.com/vocab/'];
+    const input = [
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://example.com/vocab/name'),
+      ),
+      quad(
+        namedNode(datasetIri),
+        namedNode(`${VOID}property`),
+        namedNode('http://schema.org/name'),
+      ),
+    ];
+
+    const result = await collect(
+      withVocabularies(toAsync(...input), datasetIri, customVocabularies),
+    );
+
+    const vocabQuads = result.filter(
+      (q) => q.predicate.value === `${VOID}vocabulary`,
+    );
+    expect(vocabQuads).toHaveLength(1);
+    expect(vocabQuads[0].object.value).toBe('http://example.com/vocab/');
   });
 });
