@@ -1,3 +1,13 @@
+## 0.6.26 (2026-02-15)
+
+### 🚀 Features
+
+- **pipeline:** defer #subjectFilter# substitution to runtime ([#107](https://github.com/ldengine/lde/pull/107))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.25 (2026-02-13)
 
 ### 🚀 Features
