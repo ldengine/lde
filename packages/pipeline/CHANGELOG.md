@@ -1,3 +1,7 @@
+## 0.6.27 (2026-02-15)
+
+This was a version bump only for @lde/pipeline to align it with other projects, there were no code changes.
+
 ## 0.6.26 (2026-02-15)
 
 ### 🚀 Features
