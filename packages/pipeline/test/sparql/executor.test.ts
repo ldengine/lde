@@ -33,6 +33,15 @@ describe('SparqlConstructExecutor', () => {
           })
       ).toThrow('Query must be a CONSTRUCT query');
     });
+
+    it('does not throw when query contains #subjectFilter# (deferred parsing)', () => {
+      expect(
+        () =>
+          new SparqlConstructExecutor({
+            query: `CONSTRUCT { ?s ?p ?o } WHERE { #subjectFilter# ?s ?p ?o }`,
+          })
+      ).not.toThrow();
+    });
   });
 
   describe('execute', () => {
@@ -154,6 +163,61 @@ describe('SparqlConstructExecutor', () => {
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
         expect.any(String)
+      );
+    });
+  });
+
+  describe('#subjectFilter# template', () => {
+    it('substitutes #subjectFilter# with distribution.subjectFilter at execute time', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { #subjectFilter# ?s ?p ?o }`,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+      distribution.subjectFilter = 'FILTER(?s = <http://example.org/s>)';
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('FILTER')
+      );
+    });
+
+    it('substitutes #subjectFilter# with empty string when subjectFilter is undefined', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const querySpy = vi.spyOn(fetcher, 'fetchTriples');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { #subjectFilter# ?s ?p ?o }`,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`)
+      );
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(querySpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.not.stringContaining('#subjectFilter#')
       );
     });
   });
