@@ -1,3 +1,13 @@
+## 0.2.31 (2026-02-15)
+
+### 🚀 Features
+
+- **pipeline-void:** use @zazuko/prefixes for vocabulary detection ([#110](https://github.com/ldengine/lde/pull/110))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.30 (2026-02-15)
 
 ### 🧱 Updated Dependencies
