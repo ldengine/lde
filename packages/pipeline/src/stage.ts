@@ -6,10 +6,15 @@ import { batch } from './batch.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
+/** A selector, or a factory that receives the runtime distribution. */
+export type StageSelectorInput =
+  | StageSelector
+  | ((distribution: Distribution) => StageSelector);
+
 export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
-  selector?: StageSelector;
+  selector?: StageSelectorInput;
   /** Maximum number of bindings per executor call. @default 10 */
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
@@ -26,7 +31,7 @@ export class Stage {
   readonly name: string;
   readonly stages: readonly Stage[];
   private readonly executors: Executor[];
-  private readonly selector?: StageSelector;
+  private readonly selectorInput?: StageSelectorInput;
   private readonly batchSize: number;
   private readonly maxConcurrency: number;
 
@@ -36,7 +41,7 @@ export class Stage {
     this.executors = Array.isArray(options.executors)
       ? options.executors
       : [options.executors];
-    this.selector = options.selector;
+    this.selectorInput = options.selector;
     this.batchSize = options.batchSize ?? 10;
     this.maxConcurrency = options.maxConcurrency ?? 10;
   }
@@ -47,8 +52,18 @@ export class Stage {
     writer: Writer,
     options?: RunOptions
   ): Promise<NotSupported | void> {
-    if (this.selector) {
-      return this.runWithSelector(dataset, distribution, writer, options);
+    if (this.selectorInput) {
+      const selector =
+        typeof this.selectorInput === 'function'
+          ? this.selectorInput(distribution)
+          : this.selectorInput;
+      return this.runWithSelector(
+        selector,
+        dataset,
+        distribution,
+        writer,
+        options
+      );
     }
 
     const streams = await this.executeAll(dataset, distribution);
@@ -60,6 +75,7 @@ export class Stage {
   }
 
   private async runWithSelector(
+    selector: StageSelector,
     dataset: Dataset,
     distribution: Distribution,
     writer: Writer,
@@ -67,7 +83,7 @@ export class Stage {
   ): Promise<NotSupported | void> {
     // Peek the first batch to detect an empty selector before starting the
     // writer (important because e.g. SparqlUpdateWriter does CLEAR GRAPH).
-    const batches = batch(this.selector!, this.batchSize);
+    const batches = batch(selector, this.batchSize);
     const iter = batches[Symbol.asyncIterator]();
     const first = await iter.next();
     if (first.done) {

@@ -290,6 +290,29 @@ describe('Stage', () => {
     );
   });
 
+  it('resolves a selector factory with the distribution at run time', async () => {
+    const executor = capturingExecutor([q1]);
+    const bindings = [{ class: namedNode('http://example.org/Person') }];
+    const selectorFactory = vi.fn((_distribution: Distribution) =>
+      mockSelector(bindings)
+    );
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      selector: selectorFactory,
+    });
+
+    const writer = collectingWriter();
+    const result = await stage.run(dataset, distribution, writer);
+    expect(result).not.toBeInstanceOf(NotSupported);
+
+    expect(selectorFactory).toHaveBeenCalledWith(distribution);
+    expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
+      bindings,
+    });
+  });
+
   describe('sub-stages', () => {
     it('stores sub-stages', () => {
       const child1 = new Stage({ name: 'child1', executors: mockExecutor([]) });

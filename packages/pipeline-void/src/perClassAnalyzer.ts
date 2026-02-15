@@ -1,4 +1,3 @@
-import { Distribution } from '@lde/dataset';
 import {
   Stage,
   SparqlSelector,
@@ -14,60 +13,48 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * Create a Stage that first selects classes from the endpoint,
  * then runs a per-class CONSTRUCT query with `?class` bound via VALUES.
  *
- * Replaces the legacy `PerClassAnalyzer` two-phase loop with streaming.
+ * The selector is a factory that receives the runtime distribution,
+ * so no distribution is needed at construction time.
  */
-async function createPerClassStage(
-  queryFilename: string,
-  distribution: Distribution
-): Promise<Stage> {
+async function createPerClassStage(queryFilename: string): Promise<Stage> {
   const rawQuery = await readQueryFile(
     resolve(__dirname, 'queries', queryFilename)
   );
 
-  // Pre-process #subjectFilter# before the query is parsed as SPARQL.
-  const subjectFilter = distribution.subjectFilter ?? '';
-  const query = rawQuery.replace('#subjectFilter#', subjectFilter);
-
-  // Build the selector SELECT query (same substitution for subjectFilter).
-  const fromClause = distribution.namedGraph
-    ? `FROM <${distribution.namedGraph}>`
-    : '';
-  const selectorQuery = [
-    'SELECT DISTINCT ?class',
-    fromClause,
-    `WHERE { ${subjectFilter} ?s a ?class . }`,
-    'LIMIT 1000',
-  ].join('\n');
-
-  const selector = new SparqlSelector({
-    query: selectorQuery,
-    endpoint: distribution.accessUrl!,
-    pageSize: 1000,
-  });
-
-  const executor = new SparqlConstructExecutor({ query });
+  const executor = new SparqlConstructExecutor({ query: rawQuery });
 
   return new Stage({
     name: queryFilename,
-    selector,
+    selector: (distribution) => {
+      const subjectFilter = distribution.subjectFilter ?? '';
+      const fromClause = distribution.namedGraph
+        ? `FROM <${distribution.namedGraph}>`
+        : '';
+      const selectorQuery = [
+        'SELECT DISTINCT ?class',
+        fromClause,
+        `WHERE { ${subjectFilter} ?s a ?class . }`,
+        'LIMIT 1000',
+      ].join('\n');
+
+      return new SparqlSelector({
+        query: selectorQuery,
+        endpoint: distribution.accessUrl!,
+        pageSize: 1000,
+      });
+    },
     executors: executor,
   });
 }
 
-export function createDatatypeStage(
-  distribution: Distribution
-): Promise<Stage> {
-  return createPerClassStage('class-property-datatypes.rq', distribution);
+export function createDatatypeStage(): Promise<Stage> {
+  return createPerClassStage('class-property-datatypes.rq');
 }
 
-export function createLanguageStage(
-  distribution: Distribution
-): Promise<Stage> {
-  return createPerClassStage('class-property-languages.rq', distribution);
+export function createLanguageStage(): Promise<Stage> {
+  return createPerClassStage('class-property-languages.rq');
 }
 
-export function createObjectClassStage(
-  distribution: Distribution
-): Promise<Stage> {
-  return createPerClassStage('class-property-object-classes.rq', distribution);
+export function createObjectClassStage(): Promise<Stage> {
+  return createPerClassStage('class-property-object-classes.rq');
 }

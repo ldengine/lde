@@ -62,12 +62,16 @@ export interface SparqlConstructExecutorOptions {
 }
 
 /**
- * A streaming SPARQL CONSTRUCT executor that parses the query once (in the
- * constructor) and operates on the AST for graph and VALUES injection.
+ * A streaming SPARQL CONSTRUCT executor.
+ *
+ * Queries **without** `#subjectFilter#` are parsed once in the constructor
+ * (fast path). Queries that contain the template are stored as raw strings
+ * and parsed at {@link execute} time after substitution.
  *
  * Template substitution (applied in order):
- * 1. `FROM <graph>` — set via `withDefaultGraph` if the distribution has a named graph
- * 2. `?dataset` — replaced with the dataset IRI (string substitution on the serialised query)
+ * 1. `#subjectFilter#` — replaced with `distribution.subjectFilter` (deferred to execute)
+ * 2. `FROM <graph>` — set via `withDefaultGraph` if the distribution has a named graph
+ * 3. `?dataset` — replaced with the dataset IRI (string substitution on the serialised query)
  *
  * @example
  * ```typescript
@@ -85,17 +89,22 @@ export interface SparqlConstructExecutorOptions {
  * ```
  */
 export class SparqlConstructExecutor implements Executor {
-  private readonly query: ConstructQuery;
+  private readonly rawQuery: string;
+  private readonly preParsed?: ConstructQuery;
   private readonly fetcher: SparqlEndpointFetcher;
   private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
-    const parser = new Parser();
-    const parsed = parser.parse(options.query);
-    if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
-      throw new Error('Query must be a CONSTRUCT query');
+    this.rawQuery = options.query;
+
+    if (!options.query.includes('#subjectFilter#')) {
+      const parsed = new Parser().parse(options.query);
+      if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
+        throw new Error('Query must be a CONSTRUCT query');
+      }
+      this.preParsed = parsed as ConstructQuery;
     }
-    this.query = parsed as ConstructQuery;
+
     this.fetcher =
       options.fetcher ??
       new SparqlEndpointFetcher({
@@ -118,7 +127,20 @@ export class SparqlConstructExecutor implements Executor {
   ): Promise<QuadStream> {
     const endpoint = distribution.accessUrl;
 
-    let ast = structuredClone(this.query);
+    let ast: ConstructQuery;
+    if (this.preParsed) {
+      ast = structuredClone(this.preParsed);
+    } else {
+      const substituted = this.rawQuery.replace(
+        '#subjectFilter#',
+        distribution.subjectFilter ?? ''
+      );
+      const parsed = new Parser().parse(substituted);
+      if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
+        throw new Error('Query must be a CONSTRUCT query');
+      }
+      ast = parsed as ConstructQuery;
+    }
 
     if (distribution.namedGraph) {
       withDefaultGraph(ast, distribution.namedGraph);
@@ -148,30 +170,6 @@ export class SparqlConstructExecutor implements Executor {
     const query = await readQueryFile(filename);
     return new SparqlConstructExecutor({ ...options, query });
   }
-}
-
-/**
- * Substitute template variables in a SPARQL query.
- *
- * - `#subjectFilter#` — replaced with the distribution's subject filter
- * - `#namedGraph#` — replaced with `FROM <graph>` clause if the distribution has a named graph
- * - `?dataset` — replaced with the dataset IRI
- */
-export function substituteQueryTemplates(
-  query: string,
-  distribution: Distribution | null,
-  dataset: Dataset
-): string {
-  const subjectFilter = distribution?.subjectFilter ?? '';
-
-  const namedGraph = distribution?.namedGraph
-    ? `FROM <${distribution.namedGraph}>`
-    : '';
-
-  return query
-    .replace('#subjectFilter#', subjectFilter)
-    .replaceAll('?dataset', `<${dataset.iri}>`)
-    .replace('#namedGraph#', namedGraph);
 }
 
 /**
