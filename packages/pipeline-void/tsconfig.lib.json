@@ -11,6 +11,9 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
+      "path": "../dataset/tsconfig.lib.json"
+    },
+    {
       "path": "../pipeline/tsconfig.lib.json"
     }
   ],
