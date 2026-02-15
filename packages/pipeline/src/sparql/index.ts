@@ -8,7 +8,10 @@ export {
   type QuadStream,
   type VariableBindings,
 } from './executor.js';
-export { SparqlSelector, type SparqlSelectorOptions } from './selector.js';
+export {
+  SparqlItemSelector,
+  type SparqlItemSelectorOptions,
+} from './selector.js';
 
 export { injectValues } from './values.js';
 

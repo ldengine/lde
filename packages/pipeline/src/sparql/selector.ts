@@ -7,13 +7,13 @@ import {
   type Variable,
   type VariableTerm,
 } from 'sparqljs';
-import type { StageSelector } from '../stage.js';
+import type { ItemSelector } from '../stage.js';
 import type { VariableBindings } from './executor.js';
 
 const parser = new Parser();
 const generator = new Generator();
 
-export interface SparqlSelectorOptions {
+export interface SparqlItemSelectorOptions {
   /** SELECT query projecting at least one named variable. A LIMIT in the query sets the default page size. */
   query: string;
   /** SPARQL endpoint URL. */
@@ -25,7 +25,7 @@ export interface SparqlSelectorOptions {
 }
 
 /**
- * {@link StageSelector} that pages through SPARQL SELECT results,
+ * {@link ItemSelector} that pages through SPARQL SELECT results,
  * yielding all projected variable bindings (NamedNode values only) per row.
  *
  * Pagination is an internal detail — consumers iterate binding rows directly.
@@ -33,13 +33,13 @@ export interface SparqlSelectorOptions {
  * (can be overridden by the `pageSize` option). Pagination continues
  * until a page returns fewer results than the page size.
  */
-export class SparqlSelector implements StageSelector {
+export class SparqlItemSelector implements ItemSelector {
   private readonly parsed: SelectQuery;
   private readonly endpoint: URL;
   private readonly pageSize: number;
   private readonly fetcher: SparqlEndpointFetcher;
 
-  constructor(options: SparqlSelectorOptions) {
+  constructor(options: SparqlItemSelectorOptions) {
     const parsed = parser.parse(options.query);
     if (parsed.type !== 'query' || parsed.queryType !== 'SELECT') {
       throw new Error('Query must be a SELECT query');

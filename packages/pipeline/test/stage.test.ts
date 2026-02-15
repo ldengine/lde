@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { Stage } from '../src/stage.js';
-import type { StageSelector, RunOptions } from '../src/stage.js';
+import type { ItemSelector, RunOptions } from '../src/stage.js';
 import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset, Distribution } from '@lde/dataset';
@@ -67,9 +67,9 @@ function notSupportedExecutor(message = 'not supported'): Executor {
   };
 }
 
-function mockSelector(
+function mockItemSelector(
   rows: Record<string, ReturnType<typeof namedNode>>[]
-): StageSelector {
+): ItemSelector {
   return {
     async *[Symbol.asyncIterator]() {
       yield* rows;
@@ -167,7 +167,7 @@ describe('Stage', () => {
     expect(writer.quads).toEqual([]);
   });
 
-  it('passes selector bindings to executors in a single batch', async () => {
+  it('passes item selector bindings to executors in a single batch', async () => {
     const executor = capturingExecutor([q1]);
     const bindings = [
       { class: namedNode('http://example.org/Person') },
@@ -177,7 +177,7 @@ describe('Stage', () => {
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      selector: mockSelector(bindings),
+      itemSelector: mockItemSelector(bindings),
     });
 
     const writer = collectingWriter();
@@ -201,7 +201,7 @@ describe('Stage', () => {
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      selector: mockSelector(bindings),
+      itemSelector: mockItemSelector(bindings),
       batchSize: 2,
     });
 
@@ -229,7 +229,7 @@ describe('Stage', () => {
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      selector: mockSelector(bindings),
+      itemSelector: mockItemSelector(bindings),
       batchSize: 1,
     });
 
@@ -239,13 +239,13 @@ describe('Stage', () => {
     expect(executor.execute).toHaveBeenCalledTimes(3);
   });
 
-  it('returns NotSupported when selector yields nothing', async () => {
+  it('returns NotSupported when item selector yields nothing', async () => {
     const executor = capturingExecutor([q1]);
 
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      selector: mockSelector([]),
+      itemSelector: mockItemSelector([]),
     });
 
     const writer = collectingWriter();
@@ -254,7 +254,7 @@ describe('Stage', () => {
     expect(executor.execute).not.toHaveBeenCalled();
   });
 
-  it('works without a selector', async () => {
+  it('works without an item selector', async () => {
     const executor = capturingExecutor([q1, q2]);
 
     const stage = new Stage({
@@ -290,24 +290,24 @@ describe('Stage', () => {
     );
   });
 
-  it('resolves a selector factory with the distribution at run time', async () => {
+  it('resolves an item selector factory with the distribution at run time', async () => {
     const executor = capturingExecutor([q1]);
     const bindings = [{ class: namedNode('http://example.org/Person') }];
-    const selectorFactory = vi.fn((_distribution: Distribution) =>
-      mockSelector(bindings)
+    const itemSelectorFactory = vi.fn((_distribution: Distribution) =>
+      mockItemSelector(bindings)
     );
 
     const stage = new Stage({
       name: 'test',
       executors: executor,
-      selector: selectorFactory,
+      itemSelector: itemSelectorFactory,
     });
 
     const writer = collectingWriter();
     const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
 
-    expect(selectorFactory).toHaveBeenCalledWith(distribution);
+    expect(itemSelectorFactory).toHaveBeenCalledWith(distribution);
     expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
       bindings,
     });
@@ -375,7 +375,7 @@ describe('Stage', () => {
       const stage = new Stage({
         name: 'test',
         executors: delayExecutor([q1], 20, tracker),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
           { class: namedNode('http://example.org/C') },
@@ -397,7 +397,7 @@ describe('Stage', () => {
       const stage = new Stage({
         name: 'test',
         executors: delayExecutor([q1], 10, tracker),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
           { class: namedNode('http://example.org/C') },
@@ -420,7 +420,7 @@ describe('Stage', () => {
       const stage = new Stage({
         name: 'test',
         executors: failingExecutor(2),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
           { class: namedNode('http://example.org/C') },
@@ -440,7 +440,7 @@ describe('Stage', () => {
       const stage = new Stage({
         name: 'test',
         executors: delayExecutor([q1, q2], 10, tracker),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
           { class: namedNode('http://example.org/C') },
@@ -475,7 +475,7 @@ describe('Stage', () => {
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1]),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
           { class: namedNode('http://example.org/C') },
@@ -500,11 +500,11 @@ describe('Stage', () => {
       expect(progressCalls[2].elements).toBe(3);
     });
 
-    it('returns NotSupported when all executors return NotSupported with selector', async () => {
+    it('returns NotSupported when all executors return NotSupported with item selector', async () => {
       const stage = new Stage({
         name: 'test',
         executors: notSupportedExecutor(),
-        selector: mockSelector([
+        itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
           { class: namedNode('http://example.org/B') },
         ]),

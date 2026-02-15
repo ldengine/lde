@@ -2,7 +2,7 @@ import { createReadStream } from 'node:fs';
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
 import { StreamParser } from 'n3';
-import type { Selector } from './selector.js';
+import type { DatasetSelector } from './selector.js';
 import { Stage } from './stage.js';
 import type { Writer } from './writer/writer.js';
 import { FileWriter } from './writer/fileWriter.js';
@@ -16,7 +16,7 @@ import type { ProgressReporter } from './progressReporter.js';
 
 export interface PipelineOptions {
   name: string;
-  selector: Selector;
+  datasetSelector: DatasetSelector;
   stages: Stage[];
   writer: Writer;
   distributionResolver: DistributionResolver;
@@ -45,12 +45,12 @@ export class Pipeline {
   }
 
   async run(): Promise<void> {
-    const { selector, reporter, name } = this.options;
+    const { datasetSelector, reporter, name } = this.options;
     const start = Date.now();
 
     reporter?.pipelineStart(name);
 
-    const datasets = await selector.select();
+    const datasets = await datasetSelector.select();
     for await (const dataset of datasets) {
       await this.processDataset(dataset);
     }
