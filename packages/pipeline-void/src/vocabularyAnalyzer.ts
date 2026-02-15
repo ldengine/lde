@@ -1,4 +1,5 @@
 import type { Quad } from '@rdfjs/types';
+import prefixes from '@zazuko/prefixes';
 import { DataFactory } from 'n3';
 
 const { namedNode, quad } = DataFactory;
@@ -7,30 +8,9 @@ const VOID = 'http://rdfs.org/ns/void#';
 const voidProperty = namedNode(`${VOID}property`);
 const voidVocabulary = namedNode(`${VOID}vocabulary`);
 
-/**
- * Known vocabulary namespace prefixes mapped to their canonical URIs.
- */
-const vocabularyPrefixes: ReadonlyMap<string, string> = new Map([
-  ['http://schema.org/', 'http://schema.org/'],
-  ['https://schema.org/', 'https://schema.org/'],
-  [
-    'https://www.ica.org/standards/RiC/ontology#',
-    'https://www.ica.org/standards/RiC/ontology#',
-  ],
-  [
-    'http://www.cidoc-crm.org/cidoc-crm/',
-    'http://www.cidoc-crm.org/cidoc-crm/',
-  ],
-  ['http://purl.org/ontology/bibo/', 'http://purl.org/ontology/bibo/'],
-  ['http://purl.org/dc/elements/1.1/', 'http://purl.org/dc/elements/1.1/'],
-  ['http://purl.org/dc/terms/', 'http://purl.org/dc/terms/'],
-  ['http://purl.org/dc/dcmitype/', 'http://purl.org/dc/dcmitype/'],
-  [
-    'http://www.w3.org/2004/02/skos/core#',
-    'http://www.w3.org/2004/02/skos/core#',
-  ],
-  ['http://xmlns.com/foaf/0.1/', 'http://xmlns.com/foaf/0.1/'],
-]);
+const defaultVocabularies: readonly string[] = [
+  ...new Set(Object.values(prefixes)),
+];
 
 /**
  * Streaming transformer that passes through all quads and appends
@@ -42,7 +22,8 @@ const vocabularyPrefixes: ReadonlyMap<string, string> = new Map([
  */
 export async function* withVocabularies(
   quads: AsyncIterable<Quad>,
-  datasetIri: string
+  datasetIri: string,
+  vocabularies: readonly string[] = defaultVocabularies,
 ): AsyncIterable<Quad> {
   const detectedVocabularies = new Set<string>();
 
@@ -51,9 +32,9 @@ export async function* withVocabularies(
 
     if (q.predicate.equals(voidProperty)) {
       const propertyUri = q.object.value;
-      for (const [prefix, vocabUri] of vocabularyPrefixes) {
-        if (propertyUri.startsWith(prefix)) {
-          detectedVocabularies.add(vocabUri);
+      for (const ns of vocabularies) {
+        if (propertyUri.startsWith(ns)) {
+          detectedVocabularies.add(ns);
           break;
         }
       }
