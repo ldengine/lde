@@ -11,7 +11,7 @@ import {
 import type { Writer } from '../src/writer/writer.js';
 import type { ProgressReporter } from '../src/progressReporter.js';
 import type { StageOutputResolver } from '../src/stageOutputResolver.js';
-import type { Selector } from '../src/selector.js';
+import type { DatasetSelector } from '../src/selector.js';
 import { Paginator } from '@lde/dataset-registry-client';
 
 function makeDataset(iri = 'http://example.org/dataset'): Dataset {
@@ -25,7 +25,7 @@ const sparqlDistribution = Distribution.sparql(
   new URL('http://example.org/sparql')
 );
 
-function makeSelector(...datasets: Dataset[]): Selector {
+function makeDatasetSelector(...datasets: Dataset[]): DatasetSelector {
   return {
     select: async () => new Paginator(async () => datasets, datasets.length),
   };
@@ -103,7 +103,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [stage1, stage2],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -131,7 +131,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [stage],
         writer,
         distributionResolver: makeResolver(
@@ -159,7 +159,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [stage1, stage2],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -189,7 +189,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -233,7 +233,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -264,7 +264,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -286,7 +286,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -309,7 +309,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [failingParent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -330,7 +330,7 @@ describe('Pipeline', () => {
         () =>
           new Pipeline({
             name: 'test',
-            selector: makeSelector(dataset),
+            datasetSelector: makeDatasetSelector(dataset),
             stages: [parent],
             writer,
             distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -349,7 +349,7 @@ describe('Pipeline', () => {
         () =>
           new Pipeline({
             name: 'test',
-            selector: makeSelector(dataset),
+            datasetSelector: makeDatasetSelector(dataset),
             stages: [parent],
             writer,
             distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -369,7 +369,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [flatStage, chainedParent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -400,7 +400,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'my-pipeline',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [stage],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -445,7 +445,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -471,7 +471,7 @@ describe('Pipeline', () => {
     it('works without reporter', async () => {
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset),
+        datasetSelector: makeDatasetSelector(dataset),
         stages: [makeStage('stage1')],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
@@ -490,7 +490,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset1, dataset2),
+        datasetSelector: makeDatasetSelector(dataset1, dataset2),
         stages: [stage],
         writer,
         distributionResolver: resolver,
@@ -521,7 +521,7 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline({
         name: 'test',
-        selector: makeSelector(dataset1, dataset2),
+        datasetSelector: makeDatasetSelector(dataset1, dataset2),
         stages: [failingStage],
         writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),

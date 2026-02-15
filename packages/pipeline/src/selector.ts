@@ -4,11 +4,11 @@ import { Client, Paginator } from '@lde/dataset-registry-client';
 /**
  * Select {@link Dataset}s for processing in a pipeline.
  */
-export interface Selector {
+export interface DatasetSelector {
   select(): Promise<Paginator<Dataset>>;
 }
 
-export class ManualDatasetSelection implements Selector {
+export class ManualDatasetSelection implements DatasetSelector {
   constructor(private readonly datasets: Dataset[]) {}
 
   async select(): Promise<Paginator<Dataset>> {
@@ -31,7 +31,7 @@ export class ManualDatasetSelection implements Selector {
  * @param string options.query Optional custom SPARQL query to select datasets.
  * @param object options.criteria Optional search criteria to select datasets.
  */
-export class RegistrySelector implements Selector {
+export class RegistrySelector implements DatasetSelector {
   private readonly registry: Client;
   private readonly query?: string;
   private readonly criteria?: object;

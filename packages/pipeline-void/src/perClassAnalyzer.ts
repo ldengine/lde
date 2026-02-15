@@ -1,6 +1,6 @@
 import {
   Stage,
-  SparqlSelector,
+  SparqlItemSelector,
   SparqlConstructExecutor,
   readQueryFile,
 } from '@lde/pipeline';
@@ -25,7 +25,7 @@ async function createPerClassStage(queryFilename: string): Promise<Stage> {
 
   return new Stage({
     name: queryFilename,
-    selector: (distribution) => {
+    itemSelector: (distribution) => {
       const subjectFilter = distribution.subjectFilter ?? '';
       const fromClause = distribution.namedGraph
         ? `FROM <${distribution.namedGraph}>`
@@ -37,7 +37,7 @@ async function createPerClassStage(queryFilename: string): Promise<Stage> {
         'LIMIT 1000',
       ].join('\n');
 
-      return new SparqlSelector({
+      return new SparqlItemSelector({
         query: selectorQuery,
         endpoint: distribution.accessUrl!,
         pageSize: 1000,

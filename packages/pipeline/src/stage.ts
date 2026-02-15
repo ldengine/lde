@@ -6,15 +6,15 @@ import { batch } from './batch.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
-/** A selector, or a factory that receives the runtime distribution. */
-export type StageSelectorInput =
-  | StageSelector
-  | ((distribution: Distribution) => StageSelector);
+/** An item selector, or a factory that receives the runtime distribution. */
+export type ItemSelectorInput =
+  | ItemSelector
+  | ((distribution: Distribution) => ItemSelector);
 
 export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
-  selector?: StageSelectorInput;
+  itemSelector?: ItemSelectorInput;
   /** Maximum number of bindings per executor call. @default 10 */
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
@@ -31,7 +31,7 @@ export class Stage {
   readonly name: string;
   readonly stages: readonly Stage[];
   private readonly executors: Executor[];
-  private readonly selectorInput?: StageSelectorInput;
+  private readonly itemSelectorInput?: ItemSelectorInput;
   private readonly batchSize: number;
   private readonly maxConcurrency: number;
 
@@ -41,7 +41,7 @@ export class Stage {
     this.executors = Array.isArray(options.executors)
       ? options.executors
       : [options.executors];
-    this.selectorInput = options.selector;
+    this.itemSelectorInput = options.itemSelector;
     this.batchSize = options.batchSize ?? 10;
     this.maxConcurrency = options.maxConcurrency ?? 10;
   }
@@ -52,11 +52,11 @@ export class Stage {
     writer: Writer,
     options?: RunOptions
   ): Promise<NotSupported | void> {
-    if (this.selectorInput) {
+    if (this.itemSelectorInput) {
       const selector =
-        typeof this.selectorInput === 'function'
-          ? this.selectorInput(distribution)
-          : this.selectorInput;
+        typeof this.itemSelectorInput === 'function'
+          ? this.itemSelectorInput(distribution)
+          : this.itemSelectorInput;
       return this.runWithSelector(
         selector,
         dataset,
@@ -75,7 +75,7 @@ export class Stage {
   }
 
   private async runWithSelector(
-    selector: StageSelector,
+    selector: ItemSelector,
     dataset: Dataset,
     distribution: Distribution,
     writer: Writer,
@@ -216,6 +216,6 @@ async function* mergeStreams(
   }
 }
 
-/** Stage-level selector that yields variable bindings for use in executor queries. Pagination is an implementation detail. */
+/** Selects items (as variable bindings) for executors to process. Pagination is an implementation detail. */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
-export interface StageSelector extends AsyncIterable<VariableBindings> {}
+export interface ItemSelector extends AsyncIterable<VariableBindings> {}

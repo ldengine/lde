@@ -1,5 +1,5 @@
-import { SparqlSelector } from '../../src/sparql/selector.js';
-import type { StageSelector } from '../../src/stage.js';
+import { SparqlItemSelector } from '../../src/sparql/selector.js';
+import type { ItemSelector } from '../../src/stage.js';
 import type { VariableBindings } from '../../src/sparql/executor.js';
 import { describe, it, expect, vi } from 'vitest';
 import { Readable } from 'node:stream';
@@ -23,7 +23,7 @@ function bindingsStream(
   return Promise.resolve(stream);
 }
 
-describe('SparqlSelector', () => {
+describe('SparqlItemSelector', () => {
   const endpoint = new URL('http://example.com/sparql');
   const query = 'SELECT ?uri WHERE { ?uri a <http://example.com/Class> }';
 
@@ -39,7 +39,7 @@ describe('SparqlSelector', () => {
         ),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       pageSize: 10,
@@ -73,7 +73,7 @@ describe('SparqlSelector', () => {
         }),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       pageSize: 2,
@@ -104,7 +104,7 @@ describe('SparqlSelector', () => {
       fetchBindings: vi.fn().mockImplementation(() => bindingsStream([])),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       fetcher: mockFetcher as never,
@@ -129,7 +129,7 @@ describe('SparqlSelector', () => {
         }),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       pageSize: 50,
@@ -157,7 +157,7 @@ describe('SparqlSelector', () => {
         ),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       pageSize: 10,
@@ -185,7 +185,7 @@ describe('SparqlSelector', () => {
         }),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query,
       endpoint,
       fetcher: mockFetcher as never,
@@ -209,7 +209,7 @@ describe('SparqlSelector', () => {
         }),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query: 'SELECT ?class WHERE { ?s a ?class } LIMIT 25',
       endpoint,
       fetcher: mockFetcher as never,
@@ -234,7 +234,7 @@ describe('SparqlSelector', () => {
         }),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query: 'SELECT ?class WHERE { ?s a ?class } LIMIT 25',
       endpoint,
       pageSize: 5,
@@ -261,7 +261,7 @@ describe('SparqlSelector', () => {
       ),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query: 'SELECT ?class ?property WHERE { ?s a ?class ; ?property ?o }',
       endpoint,
       fetcher: mockFetcher as never,
@@ -288,7 +288,7 @@ describe('SparqlSelector', () => {
       ),
     };
 
-    const selector = new SparqlSelector({
+    const selector = new SparqlItemSelector({
       query:
         'SELECT ?class ?label WHERE { ?s a ?class ; <http://www.w3.org/2000/01/rdf-schema#label> ?label }',
       endpoint,
@@ -309,7 +309,7 @@ describe('SparqlSelector', () => {
   it('throws on non-SELECT queries', () => {
     expect(
       () =>
-        new SparqlSelector({
+        new SparqlItemSelector({
           query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
           endpoint,
         })
@@ -319,14 +319,14 @@ describe('SparqlSelector', () => {
   it('throws on SELECT * queries', () => {
     expect(
       () =>
-        new SparqlSelector({
+        new SparqlItemSelector({
           query: 'SELECT * WHERE { ?s ?p ?o }',
           endpoint,
         })
     ).toThrow('SELECT * is not supported');
   });
 
-  it('is assignable to StageSelector', async () => {
+  it('is assignable to ItemSelector', async () => {
     const mockFetcher = {
       fetchBindings: vi
         .fn()
@@ -335,8 +335,8 @@ describe('SparqlSelector', () => {
         ),
     };
 
-    // Verify SparqlSelector satisfies StageSelector.
-    const selector: StageSelector = new SparqlSelector({
+    // Verify SparqlItemSelector satisfies ItemSelector.
+    const selector: ItemSelector = new SparqlItemSelector({
       query,
       endpoint,
       fetcher: mockFetcher as never,
