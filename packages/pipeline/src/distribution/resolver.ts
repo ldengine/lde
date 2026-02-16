@@ -1,12 +1,13 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Importer } from '@lde/sparql-importer';
 import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
+import type { SparqlServer } from '@lde/sparql-server';
 import { probe, SparqlProbeResult, type ProbeResultType } from './probe.js';
 
 export class ResolvedDistribution {
   constructor(
     readonly distribution: Distribution,
-    readonly probeResults: ProbeResultType[]
+    readonly probeResults: ProbeResultType[],
   ) {}
 }
 
@@ -15,18 +16,20 @@ export class NoDistributionAvailable {
     readonly dataset: Dataset,
     readonly message: string,
     readonly probeResults: ProbeResultType[],
-    readonly importFailed?: ImportFailed
+    readonly importFailed?: ImportFailed,
   ) {}
 }
 
 export interface DistributionResolver {
   resolve(
-    dataset: Dataset
+    dataset: Dataset,
   ): Promise<ResolvedDistribution | NoDistributionAvailable>;
+  cleanup?(): Promise<void>;
 }
 
 export interface SparqlDistributionResolverOptions {
   importer?: Importer;
+  server?: SparqlServer;
   timeout?: number;
 }
 
@@ -42,20 +45,22 @@ export interface SparqlDistributionResolverOptions {
  */
 export class SparqlDistributionResolver implements DistributionResolver {
   private readonly importer?: Importer;
+  private readonly server?: SparqlServer;
   private readonly timeout: number;
 
   constructor(options?: SparqlDistributionResolverOptions) {
     this.importer = options?.importer;
+    this.server = options?.server;
     this.timeout = options?.timeout ?? 5000;
   }
 
   async resolve(
-    dataset: Dataset
+    dataset: Dataset,
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const results = await Promise.all(
       dataset.distributions.map((distribution) =>
-        probe(distribution, this.timeout)
-      )
+        probe(distribution, this.timeout),
+      ),
     );
 
     // Find first valid SPARQL endpoint.
@@ -76,9 +81,19 @@ export class SparqlDistributionResolver implements DistributionResolver {
     if (this.importer) {
       const importResult = await this.importer.import(dataset);
       if (importResult instanceof ImportSuccessful) {
+        // Start server if provided, using its query endpoint.
+        if (this.server) {
+          await this.server.start();
+          const distribution = Distribution.sparql(
+            this.server.queryEndpoint,
+            importResult.identifier,
+          );
+          return new ResolvedDistribution(distribution, results);
+        }
+
         const distribution = Distribution.sparql(
           importResult.distribution.accessUrl,
-          importResult.identifier
+          importResult.identifier,
         );
         return new ResolvedDistribution(distribution, results);
       }
@@ -87,7 +102,7 @@ export class SparqlDistributionResolver implements DistributionResolver {
           dataset,
           'No SPARQL endpoint or importable data dump available',
           results,
-          importResult
+          importResult,
         );
       }
     }
@@ -95,7 +110,11 @@ export class SparqlDistributionResolver implements DistributionResolver {
     return new NoDistributionAvailable(
       dataset,
       'No SPARQL endpoint or importable data dump available',
-      results
+      results,
     );
+  }
+
+  async cleanup(): Promise<void> {
+    await this.server?.stop();
   }
 }

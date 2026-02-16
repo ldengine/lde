@@ -535,4 +535,64 @@ describe('Pipeline', () => {
       expect(reporter.datasetComplete).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('resolver cleanup', () => {
+    it('calls resolver.cleanup after processing a dataset', async () => {
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+      const resolver: DistributionResolver = {
+        resolve: vi.fn().mockResolvedValue(makeResolvedDistribution()),
+        cleanup,
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: resolver,
+      });
+
+      await pipeline.run();
+
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls resolver.cleanup even when a stage throws', async () => {
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+      const resolver: DistributionResolver = {
+        resolve: vi.fn().mockResolvedValue(makeResolvedDistribution()),
+        cleanup,
+      };
+
+      const failingStage = makeStage('failing');
+      vi.spyOn(failingStage, 'run').mockRejectedValue(
+        new Error('Stage failed'),
+      );
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [failingStage],
+        writers: writer,
+        distributionResolver: resolver,
+      });
+
+      await pipeline.run();
+
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    });
+
+    it('works when resolver has no cleanup method', async () => {
+      const resolver: DistributionResolver = {
+        resolve: vi.fn().mockResolvedValue(makeResolvedDistribution()),
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: resolver,
+      });
+
+      await expect(pipeline.run()).resolves.toBeUndefined();
+    });
+  });
 });
