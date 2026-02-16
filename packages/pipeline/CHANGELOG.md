@@ -1,3 +1,13 @@
+## 0.6.30 (2026-02-16)
+
+### 🩹 Fixes
+
+- **pipeline:** don't mark empty distributions as valid ([#114](https://github.com/ldengine/lde/pull/114))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.29 (2026-02-16)
 
 This was a version bump only for @lde/pipeline to align it with other projects, there were no code changes.
