@@ -14,6 +14,9 @@
       "path": "../local-sparql-endpoint/tsconfig.lib.json"
     },
     {
+      "path": "../sparql-server/tsconfig.lib.json"
+    },
+    {
       "path": "../sparql-importer/tsconfig.lib.json"
     },
     {

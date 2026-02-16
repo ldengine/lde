@@ -26,6 +26,7 @@
     "@lde/dataset": "0.6.9",
     "@lde/dataset-registry-client": "0.6.16",
     "@lde/sparql-importer": "0.2.9",
+    "@lde/sparql-server": "0.4.9",
     "@rdfjs/types": "^2.0.1",
     "fetch-sparql-endpoint": "^7.1.0",
     "filenamify-url": "^3.0.0",

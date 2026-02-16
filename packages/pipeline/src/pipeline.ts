@@ -109,6 +109,8 @@ export class Pipeline {
       }
     } catch {
       // Stage error for this dataset; continue to next dataset.
+    } finally {
+      await this.distributionResolver.cleanup?.();
     }
 
     this.reporter?.datasetComplete(datasetIri);
