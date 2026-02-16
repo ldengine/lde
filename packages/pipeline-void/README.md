@@ -9,9 +9,9 @@ VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets.
 - `createLanguageStage(distribution)` — Per-class language tags
 - `createObjectClassStage(distribution)` — Per-class object class partitions
 
-## Streaming transformers
+## Executor decorators
 
-- `withVocabularies(quads, datasetIri)` — Detect and append `void:vocabulary` triples
+- `VocabularyExecutor` — Wraps an executor; detects and appends `void:vocabulary` triples
 - `withProvenance(quads, iri, startedAt, endedAt)` — Append PROV-O provenance metadata
 
 ## SPARQL Queries
@@ -43,20 +43,23 @@ Generic VOiD analysis queries included:
 import {
   createQueryStage,
   createDatatypeStage,
-  withVocabularies,
-  withProvenance,
+  VocabularyExecutor,
+  Stage,
 } from '@lde/pipeline-void';
-import { Distribution } from '@lde/dataset';
-
-const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
+import { SparqlConstructExecutor } from '@lde/pipeline';
 
 // Simple CONSTRUCT query stage
-const stage = await createQueryStage('triples.rq', distribution);
+const stage = await createQueryStage('triples.rq');
 await stage.run(dataset, distribution, writer);
 
-// Per-class stage (streaming)
-const datatypeStage = await createDatatypeStage(distribution);
-await datatypeStage.run(dataset, distribution, writer);
+// Executor decorator: vocabulary detection wraps entity-properties executor
+const executor = await SparqlConstructExecutor.fromFile(
+  'queries/entity-properties.rq',
+);
+const entityPropertiesStage = new Stage({
+  name: 'entity-properties',
+  executors: new VocabularyExecutor(executor),
+});
 ```
 
 ## Validation
