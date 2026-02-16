@@ -79,6 +79,9 @@
       "automaticFromRef": true
     }
   },
+  "sync": {
+    "applyChanges": true
+  },
   "generators": {
     "@nx/js:library": {
       "bundler": "tsc",
