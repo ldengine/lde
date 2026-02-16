@@ -86,9 +86,7 @@ import {
 } from '@lde/pipeline';
 
 const pipeline = new Pipeline({
-  name: 'example',
   datasetSelector: new ManualDatasetSelection([dataset]),
-  distributionResolver: new SparqlDistributionResolver(),
   stages: [
     new Stage({
       name: 'per-class',
@@ -101,7 +99,7 @@ const pipeline = new Pipeline({
       }),
     }),
   ],
-  writer: new SparqlUpdateWriter({
+  writers: new SparqlUpdateWriter({
     endpoint: new URL('http://localhost:7200/repositories/lde/statements'),
   }),
 });

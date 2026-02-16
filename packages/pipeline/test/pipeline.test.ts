@@ -22,7 +22,7 @@ function makeDataset(iri = 'http://example.org/dataset'): Dataset {
 }
 
 const sparqlDistribution = Distribution.sparql(
-  new URL('http://example.org/sparql')
+  new URL('http://example.org/sparql'),
 );
 
 function makeDatasetSelector(...datasets: Dataset[]): DatasetSelector {
@@ -32,7 +32,7 @@ function makeDatasetSelector(...datasets: Dataset[]): DatasetSelector {
 }
 
 function makeResolver(
-  result: ResolvedDistribution | NoDistributionAvailable
+  result: ResolvedDistribution | NoDistributionAvailable,
 ): DistributionResolver {
   return { resolve: vi.fn().mockResolvedValue(result) };
 }
@@ -69,7 +69,7 @@ function makeStageOutputResolver(): StageOutputResolver & {
     resolve: vi
       .fn<StageOutputResolver['resolve']>()
       .mockResolvedValue(
-        Distribution.sparql(new URL('http://resolved.example.org/sparql'))
+        Distribution.sparql(new URL('http://resolved.example.org/sparql')),
       ),
     cleanup: vi
       .fn<StageOutputResolver['cleanup']>()
@@ -80,7 +80,7 @@ function makeStageOutputResolver(): StageOutputResolver & {
 function makeStage(
   name: string,
   result: NotSupported | void = undefined,
-  subStages: Stage[] = []
+  subStages: Stage[] = [],
 ): Stage {
   const stage = new Stage({ name, executors: [], stages: subStages });
   vi.spyOn(stage, 'run').mockResolvedValue(result);
@@ -102,10 +102,9 @@ describe('Pipeline', () => {
       const stage2 = makeStage('stage2');
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [stage1, stage2],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
       });
 
@@ -115,13 +114,13 @@ describe('Pipeline', () => {
         dataset,
         sparqlDistribution,
         writer,
-        expect.objectContaining({ onProgress: expect.any(Function) })
+        expect.objectContaining({ onProgress: expect.any(Function) }),
       );
       expect(stage2.run).toHaveBeenCalledWith(
         dataset,
         sparqlDistribution,
         writer,
-        expect.objectContaining({ onProgress: expect.any(Function) })
+        expect.objectContaining({ onProgress: expect.any(Function) }),
       );
     });
 
@@ -130,12 +129,11 @@ describe('Pipeline', () => {
       const reporter = makeReporter();
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [stage],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(
-          new NoDistributionAvailable(dataset, 'No SPARQL endpoint', [])
+          new NoDistributionAvailable(dataset, 'No SPARQL endpoint', []),
         ),
         reporter,
       });
@@ -145,23 +143,42 @@ describe('Pipeline', () => {
       expect(stage.run).not.toHaveBeenCalled();
       expect(reporter.datasetSkipped).toHaveBeenCalledWith(
         dataset.iri.toString(),
-        'No SPARQL endpoint'
+        'No SPARQL endpoint',
       );
+    });
+
+    it('fans out to multiple writers', async () => {
+      const writer2 = makeWriter();
+      const stage = makeStage('stage1');
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [stage],
+        writers: [writer, writer2],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      // Both stages should receive a FanOutWriter, not the individual writers.
+      const usedWriter = (stage.run as ReturnType<typeof vi.fn>).mock
+        .calls[0][2];
+      expect(usedWriter).not.toBe(writer);
+      expect(usedWriter).not.toBe(writer2);
     });
 
     it('skips stage returning NotSupported', async () => {
       const stage1 = makeStage(
         'stage1',
-        new NotSupported('Not supported reason')
+        new NotSupported('Not supported reason'),
       );
       const stage2 = makeStage('stage2');
       const reporter = makeReporter();
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [stage1, stage2],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
         reporter,
       });
@@ -170,7 +187,7 @@ describe('Pipeline', () => {
 
       expect(reporter.stageSkipped).toHaveBeenCalledWith(
         'stage1',
-        'Not supported reason'
+        'Not supported reason',
       );
       expect(stage2.run).toHaveBeenCalled();
     });
@@ -179,7 +196,7 @@ describe('Pipeline', () => {
   describe('sub-stage chaining', () => {
     it('runs parent with FileWriter, children chain off parent output', async () => {
       const resolvedDistribution = Distribution.sparql(
-        new URL('http://resolved.example.org/sparql')
+        new URL('http://resolved.example.org/sparql'),
       );
       const stageOutputResolver = makeStageOutputResolver();
       stageOutputResolver.resolve.mockResolvedValue(resolvedDistribution);
@@ -188,14 +205,15 @@ describe('Pipeline', () => {
       const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
-        outputFormat: 'n-triples',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+          outputFormat: 'n-triples',
+        },
       });
 
       await pipeline.run();
@@ -217,10 +235,10 @@ describe('Pipeline', () => {
 
     it('calls stageOutputResolver between chained stages', async () => {
       const dist1 = Distribution.sparql(
-        new URL('http://resolved.example.org/sparql/1')
+        new URL('http://resolved.example.org/sparql/1'),
       );
       const dist2 = Distribution.sparql(
-        new URL('http://resolved.example.org/sparql/2')
+        new URL('http://resolved.example.org/sparql/2'),
       );
       const stageOutputResolver = makeStageOutputResolver();
       stageOutputResolver.resolve
@@ -232,14 +250,15 @@ describe('Pipeline', () => {
       const parent = makeStage('parent', undefined, [child1, child2]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
-        outputFormat: 'n-triples',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+          outputFormat: 'n-triples',
+        },
       });
 
       await pipeline.run();
@@ -249,11 +268,11 @@ describe('Pipeline', () => {
 
       // child1 gets dist1 (resolved from parent output).
       expect((child1.run as ReturnType<typeof vi.fn>).mock.calls[0][1]).toBe(
-        dist1
+        dist1,
       );
       // child2 gets dist2 (resolved from child1 output).
       expect((child2.run as ReturnType<typeof vi.fn>).mock.calls[0][1]).toBe(
-        dist2
+        dist2,
       );
     });
 
@@ -263,14 +282,15 @@ describe('Pipeline', () => {
       const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
-        outputFormat: 'n-triples',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+          outputFormat: 'n-triples',
+        },
       });
 
       await pipeline.run();
@@ -285,13 +305,14 @@ describe('Pipeline', () => {
       const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+        },
       });
 
       await pipeline.run();
@@ -304,17 +325,18 @@ describe('Pipeline', () => {
       const child = makeStage('child');
       const failingParent = makeStage('failing', undefined, [child]);
       vi.spyOn(failingParent, 'run').mockRejectedValue(
-        new Error('Stage failed')
+        new Error('Stage failed'),
       );
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [failingParent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+        },
       });
 
       await pipeline.run();
@@ -322,40 +344,19 @@ describe('Pipeline', () => {
       expect(stageOutputResolver.cleanup).toHaveBeenCalledTimes(1);
     });
 
-    it('validates stageOutputResolver is required for sub-stages', () => {
+    it('validates chaining is required for sub-stages', () => {
       const child = makeStage('child');
       const parent = makeStage('parent', undefined, [child]);
 
       expect(
         () =>
           new Pipeline({
-            name: 'test',
             datasetSelector: makeDatasetSelector(dataset),
             stages: [parent],
-            writer,
+            writers: writer,
             distributionResolver: makeResolver(makeResolvedDistribution()),
-          })
-      ).toThrow(
-        'stageOutputResolver is required when any stage has sub-stages'
-      );
-    });
-
-    it('validates outputDir is required for sub-stages', () => {
-      const stageOutputResolver = makeStageOutputResolver();
-      const child = makeStage('child');
-      const parent = makeStage('parent', undefined, [child]);
-
-      expect(
-        () =>
-          new Pipeline({
-            name: 'test',
-            datasetSelector: makeDatasetSelector(dataset),
-            stages: [parent],
-            writer,
-            distributionResolver: makeResolver(makeResolvedDistribution()),
-            stageOutputResolver,
-          })
-      ).toThrow('outputDir is required when any stage has sub-stages');
+          }),
+      ).toThrow('chaining is required when any stage has sub-stages');
     });
   });
 
@@ -368,14 +369,15 @@ describe('Pipeline', () => {
       const chainedParent = makeStage('chained', undefined, [child]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [flatStage, chainedParent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
-        outputFormat: 'n-triples',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+          outputFormat: 'n-triples',
+        },
       });
 
       await pipeline.run();
@@ -402,7 +404,7 @@ describe('Pipeline', () => {
         name: 'my-pipeline',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [stage],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
         reporter,
       });
@@ -422,18 +424,18 @@ describe('Pipeline', () => {
         expect(callOrder[i]).toHaveBeenCalledTimes(1);
         if (i > 0) {
           expect(callOrder[i].mock.invocationCallOrder[0]).toBeGreaterThan(
-            callOrder[i - 1].mock.invocationCallOrder[0]
+            callOrder[i - 1].mock.invocationCallOrder[0],
           );
         }
       }
 
       expect(reporter.pipelineStart).toHaveBeenCalledWith('my-pipeline');
       expect(reporter.datasetStart).toHaveBeenCalledWith(
-        dataset.iri.toString()
+        dataset.iri.toString(),
       );
       expect(reporter.stageStart).toHaveBeenCalledWith('stage1');
       expect(reporter.pipelineComplete).toHaveBeenCalledWith(
-        expect.objectContaining({ duration: expect.any(Number) })
+        expect.objectContaining({ duration: expect.any(Number) }),
       );
     });
 
@@ -444,13 +446,14 @@ describe('Pipeline', () => {
       const parent = makeStage('parent', undefined, [child]);
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [parent],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
-        stageOutputResolver,
-        outputDir: '/tmp/test',
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+        },
         reporter,
       });
 
@@ -460,20 +463,19 @@ describe('Pipeline', () => {
       expect(reporter.stageStart).toHaveBeenCalledWith('child');
       expect(reporter.stageComplete).toHaveBeenCalledWith(
         'parent',
-        expect.objectContaining({ duration: expect.any(Number) })
+        expect.objectContaining({ duration: expect.any(Number) }),
       );
       expect(reporter.stageComplete).toHaveBeenCalledWith(
         'child',
-        expect.objectContaining({ duration: expect.any(Number) })
+        expect.objectContaining({ duration: expect.any(Number) }),
       );
     });
 
     it('works without reporter', async () => {
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset),
         stages: [makeStage('stage1')],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
       });
 
@@ -489,10 +491,9 @@ describe('Pipeline', () => {
       const resolver = makeResolver(makeResolvedDistribution());
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset1, dataset2),
         stages: [stage],
-        writer,
+        writers: writer,
         distributionResolver: resolver,
       });
 
@@ -520,10 +521,9 @@ describe('Pipeline', () => {
       const reporter = makeReporter();
 
       const pipeline = new Pipeline({
-        name: 'test',
         datasetSelector: makeDatasetSelector(dataset1, dataset2),
         stages: [failingStage],
-        writer,
+        writers: writer,
         distributionResolver: makeResolver(makeResolvedDistribution()),
         reporter,
       });
