@@ -1,3 +1,9 @@
+import { Dataset, Distribution } from '@lde/dataset';
+import {
+  NotSupported,
+  type Executor,
+  type ExecuteOptions,
+} from '@lde/pipeline';
 import type { Quad } from '@rdfjs/types';
 import prefixes from '@zazuko/prefixes';
 import { DataFactory } from 'n3';
@@ -13,17 +19,36 @@ const defaultVocabularies: readonly string[] = [
 ];
 
 /**
- * Streaming transformer that passes through all quads and appends
- * `void:vocabulary` triples for detected vocabulary prefixes.
+ * Executor decorator that passes through all quads from the inner executor
+ * and appends `void:vocabulary` triples for detected vocabulary prefixes.
  *
  * Inspects quads with predicate `void:property` to detect known vocabulary
  * namespace prefixes, then yields the corresponding `void:vocabulary` quads
- * after all input quads have been consumed.
+ * after all inner quads have been consumed.
  */
-export async function* withVocabularies(
+export class VocabularyExecutor implements Executor {
+  constructor(
+    private readonly inner: Executor,
+    private readonly vocabularies: readonly string[] = defaultVocabularies,
+  ) {}
+
+  async execute(
+    dataset: Dataset,
+    distribution: Distribution,
+    options?: ExecuteOptions,
+  ): Promise<AsyncIterable<Quad> | NotSupported> {
+    const result = await this.inner.execute(dataset, distribution, options);
+    if (result instanceof NotSupported) {
+      return result;
+    }
+    return withVocabularies(result, dataset.iri.toString(), this.vocabularies);
+  }
+}
+
+async function* withVocabularies(
   quads: AsyncIterable<Quad>,
   datasetIri: string,
-  vocabularies: readonly string[] = defaultVocabularies,
+  vocabularies: readonly string[],
 ): AsyncIterable<Quad> {
   const detectedVocabularies = new Set<string>();
 
