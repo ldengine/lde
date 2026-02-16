@@ -1,3 +1,13 @@
+## 0.6.31 (2026-02-16)
+
+### 🚀 Features
+
+- **pipeline:** add SparqlServer support to distribution resolver ([#118](https://github.com/ldengine/lde/pull/118))
+
+### ❤️ Thank You
+
+- David de Boer
+
 ## 0.6.30 (2026-02-16)
 
 ### 🩹 Fixes
