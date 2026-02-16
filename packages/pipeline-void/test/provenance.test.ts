@@ -1,7 +1,10 @@
-import { withProvenance } from '../src/index.js';
-import { describe, it, expect } from 'vitest';
+import { ProvenanceExecutor } from '../src/index.js';
+import { Dataset, Distribution } from '@lde/dataset';
+import { NotSupported } from '@lde/pipeline';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
+import type { Executor } from '@lde/pipeline';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -9,8 +12,20 @@ const PROV = 'http://www.w3.org/ns/prov#';
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const XSD_DATE_TIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
 
-async function* toAsync(...quads: Quad[]): AsyncIterable<Quad> {
-  yield* quads;
+const dataset = new Dataset({
+  iri: new URL('http://example.com/dataset/1'),
+  distributions: [],
+});
+const distribution = new Distribution(new URL('http://example.com/sparql'));
+
+function mockExecutor(quads: Quad[]): Executor {
+  return {
+    async execute() {
+      return (async function* () {
+        yield* quads;
+      })();
+    },
+  };
 }
 
 async function collect(stream: AsyncIterable<Quad>): Promise<Quad[]> {
@@ -21,58 +36,64 @@ async function collect(stream: AsyncIterable<Quad>): Promise<Quad[]> {
   return result;
 }
 
-describe('withProvenance', () => {
-  const iri = 'http://example.com/dataset/1';
-  const startedAt = new Date('2024-01-15T10:00:00.000Z');
-  const endedAt = new Date('2024-01-15T10:05:00.000Z');
+describe('ProvenanceExecutor', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T10:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('adds prov:Entity type', async () => {
-    const result = await collect(
-      withProvenance(toAsync(), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([]));
+    const result = await executor.execute(dataset, distribution);
 
-    const entityQuads = result.filter(
+    const quads = await collect(result as AsyncIterable<Quad>);
+    const entityQuads = quads.filter(
       (q) =>
-        q.subject.value === iri &&
+        q.subject.value === dataset.iri.toString() &&
         q.predicate.value === RDF_TYPE &&
-        q.object.value === `${PROV}Entity`
+        q.object.value === `${PROV}Entity`,
     );
     expect(entityQuads).toHaveLength(1);
   });
 
   it('adds prov:wasGeneratedBy linking to an activity', async () => {
-    const result = await collect(
-      withProvenance(toAsync(), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([]));
+    const result = await executor.execute(dataset, distribution);
 
-    const generatedByQuads = result.filter(
+    const quads = await collect(result as AsyncIterable<Quad>);
+    const generatedByQuads = quads.filter(
       (q) =>
-        q.subject.value === iri && q.predicate.value === `${PROV}wasGeneratedBy`
+        q.subject.value === dataset.iri.toString() &&
+        q.predicate.value === `${PROV}wasGeneratedBy`,
     );
     expect(generatedByQuads).toHaveLength(1);
     expect(generatedByQuads[0].object.termType).toBe('BlankNode');
   });
 
   it('adds prov:Activity type to the activity', async () => {
-    const result = await collect(
-      withProvenance(toAsync(), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([]));
+    const result = await executor.execute(dataset, distribution);
 
-    const activityQuads = result.filter(
+    const quads = await collect(result as AsyncIterable<Quad>);
+    const activityQuads = quads.filter(
       (q) =>
-        q.predicate.value === RDF_TYPE && q.object.value === `${PROV}Activity`
+        q.predicate.value === RDF_TYPE && q.object.value === `${PROV}Activity`,
     );
     expect(activityQuads).toHaveLength(1);
     expect(activityQuads[0].subject.termType).toBe('BlankNode');
   });
 
   it('adds prov:startedAtTime as xsd:dateTime', async () => {
-    const result = await collect(
-      withProvenance(toAsync(), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([]));
+    const result = await executor.execute(dataset, distribution);
 
-    const startQuads = result.filter(
-      (q) => q.predicate.value === `${PROV}startedAtTime`
+    const quads = await collect(result as AsyncIterable<Quad>);
+    const startQuads = quads.filter(
+      (q) => q.predicate.value === `${PROV}startedAtTime`,
     );
     expect(startQuads).toHaveLength(1);
     expect(startQuads[0].object.value).toBe('2024-01-15T10:00:00.000Z');
@@ -80,43 +101,59 @@ describe('withProvenance', () => {
       'datatype' in startQuads[0].object
         ? (startQuads[0].object as { datatype: { value: string } }).datatype
             .value
-        : undefined
+        : undefined,
     ).toBe(XSD_DATE_TIME);
   });
 
   it('adds prov:endedAtTime as xsd:dateTime', async () => {
-    const result = await collect(
-      withProvenance(toAsync(), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([]));
+    const result = await executor.execute(dataset, distribution);
 
-    const endQuads = result.filter(
-      (q) => q.predicate.value === `${PROV}endedAtTime`
+    // Advance time before consuming the stream.
+    vi.setSystemTime(new Date('2024-01-15T10:05:00.000Z'));
+    const quads = await collect(result as AsyncIterable<Quad>);
+
+    const endQuads = quads.filter(
+      (q) => q.predicate.value === `${PROV}endedAtTime`,
     );
     expect(endQuads).toHaveLength(1);
     expect(endQuads[0].object.value).toBe('2024-01-15T10:05:00.000Z');
     expect(
       'datatype' in endQuads[0].object
         ? (endQuads[0].object as { datatype: { value: string } }).datatype.value
-        : undefined
+        : undefined,
     ).toBe(XSD_DATE_TIME);
   });
 
   it('preserves existing triples', async () => {
     const existing = quad(
-      namedNode(iri),
+      namedNode(dataset.iri.toString()),
       namedNode('http://rdfs.org/ns/void#triples'),
-      literal('100')
+      literal('100'),
     );
 
-    const result = await collect(
-      withProvenance(toAsync(existing), iri, startedAt, endedAt)
-    );
+    const executor = new ProvenanceExecutor(mockExecutor([existing]));
+    const result = await executor.execute(dataset, distribution);
 
-    const existingQuads = result.filter(
-      (q) => q.predicate.value === 'http://rdfs.org/ns/void#triples'
+    const quads = await collect(result as AsyncIterable<Quad>);
+    const existingQuads = quads.filter(
+      (q) => q.predicate.value === 'http://rdfs.org/ns/void#triples',
     );
     expect(existingQuads).toHaveLength(1);
     // 1 existing + 5 provenance triples
-    expect(result).toHaveLength(6);
+    expect(quads).toHaveLength(6);
+  });
+
+  it('propagates NotSupported from inner executor', async () => {
+    const inner: Executor = {
+      async execute() {
+        return new NotSupported('no endpoint');
+      },
+    };
+
+    const executor = new ProvenanceExecutor(inner);
+    const result = await executor.execute(dataset, distribution);
+
+    expect(result).toBeInstanceOf(NotSupported);
   });
 });

@@ -12,7 +12,7 @@ VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets.
 ## Executor decorators
 
 - `VocabularyExecutor` — Wraps an executor; detects and appends `void:vocabulary` triples
-- `withProvenance(quads, iri, startedAt, endedAt)` — Append PROV-O provenance metadata
+- `ProvenanceExecutor` — Wraps an executor; appends PROV-O provenance metadata with automatic timing
 
 ## SPARQL Queries
 
