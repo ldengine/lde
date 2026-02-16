@@ -1,3 +1,13 @@
+## 0.2.35 (2026-02-16)
+
+### 🚀 Features
+
+- **pipeline-void:** add generic UriSpaceExecutor decorator ([#115](https://github.com/ldengine/lde/pull/115))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.34 (2026-02-16)
 
 ### 🧱 Updated Dependencies
