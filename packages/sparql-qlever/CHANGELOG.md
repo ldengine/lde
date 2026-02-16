@@ -1,3 +1,10 @@
+## 0.6.12 (2026-02-16)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner-docker to 0.2.10
+- Updated @lde/wait-for-sparql to 0.2.11
+
 ## 0.6.11 (2026-02-13)
 
 ### 🧱 Updated Dependencies
