@@ -1,3 +1,7 @@
+## 0.2.32 (2026-02-16)
+
+This was a version bump only for @lde/pipeline-void to align it with other projects, there were no code changes.
+
 ## 0.2.31 (2026-02-15)
 
 ### 🚀 Features
