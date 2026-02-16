@@ -1,10 +1,14 @@
 import { Distribution } from '@lde/dataset';
+import { Parser } from 'n3';
 
 /**
  * Result of a network error during probing.
  */
 export class NetworkError {
-  constructor(public readonly url: string, public readonly message: string) {}
+  constructor(
+    public readonly url: string,
+    public readonly message: string,
+  ) {}
 }
 
 /**
@@ -16,7 +20,10 @@ abstract class ProbeResult {
   public readonly lastModified: Date | null = null;
   public readonly contentType: string | null;
 
-  constructor(public readonly url: string, response: Response) {
+  constructor(
+    public readonly url: string,
+    response: Response,
+  ) {
     this.statusCode = response.status;
     this.statusText = response.statusText;
     this.contentType = response.headers.get('Content-Type');
@@ -50,13 +57,23 @@ export class SparqlProbeResult extends ProbeResult {
  */
 export class DataDumpProbeResult extends ProbeResult {
   public readonly contentSize: number | null = null;
+  public readonly failureReason: string | null;
 
-  constructor(url: string, response: Response) {
+  constructor(
+    url: string,
+    response: Response,
+    failureReason: string | null = null,
+  ) {
     super(url, response);
+    this.failureReason = failureReason;
     const contentLengthHeader = response.headers.get('Content-Length');
     if (contentLengthHeader) {
       this.contentSize = parseInt(contentLengthHeader);
     }
+  }
+
+  override isSuccess(): boolean {
+    return super.isSuccess() && this.failureReason === null;
   }
 }
 
@@ -75,7 +92,7 @@ export type ProbeResultType =
  */
 export async function probe(
   distribution: Distribution,
-  timeout = 5000
+  timeout = 5000,
 ): Promise<ProbeResultType> {
   try {
     if (distribution.isSparql()) {
@@ -85,14 +102,14 @@ export async function probe(
   } catch (e) {
     return new NetworkError(
       distribution.accessUrl?.toString() ?? 'unknown',
-      e instanceof Error ? e.message : String(e)
+      e instanceof Error ? e.message : String(e),
     );
   }
 }
 
 async function probeSparqlEndpoint(
   distribution: Distribution,
-  timeout: number
+  timeout: number,
 ): Promise<SparqlProbeResult | NetworkError> {
   const url = distribution.accessUrl!.toString();
   const response = await fetch(url, {
@@ -110,7 +127,7 @@ async function probeSparqlEndpoint(
 
 async function probeDataDump(
   distribution: Distribution,
-  timeout: number
+  timeout: number,
 ): Promise<DataDumpProbeResult | NetworkError> {
   const url = distribution.accessUrl!.toString();
   const requestOptions = {
@@ -121,21 +138,54 @@ async function probeDataDump(
     },
   };
 
-  let response = await fetch(url, {
+  const headResponse = await fetch(url, {
     method: 'HEAD',
     ...requestOptions,
   });
 
-  const contentLength = response.headers.get('Content-Length');
-  if (contentLength === null || contentLength === '0') {
-    // Retry as GET request for servers incorrectly returning HEAD request Content-Length,
-    // which *should* be the size of the response body when issuing a GET, not that of
-    // the response to a HEAD request, which is intentionally 0.
-    response = await fetch(url, {
+  const contentLength = headResponse.headers.get('Content-Length');
+  const contentLengthBytes = contentLength ? parseInt(contentLength) : 0;
+
+  // For small or unknown-size files, do a GET to validate body content.
+  // This also handles servers that incorrectly return 0 Content-Length for HEAD.
+  if (contentLengthBytes <= 10_240) {
+    const getResponse = await fetch(url, {
       method: 'GET',
       ...requestOptions,
     });
+    const body = await getResponse.text();
+    const isHttpSuccess = getResponse.status >= 200 && getResponse.status < 400;
+    const failureReason = isHttpSuccess
+      ? validateBody(body, getResponse.headers.get('Content-Type'))
+      : null;
+    return new DataDumpProbeResult(url, getResponse, failureReason);
   }
 
-  return new DataDumpProbeResult(url, response);
+  return new DataDumpProbeResult(url, headResponse);
+}
+
+const rdfContentTypes = [
+  'text/turtle',
+  'application/n-triples',
+  'application/n-quads',
+];
+
+function validateBody(body: string, contentType: string | null): string | null {
+  if (body.length === 0) {
+    return 'Distribution is empty';
+  }
+
+  if (contentType && rdfContentTypes.some((t) => contentType.startsWith(t))) {
+    try {
+      const parser = new Parser();
+      const quads = parser.parse(body);
+      if (quads.length === 0) {
+        return 'Distribution contains no RDF triples';
+      }
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  return null;
 }
