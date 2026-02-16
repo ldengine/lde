@@ -28,7 +28,7 @@ const HTTP_STATUS = 'https://www.w3.org/2011/http-statusCodes#';
 export async function* probeResultsToQuads(
   probeResults: ProbeResultType[],
   datasetIri: string,
-  importResult?: ImportFailed
+  importResult?: ImportFailed,
 ): AsyncIterable<Quad> {
   // Track blank nodes per URL so import errors can reference the right action.
   const actionsByUrl = new Map<string, ReturnType<typeof blankNode>>();
@@ -44,6 +44,12 @@ export async function* probeResultsToQuads(
       yield quad(action, namedNode(`${SCHEMA}error`), literal(result.message));
     } else if (result.isSuccess()) {
       yield* successQuads(action, result, datasetIri);
+    } else if (result instanceof DataDumpProbeResult && result.failureReason) {
+      yield quad(
+        action,
+        namedNode(`${SCHEMA}error`),
+        literal(result.failureReason),
+      );
     } else {
       // HTTP error
       const statusUri = `${HTTP_STATUS}${result.statusText.replace(/ /g, '')}`;
@@ -53,13 +59,13 @@ export async function* probeResultsToQuads(
 
   if (importResult) {
     const action = actionsByUrl.get(
-      importResult.distribution.accessUrl.toString()
+      importResult.distribution.accessUrl.toString(),
     );
     if (action) {
       yield quad(
         action,
         namedNode(`${SCHEMA}error`),
-        literal(importResult.error)
+        literal(importResult.error),
       );
     }
   }
@@ -68,7 +74,7 @@ export async function* probeResultsToQuads(
 function* successQuads(
   action: ReturnType<typeof blankNode>,
   result: SparqlProbeResult | DataDumpProbeResult,
-  datasetIri: string
+  datasetIri: string,
 ): Iterable<Quad> {
   const distributionUrl = namedNode(result.url);
 
@@ -78,7 +84,7 @@ function* successQuads(
     yield quad(
       distributionUrl,
       namedNode(`${SCHEMA}dateModified`),
-      literal(result.lastModified.toISOString(), namedNode(`${XSD}dateTime`))
+      literal(result.lastModified.toISOString(), namedNode(`${XSD}dateTime`)),
     );
   }
 
@@ -86,20 +92,20 @@ function* successQuads(
     yield quad(
       namedNode(datasetIri),
       namedNode(`${VOID}sparqlEndpoint`),
-      distributionUrl
+      distributionUrl,
     );
   } else {
     yield quad(
       namedNode(datasetIri),
       namedNode(`${VOID}dataDump`),
-      distributionUrl
+      distributionUrl,
     );
 
     if (result.contentSize) {
       yield quad(
         distributionUrl,
         namedNode(`${SCHEMA}contentSize`),
-        literal(result.contentSize.toString())
+        literal(result.contentSize.toString()),
       );
     }
 
@@ -107,7 +113,7 @@ function* successQuads(
       yield quad(
         distributionUrl,
         namedNode(`${SCHEMA}encodingFormat`),
-        literal(result.contentType)
+        literal(result.contentType),
       );
     }
   }

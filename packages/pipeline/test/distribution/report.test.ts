@@ -15,7 +15,7 @@ const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
 
 async function collect(
-  quads: AsyncIterable<import('n3').Quad>
+  quads: AsyncIterable<import('n3').Quad>,
 ): Promise<Store> {
   const store = new Store();
   for await (const quad of quads) {
@@ -38,7 +38,7 @@ describe('probeResultsToQuads', () => {
       new NetworkError('http://example.org/sparql', 'ECONNREFUSED'),
     ];
     const store = await collect(
-      probeResultsToQuads(results, 'http://example.org/dataset')
+      probeResultsToQuads(results, 'http://example.org/dataset'),
     );
 
     const errors = store.getQuads(null, `${SCHEMA}error`, null, null);
@@ -49,26 +49,26 @@ describe('probeResultsToQuads', () => {
   it('yields schema:error with status URI for HTTP error', async () => {
     const result = new SparqlProbeResult(
       'http://example.org/sparql',
-      new Response('', { status: 404, statusText: 'Not Found' })
+      new Response('', { status: 404, statusText: 'Not Found' }),
     );
     const store = await collect(
-      probeResultsToQuads([result], 'http://example.org/dataset')
+      probeResultsToQuads([result], 'http://example.org/dataset'),
     );
 
     const errors = store.getQuads(null, `${SCHEMA}error`, null, null);
     expect(errors).toHaveLength(1);
     expect(errors[0].object.value).toBe(
-      'https://www.w3.org/2011/http-statusCodes#NotFound'
+      'https://www.w3.org/2011/http-statusCodes#NotFound',
     );
   });
 
   it('yields void:sparqlEndpoint and action triples for successful SPARQL probe', async () => {
     const result = new SparqlProbeResult(
       'http://example.org/sparql',
-      sparqlResponse()
+      sparqlResponse(),
     );
     const store = await collect(
-      probeResultsToQuads([result], 'http://example.org/dataset')
+      probeResultsToQuads([result], 'http://example.org/dataset'),
     );
 
     // Action type
@@ -89,7 +89,7 @@ describe('probeResultsToQuads', () => {
       'http://example.org/dataset',
       `${VOID}sparqlEndpoint`,
       null,
-      null
+      null,
     );
     expect(endpoints).toHaveLength(1);
     expect(endpoints[0].object.value).toBe('http://example.org/sparql');
@@ -105,10 +105,10 @@ describe('probeResultsToQuads', () => {
           'Content-Length': '1000',
           'Last-Modified': 'Wed, 01 Jan 2025 00:00:00 GMT',
         },
-      })
+      }),
     );
     const store = await collect(
-      probeResultsToQuads([result], 'http://example.org/dataset')
+      probeResultsToQuads([result], 'http://example.org/dataset'),
     );
 
     // void:dataDump
@@ -116,7 +116,7 @@ describe('probeResultsToQuads', () => {
       'http://example.org/dataset',
       `${VOID}dataDump`,
       null,
-      null
+      null,
     );
     expect(dumps).toHaveLength(1);
     expect(dumps[0].object.value).toBe('http://example.org/data.nt');
@@ -126,7 +126,7 @@ describe('probeResultsToQuads', () => {
       'http://example.org/data.nt',
       `${SCHEMA}contentSize`,
       null,
-      null
+      null,
     );
     expect(sizes).toHaveLength(1);
     expect(sizes[0].object.value).toBe('1000');
@@ -136,7 +136,7 @@ describe('probeResultsToQuads', () => {
       'http://example.org/data.nt',
       `${SCHEMA}encodingFormat`,
       null,
-      null
+      null,
     );
     expect(formats).toHaveLength(1);
     expect(formats[0].object.value).toBe('application/n-triples');
@@ -146,11 +146,11 @@ describe('probeResultsToQuads', () => {
       'http://example.org/data.nt',
       `${SCHEMA}dateModified`,
       null,
-      null
+      null,
     );
     expect(dates).toHaveLength(1);
     expect(
-      'datatype' in dates[0].object && dates[0].object.datatype.value
+      'datatype' in dates[0].object && dates[0].object.datatype.value,
     ).toBe(`${XSD}dateTime`);
   });
 
@@ -160,7 +160,7 @@ describe('probeResultsToQuads', () => {
       new NetworkError('http://example.org/other', 'timeout'),
     ];
     const store = await collect(
-      probeResultsToQuads(results, 'http://example.org/dataset')
+      probeResultsToQuads(results, 'http://example.org/dataset'),
     );
 
     const actions = store.getQuads(null, `${RDF}type`, `${SCHEMA}Action`, null);
@@ -170,14 +170,14 @@ describe('probeResultsToQuads', () => {
   it('attaches import error to the correct action blank node', async () => {
     const distribution = new Distribution(
       new URL('http://example.org/data.nt'),
-      'application/n-triples'
+      'application/n-triples',
     );
     const probeResult = new DataDumpProbeResult(
       'http://example.org/data.nt',
       new Response('', {
         status: 200,
         headers: { 'Content-Length': '1000' },
-      })
+      }),
     );
     const importError = new ImportFailed(distribution, 'Parse error');
 
@@ -185,8 +185,8 @@ describe('probeResultsToQuads', () => {
       probeResultsToQuads(
         [probeResult],
         'http://example.org/dataset',
-        importError
-      )
+        importError,
+      ),
     );
 
     // The import error should be on the same blank node as the action target
@@ -194,7 +194,7 @@ describe('probeResultsToQuads', () => {
       null,
       `${SCHEMA}target`,
       'http://example.org/data.nt',
-      null
+      null,
     );
     expect(targets).toHaveLength(1);
     const actionNode = targets[0].subject;
@@ -204,9 +204,31 @@ describe('probeResultsToQuads', () => {
     expect(errors[0].object.value).toBe('Parse error');
   });
 
+  it('yields schema:error literal for data dump with failure reason', async () => {
+    const result = new DataDumpProbeResult(
+      'http://example.org/data.ttl',
+      new Response('', {
+        status: 200,
+        headers: { 'Content-Type': 'text/turtle' },
+      }),
+      'Distribution is empty',
+    );
+    const store = await collect(
+      probeResultsToQuads([result], 'http://example.org/dataset'),
+    );
+
+    const errors = store.getQuads(null, `${SCHEMA}error`, null, null);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].object.value).toBe('Distribution is empty');
+
+    // Should not emit void:dataDump since it's a failure.
+    const dumps = store.getQuads(null, `${VOID}dataDump`, null, null);
+    expect(dumps).toHaveLength(0);
+  });
+
   it('yields nothing for empty probe results', async () => {
     const store = await collect(
-      probeResultsToQuads([], 'http://example.org/dataset')
+      probeResultsToQuads([], 'http://example.org/dataset'),
     );
 
     expect(store.size).toBe(0);
