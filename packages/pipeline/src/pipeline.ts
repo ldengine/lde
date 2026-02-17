@@ -24,7 +24,6 @@ export interface PipelineOptions {
   chaining?: {
     stageOutputResolver: StageOutputResolver;
     outputDir: string;
-    outputFormat?: 'turtle' | 'n-triples' | 'n-quads';
   };
   reporter?: ProgressReporter;
 }
@@ -151,14 +150,14 @@ export class Pipeline {
     distribution: Distribution,
     stage: Stage,
   ): Promise<void> {
-    const { stageOutputResolver, outputDir, outputFormat } = this.chaining!;
+    const { stageOutputResolver, outputDir } = this.chaining!;
     const outputFiles: string[] = [];
 
     try {
       // 1. Run parent stage → FileWriter.
       const parentWriter = new FileWriter({
         outputDir: `${outputDir}/${stage.name}`,
-        format: outputFormat,
+        format: 'n-triples',
       });
 
       await this.runChainedStage(dataset, distribution, stage, parentWriter);
@@ -172,7 +171,7 @@ export class Pipeline {
         const child = stage.stages[i];
         const childWriter = new FileWriter({
           outputDir: `${outputDir}/${child.name}`,
-          format: outputFormat,
+          format: 'n-triples',
         });
 
         await this.runChainedStage(
