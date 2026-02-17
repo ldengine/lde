@@ -1,3 +1,13 @@
+## 0.6.32 (2026-02-16)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.6.17
+- Updated @lde/local-sparql-endpoint to 0.2.12
+- Updated @lde/sparql-importer to 0.2.10
+- Updated @lde/sparql-server to 0.4.10
+- Updated @lde/dataset to 0.6.10
+
 ## 0.6.31 (2026-02-16)
 
 ### 🚀 Features

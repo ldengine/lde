@@ -1,6 +1,6 @@
 {
   "name": "@lde/wait-for-sparql",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/wait-for-sparql"
