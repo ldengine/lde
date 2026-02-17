@@ -212,7 +212,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -257,7 +256,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -289,7 +287,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -376,7 +373,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
