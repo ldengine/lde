@@ -1,9 +1,4 @@
-import { Dataset, Distribution } from '@lde/dataset';
-import {
-  NotSupported,
-  type Executor,
-  type ExecuteOptions,
-} from '@lde/pipeline';
+import type { QuadTransform, PipelinePlugin } from '@lde/pipeline';
 import type { Quad } from '@rdfjs/types';
 import { DataFactory } from 'n3';
 
@@ -21,38 +16,19 @@ const PROV_STARTED_AT_TIME = namedNode(
 const PROV_ENDED_AT_TIME = namedNode('http://www.w3.org/ns/prov#endedAtTime');
 const XSD_DATE_TIME = namedNode('http://www.w3.org/2001/XMLSchema#dateTime');
 
-/**
- * Executor decorator that passes through all quads from the inner executor
- * and appends PROV-O provenance metadata.
- *
- * Timestamps are captured automatically: `startedAt` when `execute()` is
- * called, `endedAt` when the inner quad stream is fully consumed.
- *
- * Appended quads:
- * - `<dataset> a prov:Entity`
- * - `<dataset> prov:wasGeneratedBy _:activity`
- * - `_:activity a prov:Activity`
- * - `_:activity prov:startedAtTime "..."^^xsd:dateTime`
- * - `_:activity prov:endedAtTime "..."^^xsd:dateTime`
- */
-export class ProvenanceExecutor implements Executor {
-  constructor(private readonly inner: Executor) {}
+/** QuadTransform that appends PROV-O provenance quads. */
+export const provenanceTransform: QuadTransform = (quads, dataset) =>
+  appendProvenanceQuads(quads, dataset.iri.toString(), new Date());
 
-  async execute(
-    dataset: Dataset,
-    distribution: Distribution,
-    options?: ExecuteOptions,
-  ): Promise<AsyncIterable<Quad> | NotSupported> {
-    const startedAt = new Date();
-    const result = await this.inner.execute(dataset, distribution, options);
-    if (result instanceof NotSupported) {
-      return result;
-    }
-    return withProvenance(result, dataset.iri.toString(), startedAt);
-  }
+/** Pipeline plugin that appends PROV-O provenance to every stage's output. */
+export function provenancePlugin(): PipelinePlugin {
+  return {
+    name: 'provenance',
+    beforeStageWrite: provenanceTransform,
+  };
 }
 
-async function* withProvenance(
+async function* appendProvenanceQuads(
   quads: AsyncIterable<Quad>,
   iri: string,
   startedAt: Date,

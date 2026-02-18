@@ -4,6 +4,7 @@ import type { Quad } from '@rdfjs/types';
 import { StreamParser } from 'n3';
 import type { DatasetSelector } from './selector.js';
 import { Stage } from './stage.js';
+import type { QuadTransform } from './stage.js';
 import type { Writer } from './writer/writer.js';
 import { FileWriter } from './writer/fileWriter.js';
 import {
@@ -15,10 +16,18 @@ import { NotSupported } from './sparql/executor.js';
 import type { StageOutputResolver } from './stageOutputResolver.js';
 import type { ProgressReporter } from './progressReporter.js';
 
+/** Plugin that hooks into pipeline lifecycle events. */
+export interface PipelinePlugin {
+  name: string;
+  /** Transform the quad stream before writing. */
+  beforeStageWrite?: QuadTransform;
+}
+
 export interface PipelineOptions {
   datasetSelector: DatasetSelector;
   stages: Stage[];
   writers: Writer | Writer[];
+  plugins?: PipelinePlugin[];
   name?: string;
   distributionResolver?: DistributionResolver;
   chaining?: {
@@ -45,6 +54,17 @@ class FanOutWriter implements Writer {
   }
 }
 
+class TransformWriter implements Writer {
+  constructor(
+    private readonly inner: Writer,
+    private readonly transform: QuadTransform,
+  ) {}
+
+  async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
+    await this.inner.write(dataset, this.transform(quads, dataset));
+  }
+}
+
 export class Pipeline {
   private readonly name: string;
   private readonly datasetSelector: DatasetSelector;
@@ -65,9 +85,21 @@ export class Pipeline {
     this.name = options.name ?? '';
     this.datasetSelector = options.datasetSelector;
     this.stages = options.stages;
-    this.writer = Array.isArray(options.writers)
+
+    let writer: Writer = Array.isArray(options.writers)
       ? new FanOutWriter(options.writers)
       : options.writers;
+
+    const transforms = options.plugins
+      ?.map((p) => p.beforeStageWrite)
+      .filter((t): t is QuadTransform => t !== undefined);
+    if (transforms?.length) {
+      const composed: QuadTransform = (quads, dataset) =>
+        transforms.reduce((q, fn) => fn(q, dataset), quads);
+      writer = new TransformWriter(writer, composed);
+    }
+
+    this.writer = writer;
     this.distributionResolver =
       options.distributionResolver ?? new SparqlDistributionResolver();
     this.chaining = options.chaining;
