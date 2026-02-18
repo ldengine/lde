@@ -8,6 +8,11 @@ LDE (Linked Data Engine) is an Nx monorepo of Node.js libraries for building Lin
 Built on SPARQL, SHACL, and DCAT-AP 3.0 standards.
 Uses TypeScript with ESNext modules and Vite for building/testing.
 
+## Documentation
+
+- Record architecture decisions in @docs/decisions following the ADR format.
+  ADR titles start with a verb (e.g. ‘Merge pipeline approaches’).
+
 ## Development
 
 - We’re pre-release, so be aggressive about removing dead code. Do not yet care about backward compatibility.
