@@ -1,3 +1,13 @@
+## 0.3.1 (2026-02-18)
+
+### 🩹 Fixes
+
+- **pipeline-void:** resolve query files in published package ([#128](https://github.com/ldengine/lde/pull/128))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.0 (2026-02-18)
 
 ### 🧱 Updated Dependencies
