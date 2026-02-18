@@ -1,24 +1,12 @@
 # Pipeline
 
-@lde/pipeline is a framework for building pipelines that transform (large) RDF datasets with pure [SPARQL](https://www.w3.org/TR/sparql11-query/).
+A framework for transforming large RDF datasets using pure [SPARQL](https://www.w3.org/TR/sparql11-query/) queries.
 
-## Features
+- **SPARQL-native.** Data transformations are plain SPARQL query files — portable, transparent, testable and version-controlled.
+- **Composable.** Decorators wrap executors and resolvers to add behaviour (provenance, vocabulary detection, data import) without subclassing.
+- **Extensible.** A plugin system lets packages like [@lde/pipeline-void](../pipeline-void) (or your own plugins) hook into the pipeline lifecycle.
 
-- Full pipeline framework and toolkit out of the box.
-- Transparent, portable data transformations with pure SPARQL queries.
-- Where needed, the plain SPARQL queries can be decorated with TypeScript code to add logic that cannot be expressed (well) in SPARQL.
-- Plugin architecture and focus on composition enable clean extension points.
-- Configure pipelines in YAML or TypeScript.
-
-## Approach
-
-### Design principles
-
-- Focus on composition: objects are decorated to add functionality. The inheritance tree is kept simple on purpose.
-  Examples are importing distributions (ImportResolver wrapping DistributionResolver) and
-- Plugin architecture: hooks that can be extended by shareable plugins. @lde/pipeline wants to have an ecosystem function.
-
-### Components
+## Components
 
 A **Pipeline** consists of:
 
@@ -98,7 +86,6 @@ import {
   SparqlItemSelector,
   SparqlUpdateWriter,
   ManualDatasetSelection,
-  SparqlDistributionResolver,
 } from '@lde/pipeline';
 
 const pipeline = new Pipeline({
