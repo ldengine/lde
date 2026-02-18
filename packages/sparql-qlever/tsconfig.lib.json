@@ -14,6 +14,9 @@
       "path": "../wait-for-sparql/tsconfig.lib.json"
     },
     {
+      "path": "../task-runner-native/tsconfig.lib.json"
+    },
+    {
       "path": "../task-runner-docker/tsconfig.lib.json"
     }
   ],

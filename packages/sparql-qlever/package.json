@@ -28,6 +28,8 @@
     "@lde/sparql-importer": "0.0.9",
     "@lde/sparql-server": "0.2.2",
     "@lde/task-runner": "0.0.5",
+    "@lde/task-runner-docker": "0.2.10",
+    "@lde/task-runner-native": "0.2.11",
     "tslib": "^2.3.0"
   }
 }
