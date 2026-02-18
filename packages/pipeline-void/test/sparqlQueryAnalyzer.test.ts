@@ -1,16 +1,20 @@
-import { createQueryStage, Stage } from '../src/index.js';
+import {
+  createTriplesStage,
+  createPropertiesStage,
+  Stage,
+} from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 
-describe('createQueryStage', () => {
-  it('returns a Stage with the query filename as name', async () => {
-    const stage = await createQueryStage('triples.rq');
+describe('named stage functions', () => {
+  it('createTriplesStage returns a Stage with triples.rq', async () => {
+    const stage = await createTriplesStage();
 
     expect(stage).toBeInstanceOf(Stage);
     expect(stage.name).toBe('triples.rq');
   });
 
-  it('creates a stage for any query file', async () => {
-    const stage = await createQueryStage('properties.rq');
+  it('createPropertiesStage returns a Stage with properties.rq', async () => {
+    const stage = await createPropertiesStage();
 
     expect(stage).toBeInstanceOf(Stage);
     expect(stage.name).toBe('properties.rq');
