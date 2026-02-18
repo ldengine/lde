@@ -9,6 +9,11 @@ export {
 export { probeResultsToQuads } from './report.js';
 
 export {
+  ImportResolver,
+  type ImportResolverOptions,
+} from './importResolver.js';
+
+export {
   ResolvedDistribution,
   NoDistributionAvailable,
   SparqlDistributionResolver,
