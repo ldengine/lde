@@ -1,3 +1,13 @@
+## 0.7.0 (2026-02-18)
+
+### 🚀 Features
+
+- **sparql-qlever:** add createQlever factory function ([#127](https://github.com/ldengine/lde/pull/127))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.12 (2026-02-16)
 
 ### 🧱 Updated Dependencies
