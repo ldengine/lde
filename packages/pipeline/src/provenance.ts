@@ -1,4 +1,5 @@
-import type { QuadTransform, PipelinePlugin } from '@lde/pipeline';
+import type { QuadTransform } from './stage.js';
+import type { PipelinePlugin } from './pipeline.js';
 import type { Quad } from '@rdfjs/types';
 import { DataFactory } from 'n3';
 
