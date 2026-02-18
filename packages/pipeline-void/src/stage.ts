@@ -12,7 +12,11 @@ import { fileURLToPath } from 'node:url';
 import { VocabularyExecutor } from './vocabularyAnalyzer.js';
 import { UriSpaceExecutor } from './uriSpaceExecutor.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const queriesDir = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'queries',
+);
 
 async function createVoidStage(
   filename: string,
@@ -21,7 +25,7 @@ async function createVoidStage(
     selection?: 'perClass';
   },
 ): Promise<Stage> {
-  const query = await readQueryFile(resolve(__dirname, 'queries', filename));
+  const query = await readQueryFile(resolve(queriesDir, filename));
   const executor =
     options?.executor?.(query) ?? new SparqlConstructExecutor({ query });
 
