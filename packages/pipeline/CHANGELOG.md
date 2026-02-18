@@ -1,3 +1,13 @@
+## 0.7.0 (2026-02-18)
+
+### 🚀 Features
+
+- document pipeline changes ([5489e18](https://github.com/ldengine/lde/commit/5489e18))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.32 (2026-02-16)
 
 ### 🧱 Updated Dependencies
