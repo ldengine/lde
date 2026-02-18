@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Pipeline } from '../src/pipeline.js';
+import { Pipeline, type PipelinePlugin } from '../src/pipeline.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import { Stage } from '../src/stage.js';
 import { NotSupported } from '../src/sparql/executor.js';
@@ -13,6 +13,8 @@ import type { ProgressReporter } from '../src/progressReporter.js';
 import type { StageOutputResolver } from '../src/stageOutputResolver.js';
 import type { DatasetSelector } from '../src/selector.js';
 import { Paginator } from '@lde/dataset-registry-client';
+import { DataFactory } from 'n3';
+import type { Quad } from '@rdfjs/types';
 
 function makeDataset(iri = 'http://example.org/dataset'): Dataset {
   return new Dataset({
@@ -212,7 +214,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -257,7 +258,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -289,7 +289,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -376,7 +375,6 @@ describe('Pipeline', () => {
         chaining: {
           stageOutputResolver,
           outputDir: '/tmp/test',
-          outputFormat: 'n-triples',
         },
       });
 
@@ -533,6 +531,158 @@ describe('Pipeline', () => {
       // Both datasets should be attempted.
       expect(failingStage.run).toHaveBeenCalledTimes(2);
       expect(reporter.datasetComplete).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('plugins', () => {
+    const { namedNode, quad: q } = DataFactory;
+    const extra = q(
+      namedNode('http://example.org/extra'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o'),
+    );
+
+    function realExecutor(quads: Quad[]) {
+      return {
+        async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
+          return (async function* () {
+            yield* quads;
+          })();
+        },
+      };
+    }
+
+    function collectingWriter(): Writer & { quads: Quad[] } {
+      const quads: Quad[] = [];
+      return {
+        quads,
+        async write(_dataset: Dataset, data: AsyncIterable<Quad>) {
+          for await (const quad of data) {
+            quads.push(quad);
+          }
+        },
+      };
+    }
+
+    it('applies beforeStageWrite transform', async () => {
+      const q1 = q(
+        namedNode('http://example.org/s'),
+        namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'),
+      );
+      const cw = collectingWriter();
+
+      const plugin: PipelinePlugin = {
+        name: 'test',
+        beforeStageWrite: async function* (quads) {
+          yield* quads;
+          yield extra;
+        },
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(makeDataset()),
+        stages: [new Stage({ name: 'stage1', executors: realExecutor([q1]) })],
+        writers: cw,
+        plugins: [plugin],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(cw.quads).toEqual([q1, extra]);
+    });
+
+    it('composes multiple beforeStageWrite plugins in order', async () => {
+      const q1 = q(
+        namedNode('http://example.org/s'),
+        namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'),
+      );
+      const extra2 = q(
+        namedNode('http://example.org/extra2'),
+        namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'),
+      );
+      const cw = collectingWriter();
+
+      const plugin1: PipelinePlugin = {
+        name: 'first',
+        beforeStageWrite: async function* (quads) {
+          yield* quads;
+          yield extra;
+        },
+      };
+
+      const plugin2: PipelinePlugin = {
+        name: 'second',
+        beforeStageWrite: async function* (quads) {
+          yield* quads;
+          yield extra2;
+        },
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(makeDataset()),
+        stages: [new Stage({ name: 'stage1', executors: realExecutor([q1]) })],
+        writers: cw,
+        plugins: [plugin1, plugin2],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(cw.quads).toEqual([q1, extra, extra2]);
+    });
+
+    it('does not wrap writer when plugins have no beforeStageWrite', async () => {
+      const stage = makeStage('stage1');
+      const plugin: PipelinePlugin = { name: 'noop' };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [stage],
+        writers: writer,
+        plugins: [plugin],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      // Stage receives the original writer (no TransformWriter wrapping).
+      const usedWriter = (stage.run as ReturnType<typeof vi.fn>).mock
+        .calls[0][2];
+      expect(usedWriter).toBe(writer);
+    });
+
+    it('passes dataset to beforeStageWrite transform', async () => {
+      const cw = collectingWriter();
+      const ds = makeDataset('http://example.org/my-dataset');
+
+      const plugin: PipelinePlugin = {
+        name: 'dataset-aware',
+        beforeStageWrite: async function* (quads, dataset) {
+          yield* quads;
+          yield q(
+            namedNode(dataset.iri.toString()),
+            namedNode('http://example.org/p'),
+            namedNode('http://example.org/o'),
+          );
+        },
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(ds),
+        stages: [new Stage({ name: 'stage1', executors: realExecutor([]) })],
+        writers: cw,
+        plugins: [plugin],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(cw.quads).toHaveLength(1);
+      expect(cw.quads[0].subject.value).toBe('http://example.org/my-dataset');
     });
   });
 

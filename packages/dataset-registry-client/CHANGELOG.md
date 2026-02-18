@@ -1,3 +1,10 @@
+## 0.6.17 (2026-02-16)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/local-sparql-endpoint to 0.2.12
+- Updated @lde/dataset to 0.6.10
+
 ## 0.6.16 (2026-02-13)
 
 ### 🧱 Updated Dependencies

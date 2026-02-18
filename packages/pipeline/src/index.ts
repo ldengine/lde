@@ -8,3 +8,4 @@ export * from './stageOutputResolver.js';
 export * from './sparql/index.js';
 export * from './distribution/index.js';
 export * from './writer/index.js';
+export * from './provenance.js';

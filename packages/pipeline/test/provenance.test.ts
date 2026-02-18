@@ -1,10 +1,8 @@
-import { ProvenanceExecutor } from '../src/index.js';
-import { Dataset, Distribution } from '@lde/dataset';
-import { NotSupported } from '@lde/pipeline';
+import { provenanceTransform, provenancePlugin } from '../src/index.js';
+import { Dataset } from '@lde/dataset';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
-import type { Executor } from '@lde/pipeline';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -16,27 +14,26 @@ const dataset = new Dataset({
   iri: new URL('http://example.com/dataset/1'),
   distributions: [],
 });
-const distribution = new Distribution(new URL('http://example.com/sparql'));
 
-function mockExecutor(quads: Quad[]): Executor {
-  return {
-    async execute() {
-      return (async function* () {
-        yield* quads;
-      })();
-    },
-  };
-}
-
-async function collect(stream: AsyncIterable<Quad>): Promise<Quad[]> {
+async function collect(iter: AsyncIterable<Quad>): Promise<Quad[]> {
   const result: Quad[] = [];
-  for await (const q of stream) {
+  for await (const q of iter) {
     result.push(q);
   }
   return result;
 }
 
-describe('ProvenanceExecutor', () => {
+function emptyStream(): AsyncIterable<Quad> {
+  return quadStream([]);
+}
+
+function quadStream(quads: Quad[]): AsyncIterable<Quad> {
+  return (async function* () {
+    yield* quads;
+  })();
+}
+
+describe('provenanceTransform', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T10:00:00.000Z'));
@@ -47,10 +44,8 @@ describe('ProvenanceExecutor', () => {
   });
 
   it('adds prov:Entity type', async () => {
-    const executor = new ProvenanceExecutor(mockExecutor([]));
-    const result = await executor.execute(dataset, distribution);
+    const quads = await collect(provenanceTransform(emptyStream(), dataset));
 
-    const quads = await collect(result as AsyncIterable<Quad>);
     const entityQuads = quads.filter(
       (q) =>
         q.subject.value === dataset.iri.toString() &&
@@ -61,10 +56,8 @@ describe('ProvenanceExecutor', () => {
   });
 
   it('adds prov:wasGeneratedBy linking to an activity', async () => {
-    const executor = new ProvenanceExecutor(mockExecutor([]));
-    const result = await executor.execute(dataset, distribution);
+    const quads = await collect(provenanceTransform(emptyStream(), dataset));
 
-    const quads = await collect(result as AsyncIterable<Quad>);
     const generatedByQuads = quads.filter(
       (q) =>
         q.subject.value === dataset.iri.toString() &&
@@ -75,10 +68,8 @@ describe('ProvenanceExecutor', () => {
   });
 
   it('adds prov:Activity type to the activity', async () => {
-    const executor = new ProvenanceExecutor(mockExecutor([]));
-    const result = await executor.execute(dataset, distribution);
+    const quads = await collect(provenanceTransform(emptyStream(), dataset));
 
-    const quads = await collect(result as AsyncIterable<Quad>);
     const activityQuads = quads.filter(
       (q) =>
         q.predicate.value === RDF_TYPE && q.object.value === `${PROV}Activity`,
@@ -88,10 +79,8 @@ describe('ProvenanceExecutor', () => {
   });
 
   it('adds prov:startedAtTime as xsd:dateTime', async () => {
-    const executor = new ProvenanceExecutor(mockExecutor([]));
-    const result = await executor.execute(dataset, distribution);
+    const quads = await collect(provenanceTransform(emptyStream(), dataset));
 
-    const quads = await collect(result as AsyncIterable<Quad>);
     const startQuads = quads.filter(
       (q) => q.predicate.value === `${PROV}startedAtTime`,
     );
@@ -106,12 +95,9 @@ describe('ProvenanceExecutor', () => {
   });
 
   it('adds prov:endedAtTime as xsd:dateTime', async () => {
-    const executor = new ProvenanceExecutor(mockExecutor([]));
-    const result = await executor.execute(dataset, distribution);
-
-    // Advance time before consuming the stream.
+    // Advance time before consuming the stream (triggers endedAt).
     vi.setSystemTime(new Date('2024-01-15T10:05:00.000Z'));
-    const quads = await collect(result as AsyncIterable<Quad>);
+    const quads = await collect(provenanceTransform(emptyStream(), dataset));
 
     const endQuads = quads.filter(
       (q) => q.predicate.value === `${PROV}endedAtTime`,
@@ -132,10 +118,10 @@ describe('ProvenanceExecutor', () => {
       literal('100'),
     );
 
-    const executor = new ProvenanceExecutor(mockExecutor([existing]));
-    const result = await executor.execute(dataset, distribution);
+    const quads = await collect(
+      provenanceTransform(quadStream([existing]), dataset),
+    );
 
-    const quads = await collect(result as AsyncIterable<Quad>);
     const existingQuads = quads.filter(
       (q) => q.predicate.value === 'http://rdfs.org/ns/void#triples',
     );
@@ -143,17 +129,21 @@ describe('ProvenanceExecutor', () => {
     // 1 existing + 5 provenance triples
     expect(quads).toHaveLength(6);
   });
+});
 
-  it('propagates NotSupported from inner executor', async () => {
-    const inner: Executor = {
-      async execute() {
-        return new NotSupported('no endpoint');
-      },
-    };
+describe('provenancePlugin', () => {
+  it('returns a plugin with name "provenance"', () => {
+    const plugin = provenancePlugin();
+    expect(plugin.name).toBe('provenance');
+  });
 
-    const executor = new ProvenanceExecutor(inner);
-    const result = await executor.execute(dataset, distribution);
+  it('has a beforeStageWrite hook', () => {
+    const plugin = provenancePlugin();
+    expect(plugin.beforeStageWrite).toBeDefined();
+  });
 
-    expect(result).toBeInstanceOf(NotSupported);
+  it('beforeStageWrite is provenanceTransform', () => {
+    const plugin = provenancePlugin();
+    expect(plugin.beforeStageWrite).toBe(provenanceTransform);
   });
 });

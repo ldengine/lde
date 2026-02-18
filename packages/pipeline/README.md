@@ -1,6 +1,10 @@
 # Pipeline
 
-Framework for building RDF data processing pipelines with SPARQL.
+A framework for transforming large RDF datasets using pure [SPARQL](https://www.w3.org/TR/sparql11-query/) queries.
+
+- **SPARQL-native.** Data transformations are plain SPARQL query files — portable, transparent, testable and version-controlled.
+- **Composable.** Decorators wrap executors and resolvers to add behaviour (provenance, vocabulary detection, data import) without subclassing.
+- **Extensible.** A plugin system lets packages like [@lde/pipeline-void](../pipeline-void) (or your own plugins) hook into the pipeline lifecycle.
 
 ## Components
 
@@ -82,7 +86,6 @@ import {
   SparqlItemSelector,
   SparqlUpdateWriter,
   ManualDatasetSelection,
-  SparqlDistributionResolver,
 } from '@lde/pipeline';
 
 const pipeline = new Pipeline({
@@ -105,10 +108,4 @@ const pipeline = new Pipeline({
 });
 
 await pipeline.run();
-```
-
-## Validation
-
-```sh
-npx nx run-many -t lint test typecheck build --projects=@lde/pipeline
 ```

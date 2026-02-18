@@ -62,11 +62,12 @@
   },
   "release": {
     "projectsRelationship": "independent",
+    "conventionalCommits": {
+      "useCommitScope": false
+    },
     "version": {
       "preVersionCommand": "npx nx run-many -t build",
-      "conventionalCommits": {
-        "useCommitScope": false
-      },
+      "conventionalCommits": true,
       "fallbackCurrentVersionResolver": "disk",
       "versionActionsOptions": {
         "skipLockFileUpdate": true

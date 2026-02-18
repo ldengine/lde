@@ -1,6 +1,6 @@
 {
   "name": "@lde/pipeline-void",
-  "version": "0.2.35",
+  "version": "0.2.37",
   "description": "VOiD (Vocabulary of Interlinked Datasets) statistical analysis for RDF datasets",
   "repository": {
     "url": "https://github.com/ldengine/lde",
@@ -21,11 +21,12 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "src/queries",
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.6.9",
-    "@lde/pipeline": "0.6.30",
+    "@lde/dataset": "0.6.10",
+    "@lde/pipeline": "0.6.32",
     "@rdfjs/types": "^2.0.1",
     "@zazuko/prefixes": "^2.6.1",
     "n3": "^1.17.0",
