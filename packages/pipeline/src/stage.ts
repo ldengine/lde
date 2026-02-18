@@ -6,6 +6,12 @@ import { batch } from './batch.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
+/** Transforms a quad stream, optionally using dataset metadata. */
+export type QuadTransform = (
+  quads: AsyncIterable<Quad>,
+  dataset: Dataset,
+) => AsyncIterable<Quad>;
+
 export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
@@ -45,7 +51,7 @@ export class Stage {
     dataset: Dataset,
     distribution: Distribution,
     writer: Writer,
-    options?: RunOptions
+    options?: RunOptions,
   ): Promise<NotSupported | void> {
     if (this.itemSelector) {
       return this.runWithSelector(
@@ -53,7 +59,7 @@ export class Stage {
         dataset,
         distribution,
         writer,
-        options
+        options,
       );
     }
 
@@ -70,7 +76,7 @@ export class Stage {
     dataset: Dataset,
     distribution: Distribution,
     writer: Writer,
-    options?: RunOptions
+    options?: RunOptions,
   ): Promise<NotSupported | void> {
     // Peek the first batch to detect an empty selector before starting the
     // writer (important because e.g. SparqlUpdateWriter does CLEAR GRAPH).
@@ -109,7 +115,7 @@ export class Stage {
           (err: unknown) => {
             inFlight.delete(p);
             firstError ??= err;
-          }
+          },
         );
         inFlight.add(p);
       };
@@ -141,7 +147,7 @@ export class Stage {
                 }
                 elementsProcessed += bindings.length;
                 options?.onProgress?.(elementsProcessed, quadsGenerated);
-              })()
+              })(),
             );
           }
         }
@@ -178,10 +184,10 @@ export class Stage {
 
   private async executeAll(
     dataset: Dataset,
-    distribution: Distribution
+    distribution: Distribution,
   ): Promise<AsyncIterable<Quad>[] | NotSupported> {
     const results = await Promise.all(
-      this.executors.map((executor) => executor.execute(dataset, distribution))
+      this.executors.map((executor) => executor.execute(dataset, distribution)),
     );
 
     const streams: AsyncIterable<Quad>[] = [];
@@ -200,7 +206,7 @@ export class Stage {
 }
 
 async function* mergeStreams(
-  streams: AsyncIterable<Quad>[]
+  streams: AsyncIterable<Quad>[],
 ): AsyncIterable<Quad> {
   for (const stream of streams) {
     yield* stream;
