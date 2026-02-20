@@ -23,6 +23,15 @@ export interface FileWriterOptions {
  * Streams RDF quads to files on disk using N3 Writer.
  *
  * Files are named based on the dataset IRI using filenamify-url.
+ *
+ * The first {@link write} call for a given dataset creates (or overwrites) the file.
+ * Subsequent calls for the same dataset append to it, so that multiple pipeline stages
+ * can each contribute quads to a single output file.
+ *
+ * **Note:** With `format: 'turtle'` (the default) each append will repeat the prefix
+ * declarations at the start of each chunk. For multi-stage pipelines, prefer
+ * `format: 'n-triples'` or `format: 'n-quads'`, which produce clean line-oriented
+ * output without repeated headers.
  */
 const formatMap: Record<string, string> = {
   turtle: 'Turtle',
@@ -33,6 +42,7 @@ const formatMap: Record<string, string> = {
 export class FileWriter implements Writer {
   private readonly outputDir: string;
   readonly format: 'turtle' | 'n-triples' | 'n-quads';
+  private readonly writtenFiles = new Set<string>();
 
   constructor(options: FileWriterOptions) {
     this.outputDir = options.outputDir;
@@ -48,7 +58,10 @@ export class FileWriter implements Writer {
     const filePath = join(this.outputDir, this.getFilename(dataset));
     await mkdir(dirname(filePath), { recursive: true });
 
-    const stream = createWriteStream(filePath);
+    const flags = this.writtenFiles.has(filePath) ? 'a' : 'w';
+    this.writtenFiles.add(filePath);
+
+    const stream = createWriteStream(filePath, { flags });
     const writer = new N3Writer(stream, { format: formatMap[this.format] });
 
     writer.addQuad(first.value);
