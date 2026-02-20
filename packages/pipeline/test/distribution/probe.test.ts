@@ -118,7 +118,6 @@ describe('probe', () => {
 
       await probe(distribution);
 
-      expect(distribution.isValid).toBeUndefined();
       expect(distribution.byteSize).toBeUndefined();
     });
 

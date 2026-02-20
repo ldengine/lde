@@ -26,9 +26,8 @@ describe('Importer', () => {
 
       const distribution = new Distribution(
         new URL('https://example.com/dataset/distribution'),
-        'text/turtle'
+        'text/turtle',
       );
-      distribution.isValid = true;
 
       const dataset = new Dataset({
         iri: new URL('https://example.com'),
