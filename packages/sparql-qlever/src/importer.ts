@@ -110,13 +110,10 @@ export class Importer implements ImporterInterface {
   private async index(file: string, format: fileFormat): Promise<void> {
     const workingDir = dirname(file);
     const settingsFile = 'index.settings.json';
-    // Turtle is not line-delimited, so QLever's parallel parser can't split
-    // the input into independent chunks. Disable it to avoid parse failures.
-    const settings =
-      format === 'ttl'
-        ? { ...this.qleverOptions, 'parallel-parsing': false }
-        : this.qleverOptions;
-    await writeFile(`${workingDir}/${settingsFile}`, JSON.stringify(settings));
+    await writeFile(
+      `${workingDir}/${settingsFile}`,
+      JSON.stringify(this.qleverOptions),
+    );
 
     // TODO: write index to named volume instead of bind mount for better performance.
 
