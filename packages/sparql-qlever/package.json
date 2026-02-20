@@ -24,10 +24,10 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.6.10",
-    "@lde/distribution-downloader": "0.2.7",
-    "@lde/sparql-importer": "0.0.9",
-    "@lde/sparql-server": "0.2.2",
-    "@lde/task-runner": "0.0.5",
+    "@lde/distribution-downloader": "0.4.11",
+    "@lde/sparql-importer": "0.2.10",
+    "@lde/sparql-server": "0.4.10",
+    "@lde/task-runner": "0.2.10",
     "@lde/task-runner-docker": "0.2.10",
     "@lde/task-runner-native": "0.2.11",
     "tslib": "^2.3.0"
