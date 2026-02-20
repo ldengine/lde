@@ -1,3 +1,13 @@
+## 0.7.1 (2026-02-20)
+
+### 🩹 Fixes
+
+- **pipeline:** clear graph and truncate file at most once per writer instance ([#140](https://github.com/ldengine/lde/pull/140))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.0 (2026-02-18)
 
 ### 🚀 Features
