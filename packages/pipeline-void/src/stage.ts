@@ -63,11 +63,11 @@ function classSelector(): ItemSelector {
 
 // Global stages
 
-export function subjectUriSpace(): Promise<Stage> {
+export function subjectUriSpaces(): Promise<Stage> {
   return createVoidStage('subject-uri-space.rq');
 }
 
-export function classPartition(): Promise<Stage> {
+export function classPartitions(): Promise<Stage> {
   return createVoidStage('class-partition.rq');
 }
 
@@ -109,19 +109,19 @@ export function detectLicenses(): Promise<Stage> {
 
 // Per-class stages
 
-export function perClassObjectClass(): Promise<Stage> {
+export function perClassObjectClasses(): Promise<Stage> {
   return createVoidStage('class-property-object-classes.rq', {
     selection: 'perClass',
   });
 }
 
-export function perClassDatatype(): Promise<Stage> {
+export function perClassDatatypes(): Promise<Stage> {
   return createVoidStage('class-property-datatypes.rq', {
     selection: 'perClass',
   });
 }
 
-export function perClassLanguage(): Promise<Stage> {
+export function perClassLanguages(): Promise<Stage> {
   return createVoidStage('class-property-languages.rq', {
     selection: 'perClass',
   });
@@ -129,7 +129,7 @@ export function perClassLanguage(): Promise<Stage> {
 
 // Domain-specific executor stages
 
-export function uriSpace(
+export function uriSpaces(
   uriSpaces: ReadonlyMap<string, readonly Quad[]>,
 ): Promise<Stage> {
   return createVoidStage('object-uri-space.rq', {
@@ -138,7 +138,7 @@ export function uriSpace(
   });
 }
 
-export function detectVocabulary(): Promise<Stage> {
+export function detectVocabularies(): Promise<Stage> {
   return createVoidStage('entity-properties.rq', {
     executor: (query) =>
       new VocabularyExecutor(new SparqlConstructExecutor({ query })),

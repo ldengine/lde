@@ -8,7 +8,7 @@ Extensions to [@lde/pipeline](../pipeline) for VoID (Vocabulary of Interlinked D
 
 | Factory                   | Query                                                                                                              |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `classPartition()`        | [`class-partition.rq`](src/queries/class-partition.rq) — Classes with entity counts                                |
+| `classPartitions()`       | [`class-partition.rq`](src/queries/class-partition.rq) — Classes with entity counts                                |
 | `classPropertySubjects()` | [`class-properties-subjects.rq`](src/queries/class-properties-subjects.rq) — Properties per class (subject counts) |
 | `classPropertyObjects()`  | [`class-properties-objects.rq`](src/queries/class-properties-objects.rq) — Properties per class (object counts)    |
 | `countDatatypes()`        | [`datatypes.rq`](src/queries/datatypes.rq) — Dataset-level datatypes                                               |
@@ -18,22 +18,22 @@ Extensions to [@lde/pipeline](../pipeline) for VoID (Vocabulary of Interlinked D
 | `countSubjects()`         | [`subjects.rq`](src/queries/subjects.rq) — Distinct subjects                                                       |
 | `countTriples()`          | [`triples.rq`](src/queries/triples.rq) — Total triple count                                                        |
 | `detectLicenses()`        | [`licenses.rq`](src/queries/licenses.rq) — License detection                                                       |
-| `subjectUriSpace()`       | [`subject-uri-space.rq`](src/queries/subject-uri-space.rq) — Subject URI namespaces                                |
+| `subjectUriSpaces()`      | [`subject-uri-space.rq`](src/queries/subject-uri-space.rq) — Subject URI namespaces                                |
 
 ### Per-class stages (iterated with a class selector):
 
-| Factory                 | Query                                                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `perClassDatatype()`    | [`class-property-datatypes.rq`](src/queries/class-property-datatypes.rq) — Per-class datatype partitions               |
-| `perClassLanguage()`    | [`class-property-languages.rq`](src/queries/class-property-languages.rq) — Per-class language tags                     |
-| `perClassObjectClass()` | [`class-property-object-classes.rq`](src/queries/class-property-object-classes.rq) — Per-class object class partitions |
+| Factory                   | Query                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `perClassDatatypes()`     | [`class-property-datatypes.rq`](src/queries/class-property-datatypes.rq) — Per-class datatype partitions               |
+| `perClassLanguages()`     | [`class-property-languages.rq`](src/queries/class-property-languages.rq) — Per-class language tags                     |
+| `perClassObjectClasses()` | [`class-property-object-classes.rq`](src/queries/class-property-object-classes.rq) — Per-class object class partitions |
 
 ### Domain-specific stages:
 
-| Factory               | Description                                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `detectVocabulary()`  | [`entity-properties.rq`](src/queries/entity-properties.rq) — Entity properties with automatic `void:vocabulary` detection             |
-| `uriSpace(uriSpaces)` | [`object-uri-space.rq`](src/queries/object-uri-space.rq) — Object URI namespace linksets, aggregated against a provided URI space map |
+| Factory                | Description                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `detectVocabularies()` | [`entity-properties.rq`](src/queries/entity-properties.rq) — Entity properties with automatic `void:vocabulary` detection             |
+| `uriSpaces(uriSpaces)` | [`object-uri-space.rq`](src/queries/object-uri-space.rq) — Object URI namespace linksets, aggregated against a provided URI space map |
 
 All factories return `Promise<Stage>`.
 
@@ -47,14 +47,14 @@ All factories return `Promise<Stage>`.
 ```typescript
 import {
   countTriples,
-  classPartition,
-  detectVocabulary,
+  classPartitions,
+  detectVocabularies,
 } from '@lde/pipeline-void';
 import { Pipeline, SparqlUpdateWriter, provenancePlugin } from '@lde/pipeline';
 
 await new Pipeline({
   datasetSelector: selector,
-  stages: [countTriples(), classPartition(), detectVocabulary()],
+  stages: [countTriples(), classPartitions(), detectVocabularies()],
   plugins: [provenancePlugin()],
   writers: new SparqlUpdateWriter({
     endpoint: new URL('http://localhost:7200/repositories/lde/statements'),
