@@ -18,9 +18,6 @@
     },
     {
       "path": "../task-runner-docker/tsconfig.lib.json"
-    },
-    {
-      "path": "../dataset/tsconfig.lib.json"
     }
   ],
   "exclude": [

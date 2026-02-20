@@ -23,7 +23,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.6.10",
+    "@lde/dataset": "0.4.2",
     "@lde/distribution-downloader": "0.2.7",
     "@lde/sparql-importer": "0.0.9",
     "@lde/sparql-server": "0.2.2",
