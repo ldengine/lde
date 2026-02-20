@@ -46,13 +46,13 @@ export class Importer implements ImporterInterface {
   }
 
   public async import(
-    dataset: Dataset
+    dataset: Dataset,
   ): Promise<NotSupported | ImportSuccessful | ImportFailed> {
     const downloadDistributions = dataset
       .getDownloadDistributions()
       .filter(
         (distribution): distribution is Distribution & { mimeType: string } =>
-          distribution.mimeType !== undefined
+          distribution.mimeType !== undefined,
       );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
@@ -80,12 +80,12 @@ export class Importer implements ImporterInterface {
   }
 
   private async doImport(
-    distribution: Distribution & { mimeType: string }
+    distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
     await this.index(
       localFile,
-      this.fileFormatFromMimeType(distribution.mimeType)
+      this.fileFormatFromMimeType(distribution.mimeType),
     );
 
     return new ImportSuccessful(distribution);
@@ -110,19 +110,22 @@ export class Importer implements ImporterInterface {
   private async index(file: string, format: fileFormat): Promise<void> {
     const workingDir = dirname(file);
     const settingsFile = 'index.settings.json';
-    await writeFile(
-      `${workingDir}/${settingsFile}`,
-      JSON.stringify(this.qleverOptions)
-    );
+    // Turtle is not line-delimited, so QLever's parallel parser can't split
+    // the input into independent chunks. Disable it to avoid parse failures.
+    const settings =
+      format === 'ttl'
+        ? { ...this.qleverOptions, 'parallel-parsing': false }
+        : this.qleverOptions;
+    await writeFile(`${workingDir}/${settingsFile}`, JSON.stringify(settings));
 
     // TODO: write index to named volume instead of bind mount for better performance.
 
     const indexTask = await this.taskRunner.run(
       `(zcat '${basename(file)}' 2>/dev/null || cat '${basename(
-        file
+        file,
       )}') | IndexBuilderMain -i ${
         this.indexName
-      } -s ${settingsFile} -F ${format} -f -`
+      } -s ${settingsFile} -F ${format} -f -`,
     );
     await this.taskRunner.wait(indexTask);
   }

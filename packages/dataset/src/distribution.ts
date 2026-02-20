@@ -3,14 +3,13 @@ const SPARQL_URI = 'https://www.w3.org/TR/sparql11-protocol/';
 export class Distribution {
   public byteSize?: number;
   public lastModified?: Date;
-  public isValid?: boolean;
   public namedGraph?: string;
   public subjectFilter?: string;
 
   constructor(
     public readonly accessUrl: URL,
     public readonly mimeType?: string,
-    public readonly conformsTo?: URL
+    public readonly conformsTo?: URL,
   ) {}
 
   public isSparql() {
@@ -26,9 +25,8 @@ export class Distribution {
     const distribution = new this(
       endpoint,
       'application/sparql-query',
-      new URL(SPARQL_URI)
+      new URL(SPARQL_URI),
     );
-    distribution.isValid = true;
     distribution.namedGraph = namedGraph;
 
     return distribution;
