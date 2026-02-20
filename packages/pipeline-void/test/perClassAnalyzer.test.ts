@@ -1,28 +1,28 @@
 import {
-  createPerClassDatatypeStage,
-  createPerClassLanguageStage,
-  createPerClassObjectClassStage,
+  perClassDatatype,
+  perClassLanguage,
+  perClassObjectClass,
   Stage,
 } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 
 describe('per-class stages', () => {
-  it('createPerClassDatatypeStage returns a Stage', async () => {
-    const stage = await createPerClassDatatypeStage();
+  it('perClassDatatype() returns a Stage', async () => {
+    const stage = await perClassDatatype();
 
     expect(stage).toBeInstanceOf(Stage);
     expect(stage.name).toBe('class-property-datatypes.rq');
   });
 
-  it('createPerClassLanguageStage returns a Stage', async () => {
-    const stage = await createPerClassLanguageStage();
+  it('perClassLanguage() returns a Stage', async () => {
+    const stage = await perClassLanguage();
 
     expect(stage).toBeInstanceOf(Stage);
     expect(stage.name).toBe('class-property-languages.rq');
   });
 
-  it('createPerClassObjectClassStage returns a Stage', async () => {
-    const stage = await createPerClassObjectClassStage();
+  it('perClassObjectClass() returns a Stage', async () => {
+    const stage = await perClassObjectClass();
 
     expect(stage).toBeInstanceOf(Stage);
     expect(stage.name).toBe('class-property-object-classes.rq');

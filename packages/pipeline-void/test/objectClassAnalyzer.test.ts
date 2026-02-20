@@ -1,9 +1,9 @@
-import { createPerClassObjectClassStage, Stage } from '../src/index.js';
+import { perClassObjectClass, Stage } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 
-describe('createPerClassObjectClassStage', () => {
+describe('perClassObjectClass', () => {
   it('creates a stage with the correct query file', async () => {
-    const stage = await createPerClassObjectClassStage();
+    const stage = await perClassObjectClass();
 
     expect(stage.name).toBe('class-property-object-classes.rq');
     expect(stage).toBeInstanceOf(Stage);
