@@ -30,14 +30,16 @@ export interface SparqlWriterOptions {
 /**
  * Writes RDF data to a SPARQL endpoint using SPARQL UPDATE INSERT DATA queries.
  *
- * Clears the named graph before writing, then streams quads in batches
- * to avoid accumulating the entire dataset in memory.
+ * Clears the named graph before the first write per dataset per instance, then
+ * streams quads in batches to avoid accumulating the entire dataset in memory.
+ * Subsequent calls to {@link write} for the same dataset append rather than replace.
  */
 export class SparqlUpdateWriter implements Writer {
   private readonly endpoint: URL;
   private readonly auth?: string;
   private readonly fetch: typeof globalThis.fetch;
   private readonly batchSize: number;
+  private readonly clearedGraphs = new Set<string>();
 
   constructor(options: SparqlWriterOptions) {
     this.endpoint = options.endpoint;
@@ -48,7 +50,11 @@ export class SparqlUpdateWriter implements Writer {
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
     const graphUri = dataset.iri.toString();
-    await this.clearGraph(graphUri);
+
+    if (!this.clearedGraphs.has(graphUri)) {
+      await this.clearGraph(graphUri);
+      this.clearedGraphs.add(graphUri);
+    }
 
     for await (const chunk of batch(quads, this.batchSize)) {
       await this.insertBatch(graphUri, chunk);
@@ -62,7 +68,7 @@ export class SparqlUpdateWriter implements Writer {
   private async insertBatch(graphUri: string, quads: Quad[]): Promise<void> {
     const turtleData = await serializeQuads(quads, 'N-Triples');
     await this.executeUpdate(
-      `INSERT DATA { GRAPH <${graphUri}> { ${turtleData} } }`
+      `INSERT DATA { GRAPH <${graphUri}> { ${turtleData} } }`,
     );
   }
 
@@ -83,7 +89,7 @@ export class SparqlUpdateWriter implements Writer {
     if (!response.ok) {
       const body = await response.text();
       throw new Error(
-        `SPARQL UPDATE failed with status ${response.status}: ${body}`
+        `SPARQL UPDATE failed with status ${response.status}: ${body}`,
       );
     }
   }

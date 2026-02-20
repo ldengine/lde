@@ -46,9 +46,9 @@ describe('SparqlUpdateWriter', () => {
           quad(
             namedNode('http://example.com/subject'),
             namedNode('http://example.com/predicate'),
-            literal('object')
-          )
-        )
+            literal('object'),
+          ),
+        ),
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -64,7 +64,7 @@ describe('SparqlUpdateWriter', () => {
       expect(insertBody).toContain('"object"');
     });
 
-    it('clears graph even for empty data', async () => {
+    it('clears graph on first write, even for empty data', async () => {
       const writer = new SparqlUpdateWriter({
         endpoint,
         fetch: mockFetch as typeof globalThis.fetch,
@@ -94,19 +94,19 @@ describe('SparqlUpdateWriter', () => {
           quad(
             namedNode('http://example.com/s1'),
             namedNode('http://example.com/p'),
-            literal('o1')
+            literal('o1'),
           ),
           quad(
             namedNode('http://example.com/s2'),
             namedNode('http://example.com/p'),
-            literal('o2')
+            literal('o2'),
           ),
           quad(
             namedNode('http://example.com/s3'),
             namedNode('http://example.com/p'),
-            literal('o3')
-          )
-        )
+            literal('o3'),
+          ),
+        ),
       );
 
       // 1 clear + 2 insert batches (2 quads + 1 quad).
@@ -137,15 +137,15 @@ describe('SparqlUpdateWriter', () => {
           quad(
             namedNode('http://example.com/s'),
             namedNode('http://example.com/p'),
-            literal('o')
-          )
-        )
+            literal('o'),
+          ),
+        ),
       );
 
       for (const call of mockFetch.mock.calls) {
         expect(call[1]!.headers).toHaveProperty(
           'Authorization',
-          'Bearer my-token'
+          'Bearer my-token',
         );
       }
     });
@@ -162,6 +162,30 @@ describe('SparqlUpdateWriter', () => {
       for (const call of mockFetch.mock.calls) {
         expect(call[1]!.headers).not.toHaveProperty('Authorization');
       }
+    });
+
+    it('does not re-clear graph on second write to same dataset', async () => {
+      const writer = new SparqlUpdateWriter({
+        endpoint,
+        fetch: mockFetch as typeof globalThis.fetch,
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+      const aQuad = quad(
+        namedNode('http://example.com/s'),
+        namedNode('http://example.com/p'),
+        literal('o'),
+      );
+
+      await writer.write(dataset, quadsOf(aQuad));
+      mockFetch.mockClear();
+
+      // Second write to the same dataset: no CLEAR, only INSERT.
+      await writer.write(dataset, quadsOf(aQuad));
+
+      const bodies = mockFetch.mock.calls.map((c) => c[1]!.body as string);
+      expect(bodies.every((b) => !b.startsWith('CLEAR'))).toBe(true);
+      expect(bodies.some((b) => b.startsWith('INSERT'))).toBe(true);
     });
 
     it('throws on HTTP error', async () => {
@@ -185,10 +209,10 @@ describe('SparqlUpdateWriter', () => {
             quad(
               namedNode('http://example.com/s'),
               namedNode('http://example.com/p'),
-              literal('o')
-            )
-          )
-        )
+              literal('o'),
+            ),
+          ),
+        ),
       ).rejects.toThrow('SPARQL UPDATE failed with status 500');
     });
   });
