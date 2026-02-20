@@ -63,65 +63,65 @@ function classSelector(): ItemSelector {
 
 // Global stages
 
-export function createSubjectUriSpaceStage(): Promise<Stage> {
+export function subjectUriSpaces(): Promise<Stage> {
   return createVoidStage('subject-uri-space.rq');
 }
 
-export function createClassPartitionStage(): Promise<Stage> {
+export function classPartitions(): Promise<Stage> {
   return createVoidStage('class-partition.rq');
 }
 
-export function createObjectLiteralsStage(): Promise<Stage> {
+export function countObjectLiterals(): Promise<Stage> {
   return createVoidStage('object-literals.rq');
 }
 
-export function createObjectUrisStage(): Promise<Stage> {
+export function countObjectUris(): Promise<Stage> {
   return createVoidStage('object-uris.rq');
 }
 
-export function createPropertiesStage(): Promise<Stage> {
+export function countProperties(): Promise<Stage> {
   return createVoidStage('properties.rq');
 }
 
-export function createSubjectsStage(): Promise<Stage> {
+export function countSubjects(): Promise<Stage> {
   return createVoidStage('subjects.rq');
 }
 
-export function createTriplesStage(): Promise<Stage> {
+export function countTriples(): Promise<Stage> {
   return createVoidStage('triples.rq');
 }
 
-export function createClassPropertiesSubjectsStage(): Promise<Stage> {
+export function classPropertySubjects(): Promise<Stage> {
   return createVoidStage('class-properties-subjects.rq');
 }
 
-export function createClassPropertiesObjectsStage(): Promise<Stage> {
+export function classPropertyObjects(): Promise<Stage> {
   return createVoidStage('class-properties-objects.rq');
 }
 
-export function createDatatypesStage(): Promise<Stage> {
+export function countDatatypes(): Promise<Stage> {
   return createVoidStage('datatypes.rq');
 }
 
-export function createLicensesStage(): Promise<Stage> {
+export function detectLicenses(): Promise<Stage> {
   return createVoidStage('licenses.rq');
 }
 
 // Per-class stages
 
-export function createPerClassObjectClassStage(): Promise<Stage> {
+export function perClassObjectClasses(): Promise<Stage> {
   return createVoidStage('class-property-object-classes.rq', {
     selection: 'perClass',
   });
 }
 
-export function createPerClassDatatypeStage(): Promise<Stage> {
+export function perClassDatatypes(): Promise<Stage> {
   return createVoidStage('class-property-datatypes.rq', {
     selection: 'perClass',
   });
 }
 
-export function createPerClassLanguageStage(): Promise<Stage> {
+export function perClassLanguages(): Promise<Stage> {
   return createVoidStage('class-property-languages.rq', {
     selection: 'perClass',
   });
@@ -129,7 +129,7 @@ export function createPerClassLanguageStage(): Promise<Stage> {
 
 // Domain-specific executor stages
 
-export function createUriSpaceStage(
+export function uriSpaces(
   uriSpaces: ReadonlyMap<string, readonly Quad[]>,
 ): Promise<Stage> {
   return createVoidStage('object-uri-space.rq', {
@@ -138,7 +138,7 @@ export function createUriSpaceStage(
   });
 }
 
-export function createVocabularyStage(): Promise<Stage> {
+export function detectVocabularies(): Promise<Stage> {
   return createVoidStage('entity-properties.rq', {
     executor: (query) =>
       new VocabularyExecutor(new SparqlConstructExecutor({ query })),
