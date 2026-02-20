@@ -1,3 +1,13 @@
+## 0.4.0 (2026-02-20)
+
+### 🚀 Features
+
+- **pipeline-void:** shorten stage factory function names ([#135](https://github.com/ldengine/lde/pull/135))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.1 (2026-02-18)
 
 ### 🩹 Fixes
