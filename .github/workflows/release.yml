@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   contents: write
   id-token: write # needed for provenance data generation and NPM trusted publishing OIDC
@@ -33,6 +37,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Pull latest main (a previous release run may have pushed)
+        run: git pull --rebase origin main
 
       - run: npx nx release --skip-publish
         env:
