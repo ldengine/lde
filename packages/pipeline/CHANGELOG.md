@@ -1,3 +1,13 @@
+## 0.10.0 (2026-02-27)
+
+### 🚀 Features
+
+- **pipeline:** isolate errors per stage in processDataset() ([#160](https://github.com/ldengine/lde/pull/160))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.9.0 (2026-02-27)
 
 ### 🚀 Features
