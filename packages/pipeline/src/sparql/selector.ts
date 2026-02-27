@@ -1,18 +1,19 @@
 import type { Distribution } from '@lde/dataset';
 import type { Term } from '@rdfjs/types';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
+import { Parser } from '@traqula/parser-sparql-1-1';
+import { Generator } from '@traqula/generator-sparql-1-1';
 import {
-  Generator,
-  Parser,
-  type SelectQuery,
-  type Variable,
-  type VariableTerm,
-} from 'sparqljs';
+  AstFactory,
+  type QuerySelect,
+  type TermVariable,
+} from '@traqula/rules-sparql-1-1';
 import type { ItemSelector } from '../stage.js';
 import type { VariableBindings } from './executor.js';
 
 const parser = new Parser();
 const generator = new Generator();
+const F = new AstFactory();
 
 export interface SparqlItemSelectorOptions {
   /** SELECT query projecting at least one named variable. A LIMIT in the query sets the default page size. */
@@ -34,50 +35,56 @@ export interface SparqlItemSelectorOptions {
  * until a page returns fewer results than the page size.
  */
 export class SparqlItemSelector implements ItemSelector {
-  private readonly parsed: SelectQuery;
+  private readonly parsed: QuerySelect;
   private readonly pageSize: number;
   private readonly fetcher: SparqlEndpointFetcher;
 
   constructor(options: SparqlItemSelectorOptions) {
     const parsed = parser.parse(options.query);
-    if (parsed.type !== 'query' || parsed.queryType !== 'SELECT') {
+    if (parsed.type !== 'query' || parsed.subType !== 'select') {
       throw new Error('Query must be a SELECT query');
     }
 
-    const variables = parsed.variables.filter(isVariableTerm);
+    const variables = (parsed as QuerySelect).variables.filter(isVariableTerm);
     if (variables.length === 0) {
       throw new Error(
-        'Query must project at least one named variable (SELECT * is not supported)'
+        'Query must project at least one named variable (SELECT * is not supported)',
       );
     }
 
-    this.parsed = parsed;
-    this.pageSize = options.pageSize ?? parsed.limit ?? 10;
+    this.parsed = parsed as QuerySelect;
+    this.pageSize =
+      options.pageSize ??
+      this.parsed.solutionModifiers.limitOffset?.limit ??
+      10;
     this.fetcher = options.fetcher ?? new SparqlEndpointFetcher();
   }
 
   async *select(
-    distribution: Distribution
+    distribution: Distribution,
   ): AsyncIterableIterator<VariableBindings> {
     const endpoint = distribution.accessUrl!;
     let offset = 0;
 
     while (true) {
-      this.parsed.limit = this.pageSize;
-      this.parsed.offset = offset;
-      const paginatedQuery = generator.stringify(this.parsed);
+      this.parsed.solutionModifiers.limitOffset = F.solutionModifierLimitOffset(
+        this.pageSize,
+        offset,
+        F.gen(),
+      );
+      const paginatedQuery = generator.generate(this.parsed);
 
       const stream = (await this.fetcher.fetchBindings(
         endpoint.toString(),
-        paginatedQuery
+        paginatedQuery,
       )) as AsyncIterable<Record<string, Term>>;
 
       let pageSize = 0;
       for await (const record of stream) {
         const row = Object.fromEntries(
           Object.entries(record).filter(
-            ([, term]) => term.termType === 'NamedNode'
-          )
+            ([, term]) => term.termType === 'NamedNode',
+          ),
         ) as VariableBindings;
 
         if (Object.keys(row).length > 0) {
@@ -95,6 +102,11 @@ export class SparqlItemSelector implements ItemSelector {
   }
 }
 
-function isVariableTerm(v: Variable | object): v is VariableTerm {
-  return 'termType' in v && v.termType === 'Variable';
+function isVariableTerm(v: object): v is TermVariable {
+  return (
+    'type' in v &&
+    v.type === 'term' &&
+    'subType' in v &&
+    v.subType === 'variable'
+  );
 }

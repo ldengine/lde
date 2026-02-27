@@ -1,41 +1,47 @@
 import { describe, it, expect } from 'vitest';
-import { Parser, type ConstructQuery } from 'sparqljs';
+import { Parser } from '@traqula/parser-sparql-1-1';
+import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
 import { withDefaultGraph } from '../../src/sparql/graph.js';
 
 const parser = new Parser();
 
-function parseConstruct(sparql: string): ConstructQuery {
-  return parser.parse(sparql) as ConstructQuery;
+function parseConstruct(sparql: string): QueryConstruct {
+  return parser.parse(sparql) as QueryConstruct;
 }
 
 describe('withDefaultGraph', () => {
-  it('sets from.default to the given graph IRI', () => {
+  it('sets datasets to the given graph IRI', () => {
     const query = parseConstruct('CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }');
 
     withDefaultGraph(query, 'http://example.org/graph');
 
-    expect(query.from).toEqual({
-      default: [
-        expect.objectContaining({
-          termType: 'NamedNode',
+    expect(query.datasets.clauses).toEqual([
+      {
+        clauseType: 'default',
+        value: expect.objectContaining({
+          type: 'term',
+          subType: 'namedNode',
           value: 'http://example.org/graph',
         }),
-      ],
-      named: [],
-    });
+      },
+    ]);
   });
 
   it('replaces an existing FROM clause', () => {
     const query = parseConstruct(
-      'CONSTRUCT { ?s ?p ?o } FROM <http://old.org/graph> WHERE { ?s ?p ?o }'
+      'CONSTRUCT { ?s ?p ?o } FROM <http://old.org/graph> WHERE { ?s ?p ?o }',
     );
 
     withDefaultGraph(query, 'http://new.org/graph');
 
-    expect(query.from!.default).toHaveLength(1);
-    expect(query.from!.default[0]).toMatchObject({
-      termType: 'NamedNode',
-      value: 'http://new.org/graph',
+    expect(query.datasets.clauses).toHaveLength(1);
+    expect(query.datasets.clauses[0]).toMatchObject({
+      clauseType: 'default',
+      value: expect.objectContaining({
+        type: 'term',
+        subType: 'namedNode',
+        value: 'http://new.org/graph',
+      }),
     });
   });
 });

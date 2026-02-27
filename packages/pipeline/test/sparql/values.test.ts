@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { DataFactory } from 'n3';
-import { Parser, type ConstructQuery, type ValuesPattern } from 'sparqljs';
+import { Parser } from '@traqula/parser-sparql-1-1';
+import type { QueryConstruct, PatternValues } from '@traqula/rules-sparql-1-1';
 import { injectValues } from '../../src/sparql/values.js';
 
 const { namedNode } = DataFactory;
 const parser = new Parser();
 
-function parseConstruct(sparql: string): ConstructQuery {
-  return parser.parse(sparql) as ConstructQuery;
+function parseConstruct(sparql: string): QueryConstruct {
+  return parser.parse(sparql) as QueryConstruct;
 }
 
 describe('injectValues', () => {
   const baseQuery = parseConstruct(
-    'CONSTRUCT { ?s a ?class } WHERE { ?s a ?class ; ?p ?o }'
+    'CONSTRUCT { ?s a ?class } WHERE { ?s a ?class ; ?p ?o }',
   );
 
   it('injects a single-variable, single-row VALUES clause', () => {
@@ -20,13 +21,14 @@ describe('injectValues', () => {
       { class: namedNode('http://example.com/Person') },
     ]);
 
-    const values = result.where?.find(
-      (p): p is ValuesPattern => p.type === 'values'
+    const values = result.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
     );
     expect(values).toBeDefined();
     expect(values!.values).toHaveLength(1);
-    expect(values!.values[0]['?class']).toMatchObject({
-      termType: 'NamedNode',
+    expect(values!.values[0]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
       value: 'http://example.com/Person',
     });
   });
@@ -37,16 +39,18 @@ describe('injectValues', () => {
       { class: namedNode('http://example.com/Book') },
     ]);
 
-    const values = result.where?.find(
-      (p): p is ValuesPattern => p.type === 'values'
+    const values = result.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
     );
     expect(values!.values).toHaveLength(2);
-    expect(values!.values[0]['?class']).toMatchObject({
-      termType: 'NamedNode',
+    expect(values!.values[0]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
       value: 'http://example.com/Person',
     });
-    expect(values!.values[1]['?class']).toMatchObject({
-      termType: 'NamedNode',
+    expect(values!.values[1]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
       value: 'http://example.com/Book',
     });
   });
@@ -59,16 +63,18 @@ describe('injectValues', () => {
       },
     ]);
 
-    const values = result.where?.find(
-      (p): p is ValuesPattern => p.type === 'values'
+    const values = result.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
     );
     expect(values!.values).toHaveLength(1);
-    expect(values!.values[0]['?class']).toMatchObject({
-      termType: 'NamedNode',
+    expect(values!.values[0]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
       value: 'http://example.com/Person',
     });
-    expect(values!.values[0]['?property']).toMatchObject({
-      termType: 'NamedNode',
+    expect(values!.values[0]['property']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
       value: 'http://example.com/name',
     });
   });
@@ -79,8 +85,8 @@ describe('injectValues', () => {
     ]);
 
     // VALUES is prepended; original BGP pattern(s) follow.
-    expect(result.where!.length).toBeGreaterThan(1);
-    expect(result.where![0].type).toBe('values');
+    expect(result.where.patterns.length).toBeGreaterThan(1);
+    expect(result.where.patterns[0].subType).toBe('values');
   });
 
   it('preserves the CONSTRUCT template', () => {
@@ -89,26 +95,26 @@ describe('injectValues', () => {
     ]);
 
     expect(result.template).toBeDefined();
-    expect(result.template!.length).toBeGreaterThan(0);
+    expect(result.template.triples.length).toBeGreaterThan(0);
   });
 
   it('produces an empty VALUES clause for empty bindings', () => {
     const result = injectValues(baseQuery, []);
 
-    const values = result.where?.find(
-      (p): p is ValuesPattern => p.type === 'values'
+    const values = result.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
     );
     expect(values!.values).toHaveLength(0);
   });
 
   it('does not mutate the input query', () => {
     const original = parseConstruct(
-      'CONSTRUCT { ?s a ?class } WHERE { ?s a ?class }'
+      'CONSTRUCT { ?s a ?class } WHERE { ?s a ?class }',
     );
-    const originalWhereLength = original.where!.length;
+    const originalWhereLength = original.where.patterns.length;
 
     injectValues(original, [{ class: namedNode('http://example.com/Person') }]);
 
-    expect(original.where!.length).toBe(originalWhereLength);
+    expect(original.where.patterns.length).toBe(originalWhereLength);
   });
 });

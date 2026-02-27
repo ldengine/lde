@@ -28,13 +28,12 @@
     "@lde/sparql-importer": "0.3.0",
     "@lde/sparql-server": "0.4.10",
     "@rdfjs/types": "^2.0.1",
+    "@traqula/generator-sparql-1-1": "^1.0.3",
+    "@traqula/parser-sparql-1-1": "^1.0.3",
+    "@traqula/rules-sparql-1-1": "^1.0.3",
     "fetch-sparql-endpoint": "^7.1.0",
     "filenamify-url": "^4.0.0",
     "n3": "^2.0.1",
-    "sparqljs": "^3.7.4",
     "tslib": "^2.3.0"
-  },
-  "devDependencies": {
-    "@types/sparqljs": "^3.1.12"
   }
 }
