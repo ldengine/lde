@@ -1,3 +1,13 @@
+## 0.8.1 (2026-02-27)
+
+### 🩹 Fixes
+
+- **pipeline:** preserve subjectFilter when importing distributions ([#150](https://github.com/ldengine/lde/pull/150))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.0 (2026-02-27)
 
 ### 🚀 Features
