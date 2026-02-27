@@ -51,7 +51,7 @@ describe('FileWriter', () => {
       );
 
       const files = await readFile(
-        join(tempDir, 'example.com_dataset_1.nt'),
+        join(tempDir, 'example.com-dataset-1.nt'),
         'utf-8',
       );
       expect(files).toContain('<http://example.com/subject>');
@@ -79,7 +79,7 @@ describe('FileWriter', () => {
       );
 
       const content = await readFile(
-        join(tempDir, 'example.com_dataset_1.nt'),
+        join(tempDir, 'example.com-dataset-1.nt'),
         'utf-8',
       );
       expect(content).toContain('<http://example.com/subject>');
@@ -93,7 +93,7 @@ describe('FileWriter', () => {
       await writer.write(dataset, quadsOf());
 
       await expect(
-        readFile(join(tempDir, 'example.com_dataset_1.nt')),
+        readFile(join(tempDir, 'example.com-dataset-1.nt')),
       ).rejects.toThrow();
     });
 
@@ -128,13 +128,39 @@ describe('FileWriter', () => {
       );
 
       const content = await readFile(
-        join(tempDir, 'example.com_dataset_1.nt'),
+        join(tempDir, 'example.com-dataset-1.nt'),
         'utf-8',
       );
       expect(content).toContain('<http://example.com/s1>');
       expect(content).toContain('<http://example.com/s2>');
       expect(content).toContain('"first"');
       expect(content).toContain('"second"');
+    });
+
+    it('uses custom replacement character in filenames', async () => {
+      const writer = new FileWriter({
+        outputDir: tempDir,
+        replacementCharacter: '_',
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s'),
+            namedNode('http://example.com/p'),
+            literal('o'),
+          ),
+        ),
+      );
+
+      const content = await readFile(
+        join(tempDir, 'example.com_dataset_1.nt'),
+        'utf-8',
+      );
+      expect(content).toBeTruthy();
     });
 
     it('creates nested output directories', async () => {
@@ -155,7 +181,7 @@ describe('FileWriter', () => {
       );
 
       const content = await readFile(
-        join(nestedDir, 'example.com_dataset_1.nt'),
+        join(nestedDir, 'example.com-dataset-1.nt'),
         'utf-8',
       );
       expect(content).toBeTruthy();
