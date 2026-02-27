@@ -30,6 +30,7 @@
     "@lde/task-runner": "0.2.10",
     "@lde/task-runner-docker": "0.2.11",
     "@lde/task-runner-native": "0.2.11",
+    "@lde/wait-for-sparql": "0.2.11",
     "tslib": "^2.3.0"
   }
 }
