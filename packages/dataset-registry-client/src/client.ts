@@ -7,7 +7,7 @@ import { Paginator } from './paginator.js';
 export class Client {
   constructor(
     private readonly sparqlEndpoint: URL,
-    private readonly schema = DatasetSchema
+    private readonly schema = DatasetSchema,
   ) {}
 
   public query(criteria: object): Promise<Paginator<Dataset>>;
@@ -55,9 +55,10 @@ export class Client {
                 const distribution = new Distribution(
                   new URL(d.accessURL),
                   d.mediaType ?? undefined,
-                  d.conformsTo ? new URL(d.conformsTo) : undefined
+                  d.conformsTo ? new URL(d.conformsTo) : undefined,
                 );
                 distribution.byteSize = d.byteSize ?? undefined;
+                distribution.compressFormat = d.compressFormat ?? undefined;
                 distribution.lastModified = d.modified ?? undefined;
 
                 return distribution;
@@ -72,11 +73,11 @@ export class Client {
                     name: dataset.publisher.name,
                   }
                 : undefined,
-            })
+            }),
         );
       },
       total,
-      pageSize
+      pageSize,
     );
   }
 }

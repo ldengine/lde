@@ -7,6 +7,7 @@ export const dcat = createNamespace({
     'Dataset',
     'Distribution',
     'accessURL',
+    'compressFormat',
     'keyword',
     'mediaType',
     'byteSize',
