@@ -34,7 +34,7 @@ describe('FileWriter', () => {
   }
 
   describe('write', () => {
-    it('writes quads to Turtle file', async () => {
+    it('writes quads to N-Triples file by default', async () => {
       const writer = new FileWriter({ outputDir: tempDir });
 
       const dataset = createDataset('http://example.com/dataset/1');
@@ -51,7 +51,7 @@ describe('FileWriter', () => {
       );
 
       const files = await readFile(
-        join(tempDir, 'example.com_dataset_1.ttl'),
+        join(tempDir, 'example.com_dataset_1.nt'),
         'utf-8',
       );
       expect(files).toContain('<http://example.com/subject>');
@@ -93,7 +93,7 @@ describe('FileWriter', () => {
       await writer.write(dataset, quadsOf());
 
       await expect(
-        readFile(join(tempDir, 'example.com_dataset_1.ttl')),
+        readFile(join(tempDir, 'example.com_dataset_1.nt')),
       ).rejects.toThrow();
     });
 
@@ -155,7 +155,7 @@ describe('FileWriter', () => {
       );
 
       const content = await readFile(
-        join(nestedDir, 'example.com_dataset_1.ttl'),
+        join(nestedDir, 'example.com_dataset_1.nt'),
         'utf-8',
       );
       expect(content).toBeTruthy();
