@@ -1,3 +1,13 @@
+## 0.8.3 (2026-02-27)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** wait for SPARQL endpoint to be ready after server start ([#175](https://github.com/ldengine/lde/pull/175))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.2 (2026-02-27)
 
 ### 🧱 Updated Dependencies

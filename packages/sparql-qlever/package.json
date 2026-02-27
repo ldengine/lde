@@ -1,6 +1,6 @@
 {
   "name": "@lde/sparql-qlever",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "repository": {
     "url": "https://github.com/ldengine/lde",
     "directory": "packages/sparql-qlever"
