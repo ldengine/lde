@@ -32,7 +32,7 @@ export class DockerTaskRunner implements TaskRunner<Container> {
 
     if (result.StatusCode !== 0) {
       throw new Error(
-        `Task failed with status code ${result.StatusCode}: ${logs})`
+        `Task failed with status code ${result.StatusCode}: ${logs})`,
       );
     }
 
@@ -52,7 +52,7 @@ export class DockerTaskRunner implements TaskRunner<Container> {
 
     const pull = await this.options.docker.pull(this.options.image);
     const err = await new Promise<Error | null>((resolve) =>
-      this.options.docker.modem.followProgress(pull, resolve)
+      this.options.docker.modem.followProgress(pull, resolve),
     );
     if (err) {
       throw err;
@@ -89,23 +89,10 @@ export class DockerTaskRunner implements TaskRunner<Container> {
       containerOptions.WorkingDir = '/mount';
     }
 
-    const container = await this.options.docker.createContainer(
-      containerOptions
-    );
+    const container =
+      await this.options.docker.createContainer(containerOptions);
 
     await container.start();
-
-    const logStream = await container.logs({
-      follow: true,
-      stdout: true,
-      stderr: true,
-      tail: 100,
-    });
-
-    logStream.on('data', (data) => {
-      console.log(data.toString());
-      // process.stdout.write(chunk.toString());
-    });
 
     return container;
   }
