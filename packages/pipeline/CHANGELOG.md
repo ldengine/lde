@@ -1,3 +1,13 @@
+## 0.9.0 (2026-02-27)
+
+### 🚀 Features
+
+- **pipeline:** make FileWriter replacement character configurable ([#159](https://github.com/ldengine/lde/pull/159))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.1 (2026-02-27)
 
 ### 🩹 Fixes
