@@ -1,7 +1,6 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import type { NamedNode, Quad, Stream } from '@rdfjs/types';
-import type { Readable } from 'node:stream';
+import type { NamedNode, Quad } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Generator, Parser, type ConstructQuery } from 'sparqljs';
@@ -30,15 +29,9 @@ export interface Executor {
   execute(
     dataset: Dataset,
     distribution: Distribution,
-    options?: ExecuteOptions
+    options?: ExecuteOptions,
   ): Promise<AsyncIterable<Quad> | NotSupported>;
 }
-
-/**
- * A quad stream that is both an RDFJS Stream and Node.js Readable (async iterable).
- * This is the actual return type from SparqlEndpointFetcher.fetchTriples().
- */
-export type QuadStream = Readable & Stream<Quad>;
 
 /**
  * Options for SparqlConstructExecutor.
@@ -123,8 +116,8 @@ export class SparqlConstructExecutor implements Executor {
   async execute(
     dataset: Dataset,
     distribution: Distribution,
-    options?: ExecuteOptions
-  ): Promise<QuadStream> {
+    options?: ExecuteOptions,
+  ): Promise<AsyncIterable<Quad>> {
     const endpoint = distribution.accessUrl;
 
     let ast: ConstructQuery;
@@ -133,7 +126,7 @@ export class SparqlConstructExecutor implements Executor {
     } else {
       const substituted = this.rawQuery.replace(
         '#subjectFilter#',
-        distribution.subjectFilter ?? ''
+        distribution.subjectFilter ?? '',
       );
       const parsed = new Parser().parse(substituted);
       if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
@@ -165,7 +158,7 @@ export class SparqlConstructExecutor implements Executor {
    */
   public static async fromFile(
     filename: string,
-    options?: Omit<SparqlConstructExecutorOptions, 'query'>
+    options?: Omit<SparqlConstructExecutorOptions, 'query'>,
   ): Promise<SparqlConstructExecutor> {
     const query = await readQueryFile(filename);
     return new SparqlConstructExecutor({ ...options, query });

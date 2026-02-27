@@ -5,7 +5,6 @@ export {
   type ExecuteOptions,
   type Executor,
   type SparqlConstructExecutorOptions,
-  type QuadStream,
   type VariableBindings,
 } from './executor.js';
 export {
