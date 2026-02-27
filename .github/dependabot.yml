@@ -22,6 +22,9 @@ updates:
       # Upgrade Nx manually with `nx migrate latest`
       - dependency-name: '@nx/*'
       - dependency-name: 'nx'
+      # SWC versions are pinned as Nx peer deps; upgrade together with Nx
+      - dependency-name: '@swc/core'
+      - dependency-name: '@swc-node/register'
       # ESLint major versions are tied to Nx; upgrade together with Nx
       - dependency-name: '@eslint/*'
       - dependency-name: '@typescript-eslint/*'
