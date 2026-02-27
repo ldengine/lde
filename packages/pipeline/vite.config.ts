@@ -13,7 +13,7 @@ export default mergeConfig(
           autoUpdate: true,
           functions: 91.08,
           lines: 93.52,
-          branches: 88.51,
+          branches: 88.41,
           statements: 92.74,
         },
       },

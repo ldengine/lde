@@ -59,7 +59,10 @@ describe('ImportResolver', () => {
     const inner = makeInnerResolver(resolved);
     const mockImporter = { import: vi.fn() };
 
-    const resolver = new ImportResolver(inner, { importer: mockImporter });
+    const resolver = new ImportResolver(inner, {
+      importer: mockImporter,
+      server: makeServer(),
+    });
     const result = await resolver.resolve(makeDataset());
 
     expect(result).toBe(resolved);
@@ -85,14 +88,19 @@ describe('ImportResolver', () => {
         ),
     };
 
-    const resolver = new ImportResolver(inner, { importer: mockImporter });
+    const server = makeServer();
+    const resolver = new ImportResolver(inner, {
+      importer: mockImporter,
+      server,
+    });
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(ResolvedDistribution);
     expect(mockImporter.import).toHaveBeenCalledWith(dataset);
+    expect(server.start).toHaveBeenCalled();
     const resolved = result as ResolvedDistribution;
     expect(resolved.distribution.accessUrl.toString()).toBe(
-      'http://localhost:7878/sparql',
+      'http://localhost:7001/sparql',
     );
     expect(resolved.probeResults).toHaveLength(1);
     expect(resolved.probeResults[0]).toBeInstanceOf(DataDumpProbeResult);
@@ -120,7 +128,10 @@ describe('ImportResolver', () => {
         ),
     };
 
-    const resolver = new ImportResolver(inner, { importer: mockImporter });
+    const resolver = new ImportResolver(inner, {
+      importer: mockImporter,
+      server: makeServer(),
+    });
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
@@ -184,6 +195,41 @@ describe('ImportResolver', () => {
       expect(server.start).not.toHaveBeenCalled();
     });
 
+    it('preserves subjectFilter from imported distribution', async () => {
+      const dataset = makeDataset();
+      const inner = makeInnerResolver(
+        new NoDistributionAvailable(dataset, 'No endpoint', [
+          dataDumpProbeResult,
+        ]),
+      );
+
+      const importedDistribution = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples',
+      );
+      importedDistribution.subjectFilter = '?s a <http://example.org/Type> .';
+
+      const mockImporter = {
+        import: vi
+          .fn()
+          .mockResolvedValue(
+            new ImportSuccessful(importedDistribution, 'test-graph'),
+          ),
+      };
+
+      const server = makeServer();
+      const resolver = new ImportResolver(inner, {
+        importer: mockImporter,
+        server,
+      });
+      const result = await resolver.resolve(dataset);
+
+      const resolved = result as ResolvedDistribution;
+      expect(resolved.distribution.subjectFilter).toBe(
+        '?s a <http://example.org/Type> .',
+      );
+    });
+
     it('cleanup stops server', async () => {
       const server = makeServer();
       const resolver = new ImportResolver(
@@ -199,20 +245,6 @@ describe('ImportResolver', () => {
       await resolver.cleanup();
 
       expect(server.stop).toHaveBeenCalled();
-    });
-
-    it('cleanup is a no-op when no server', async () => {
-      const resolver = new ImportResolver(
-        makeInnerResolver(
-          new ResolvedDistribution(
-            Distribution.sparql(new URL('http://example.org/sparql')),
-            [],
-          ),
-        ),
-        { importer: { import: vi.fn() } },
-      );
-
-      await expect(resolver.cleanup()).resolves.toBeUndefined();
     });
   });
 });
