@@ -1,3 +1,13 @@
+## 0.2.11 (2026-02-27)
+
+### 🩹 Fixes
+
+- **task-runner-docker:** remove debug logging from container run ([#174](https://github.com/ldengine/lde/pull/174))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.10 (2026-02-16)
 
 ### 🧱 Updated Dependencies
