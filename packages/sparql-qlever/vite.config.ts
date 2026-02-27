@@ -8,7 +8,7 @@ export default mergeConfig(
     cacheDir: '../../node_modules/.vite/packages/sparql-monitor',
     test: {
       env: {
-        QLEVER_IMAGE: 'adfreiburg/qlever:commit-9352d06',
+        QLEVER_IMAGE: 'adfreiburg/qlever:commit-a14e0a0',
       },
       coverage: {
         thresholds: {
