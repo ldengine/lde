@@ -12,8 +12,9 @@ export interface ProgressReporter {
       elementsProcessed: number;
       quadsGenerated: number;
       duration: number;
-    }
+    },
   ): void;
+  stageFailed(stage: string, error: Error): void;
   stageSkipped(stage: string, reason: string): void;
   datasetComplete(dataset: string): void;
   datasetSkipped(dataset: string, reason: string): void;

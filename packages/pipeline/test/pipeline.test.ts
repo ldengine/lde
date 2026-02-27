@@ -56,6 +56,7 @@ function makeReporter(): ProgressReporter & {
     stageStart: vi.fn<ProgressReporter['stageStart']>(),
     stageProgress: vi.fn<ProgressReporter['stageProgress']>(),
     stageComplete: vi.fn<ProgressReporter['stageComplete']>(),
+    stageFailed: vi.fn<ProgressReporter['stageFailed']>(),
     stageSkipped: vi.fn<ProgressReporter['stageSkipped']>(),
     datasetComplete: vi.fn<ProgressReporter['datasetComplete']>(),
     datasetSkipped: vi.fn<ProgressReporter['datasetSkipped']>(),
@@ -531,6 +532,69 @@ describe('Pipeline', () => {
       // Both datasets should be attempted.
       expect(failingStage.run).toHaveBeenCalledTimes(2);
       expect(reporter.datasetComplete).toHaveBeenCalledTimes(2);
+      expect(reporter.stageFailed).toHaveBeenCalledWith(
+        'failing',
+        expect.any(Error),
+      );
+    });
+
+    it('continues to next stage when a stage throws', async () => {
+      const failingStage = makeStage('failing');
+      vi.spyOn(failingStage, 'run').mockRejectedValue(
+        new Error('Stage failed'),
+      );
+      const okStage = makeStage('ok');
+      const reporter = makeReporter();
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [failingStage, okStage],
+        writers: writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(okStage.run).toHaveBeenCalledTimes(1);
+      expect(reporter.stageFailed).toHaveBeenCalledWith(
+        'failing',
+        expect.any(Error),
+      );
+      expect(reporter.datasetComplete).toHaveBeenCalledTimes(1);
+    });
+
+    it('continues to next top-level stage when a chain throws', async () => {
+      const stageOutputResolver = makeStageOutputResolver();
+
+      const child = makeStage('child');
+      const chainedParent = makeStage('chained', undefined, [child]);
+      vi.spyOn(chainedParent, 'run').mockRejectedValue(
+        new Error('Chain failed'),
+      );
+
+      const flatStage = makeStage('flat');
+      const reporter = makeReporter();
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [chainedParent, flatStage],
+        writers: writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+        chaining: {
+          stageOutputResolver,
+          outputDir: '/tmp/test',
+        },
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(flatStage.run).toHaveBeenCalledTimes(1);
+      expect(reporter.stageFailed).toHaveBeenCalledWith(
+        'chained',
+        expect.any(Error),
+      );
     });
   });
 
