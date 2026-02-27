@@ -10,7 +10,7 @@ import {
 
 export interface ImportResolverOptions {
   importer: Importer;
-  server?: SparqlServer;
+  server: SparqlServer;
 }
 
 /**
@@ -36,24 +36,15 @@ export class ImportResolver implements DistributionResolver {
     const importResult = await this.options.importer.import(dataset);
 
     if (importResult instanceof ImportSuccessful) {
-      if (this.options.server) {
-        await this.options.server.start();
-        return new ResolvedDistribution(
-          Distribution.sparql(
-            this.options.server.queryEndpoint,
-            importResult.identifier,
-          ),
-          result.probeResults,
-        );
-      }
+      await this.options.server.start();
 
-      return new ResolvedDistribution(
-        Distribution.sparql(
-          importResult.distribution.accessUrl,
-          importResult.identifier,
-        ),
-        result.probeResults,
+      const distribution = Distribution.sparql(
+        this.options.server.queryEndpoint,
+        importResult.identifier,
       );
+      distribution.subjectFilter = importResult.distribution.subjectFilter;
+
+      return new ResolvedDistribution(distribution, result.probeResults);
     }
 
     return new NoDistributionAvailable(
@@ -65,6 +56,6 @@ export class ImportResolver implements DistributionResolver {
   }
 
   async cleanup(): Promise<void> {
-    await this.options.server?.stop();
+    await this.options.server.stop();
   }
 }
