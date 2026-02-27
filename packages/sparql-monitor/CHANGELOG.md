@@ -1,3 +1,13 @@
+## 0.5.13 (2026-02-27)
+
+### 🩹 Fixes
+
+- **sparql-monitor:** resolve stream type incompatibility with @types/node 25 ([f839619](https://github.com/ldengine/lde/commit/f839619))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.12 (2026-02-16)
 
 This was a version bump only for @lde/sparql-monitor to align it with other projects, there were no code changes.

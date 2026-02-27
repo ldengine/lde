@@ -1,3 +1,19 @@
+## 0.8.0 (2026-02-27)
+
+### 🚀 Features
+
+- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldengine/lde/pull/167))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.5.0
+- Updated @lde/sparql-importer to 0.3.0
+- Updated @lde/dataset to 0.7.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.0 (2026-02-18)
 
 ### 🚀 Features
