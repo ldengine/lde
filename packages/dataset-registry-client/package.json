@@ -26,7 +26,7 @@
     "@lde/dataset": "0.6.10",
     "ldkit": "^2.6.0",
     "n3": "^1.26.0",
-    "sparqljs": "^3.7.3",
+    "sparqljs": "^3.7.4",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

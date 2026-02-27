@@ -31,7 +31,7 @@
     "fetch-sparql-endpoint": "^7.1.0",
     "filenamify-url": "^3.0.0",
     "n3": "^1.17.0",
-    "sparqljs": "^3.7.3",
+    "sparqljs": "^3.7.4",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

@@ -11,7 +11,7 @@ const { namedNode, literal, blankNode } = DataFactory;
 const distribution = Distribution.sparql(new URL('http://example.com/sparql'));
 
 function bindingsStream(
-  records: Record<string, { termType: string; value: string }>[]
+  records: Record<string, { termType: string; value: string }>[],
 ): Promise<Readable> {
   const stream = new Readable({
     objectMode: true,
@@ -37,7 +37,7 @@ describe('SparqlItemSelector', () => {
           bindingsStream([
             { uri: namedNode('http://example.com/1') },
             { uri: namedNode('http://example.com/2') },
-          ])
+          ]),
         ),
     };
 
@@ -93,8 +93,7 @@ describe('SparqlItemSelector', () => {
     ]);
 
     expect(queries[0]).toMatch(/LIMIT\s+2/);
-    // sparqljs omits OFFSET 0 (the default).
-    expect(queries[0]).not.toMatch(/OFFSET/);
+    expect(queries[0]).toMatch(/OFFSET\s+0/);
     expect(queries[1]).toMatch(/LIMIT\s+2/);
     expect(queries[1]).toMatch(/OFFSET\s+2/);
   });
@@ -151,7 +150,7 @@ describe('SparqlItemSelector', () => {
             { uri: literal('not a URI') },
             { uri: blankNode('b0') },
             { uri: namedNode('http://example.com/2') },
-          ])
+          ]),
         ),
     };
 
@@ -251,7 +250,7 @@ describe('SparqlItemSelector', () => {
             class: namedNode('http://example.com/Person'),
             property: namedNode('http://example.com/name'),
           },
-        ])
+        ]),
       ),
     };
 
@@ -277,7 +276,7 @@ describe('SparqlItemSelector', () => {
             class: namedNode('http://example.com/Person'),
             label: literal('Person'),
           },
-        ])
+        ]),
       ),
     };
 
@@ -303,7 +302,7 @@ describe('SparqlItemSelector', () => {
       () =>
         new SparqlItemSelector({
           query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
-        })
+        }),
     ).toThrow('Query must be a SELECT query');
   });
 
@@ -312,7 +311,7 @@ describe('SparqlItemSelector', () => {
       () =>
         new SparqlItemSelector({
           query: 'SELECT * WHERE { ?s ?p ?o }',
-        })
+        }),
     ).toThrow('SELECT * is not supported');
   });
 
@@ -321,7 +320,7 @@ describe('SparqlItemSelector', () => {
       fetchBindings: vi
         .fn()
         .mockImplementation(() =>
-          bindingsStream([{ uri: namedNode('http://example.com/1') }])
+          bindingsStream([{ uri: namedNode('http://example.com/1') }]),
         ),
     };
 
@@ -355,7 +354,7 @@ describe('SparqlItemSelector', () => {
 
     expect(mockFetcher.fetchBindings).toHaveBeenCalledWith(
       'http://example.com/sparql',
-      expect.any(String)
+      expect.any(String),
     );
   });
 });
