@@ -17,6 +17,11 @@ export interface FileWriterOptions {
    * @default 'n-triples'
    */
   format?: 'turtle' | 'n-triples' | 'n-quads';
+  /**
+   * Character used to replace URL-unsafe characters in filenames.
+   * @default '-'
+   */
+  replacementCharacter?: string;
 }
 
 /**
@@ -41,11 +46,13 @@ const formatMap: Record<string, string> = {
 export class FileWriter implements Writer {
   private readonly outputDir: string;
   readonly format: 'turtle' | 'n-triples' | 'n-quads';
+  private readonly replacementCharacter: string;
   private readonly writtenFiles = new Set<string>();
 
   constructor(options: FileWriterOptions) {
     this.outputDir = options.outputDir;
     this.format = options.format ?? 'n-triples';
+    this.replacementCharacter = options.replacementCharacter ?? '-';
   }
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
@@ -83,7 +90,7 @@ export class FileWriter implements Writer {
   getFilename(dataset: Dataset): string {
     const extension = this.getExtension();
     const baseName = filenamifyUrl(dataset.iri.toString(), {
-      replacement: '_',
+      replacement: this.replacementCharacter,
     });
     return `${baseName}.${extension}`;
   }
