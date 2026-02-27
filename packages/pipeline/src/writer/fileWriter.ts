@@ -14,7 +14,7 @@ export interface FileWriterOptions {
   outputDir: string;
   /**
    * File format to write.
-   * @default 'turtle'
+   * @default 'n-triples'
    */
   format?: 'turtle' | 'n-triples' | 'n-quads';
 }
@@ -28,10 +28,9 @@ export interface FileWriterOptions {
  * Subsequent calls for the same dataset append to it, so that multiple pipeline stages
  * can each contribute quads to a single output file.
  *
- * **Note:** With `format: 'turtle'` (the default) each append will repeat the prefix
- * declarations at the start of each chunk. For multi-stage pipelines, prefer
- * `format: 'n-triples'` or `format: 'n-quads'`, which produce clean line-oriented
- * output without repeated headers.
+ * **Note:** With `format: 'turtle'` each append will repeat the prefix declarations
+ * at the start of each chunk. The default `format: 'n-triples'` produces clean
+ * line-oriented output without repeated headers.
  */
 const formatMap: Record<string, string> = {
   turtle: 'Turtle',
@@ -46,7 +45,7 @@ export class FileWriter implements Writer {
 
   constructor(options: FileWriterOptions) {
     this.outputDir = options.outputDir;
-    this.format = options.format ?? 'turtle';
+    this.format = options.format ?? 'n-triples';
   }
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {

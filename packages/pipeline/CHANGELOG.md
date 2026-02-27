@@ -1,3 +1,23 @@
+## 0.8.1 (2026-02-27)
+
+### 🩹 Fixes
+
+- **pipeline:** preserve subjectFilter when importing distributions ([#150](https://github.com/ldengine/lde/pull/150))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
+## 0.8.0 (2026-02-27)
+
+### 🚀 Features
+
+- change FileWriter default format to N-Triples ([#149](https://github.com/ldengine/lde/pull/149))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.1 (2026-02-20)
 
 ### 🩹 Fixes

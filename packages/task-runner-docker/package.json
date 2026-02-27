@@ -28,6 +28,6 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@types/dockerode": "^3.3.40"
+    "@types/dockerode": "^4.0.1"
   }
 }
