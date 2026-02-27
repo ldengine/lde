@@ -1,3 +1,13 @@
+## 0.8.1 (2026-02-27)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** update QLever CLI binaries to new names ([#172](https://github.com/ldengine/lde/pull/172), [#170](https://github.com/ldengine/lde/issues/170))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.0 (2026-02-27)
 
 ### 🚀 Features
