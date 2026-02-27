@@ -93,7 +93,7 @@ describe('SparqlItemSelector', () => {
     ]);
 
     expect(queries[0]).toMatch(/LIMIT\s+2/);
-    expect(queries[0]).toMatch(/OFFSET\s+0/);
+    expect(queries[0]).not.toMatch(/OFFSET\s+[1-9]/);
     expect(queries[1]).toMatch(/LIMIT\s+2/);
     expect(queries[1]).toMatch(/OFFSET\s+2/);
   });

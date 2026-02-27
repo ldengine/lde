@@ -1,5 +1,6 @@
-import { DataFactory } from 'n3';
-import type { ConstructQuery } from 'sparqljs';
+import { AstFactory, type QueryConstruct } from '@traqula/rules-sparql-1-1';
+
+const F = new AstFactory();
 
 /**
  * Set the default graph (FROM clause) on a parsed CONSTRUCT query.
@@ -7,8 +8,11 @@ import type { ConstructQuery } from 'sparqljs';
  * Mutates the query in place, replacing any existing FROM clause.
  */
 export function withDefaultGraph(
-  query: ConstructQuery,
-  graphIri: string
+  query: QueryConstruct,
+  graphIri: string,
 ): void {
-  query.from = { default: [DataFactory.namedNode(graphIri)], named: [] };
+  query.datasets = F.datasetClauses(
+    [{ clauseType: 'default', value: F.termNamed(F.gen(), graphIri) }],
+    F.gen(),
+  );
 }
