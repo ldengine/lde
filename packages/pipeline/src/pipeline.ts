@@ -132,14 +132,19 @@ export class Pipeline {
 
     try {
       for (const stage of this.stages) {
-        if (stage.stages.length > 0) {
-          await this.runChain(dataset, resolved.distribution, stage);
-        } else {
-          await this.runStage(dataset, resolved.distribution, stage);
+        try {
+          if (stage.stages.length > 0) {
+            await this.runChain(dataset, resolved.distribution, stage);
+          } else {
+            await this.runStage(dataset, resolved.distribution, stage);
+          }
+        } catch (error) {
+          this.reporter?.stageFailed(
+            stage.name,
+            error instanceof Error ? error : new Error(String(error)),
+          );
         }
       }
-    } catch {
-      // Stage error for this dataset; continue to next dataset.
     } finally {
       await this.distributionResolver.cleanup?.();
     }
