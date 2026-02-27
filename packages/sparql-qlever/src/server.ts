@@ -17,7 +17,7 @@ export class Server<Task> implements SparqlServer {
     // TODO prevent double starts.
 
     this.task = await this.taskRunner.run(
-      `ServerMain --index-basename ${this.indexName} --memory-max-size 6G --port ${this.port}`
+      `qlever-server --index-basename ${this.indexName} --memory-max-size 6G --port ${this.port}`,
     );
   }
 
