@@ -57,6 +57,10 @@ export const DatasetSchema = {
         '@type': xsd.nonNegativeInteger,
         '@optional': true,
       },
+      compressFormat: {
+        '@id': dcat.compressFormat,
+        '@optional': true,
+      },
       conformsTo: {
         '@id': dcterms.conformsTo,
         '@optional': true,
