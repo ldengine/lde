@@ -1,5 +1,6 @@
 import { SparqlServer } from '@lde/sparql-server';
 import { TaskRunner } from '@lde/task-runner';
+import { waitForSparqlEndpointAvailable } from '@lde/wait-for-sparql';
 
 export class Server<Task> implements SparqlServer {
   private readonly taskRunner: TaskRunner<Task>;
@@ -19,6 +20,7 @@ export class Server<Task> implements SparqlServer {
     this.task = await this.taskRunner.run(
       `qlever-server --index-basename ${this.indexName} --memory-max-size 6G --port ${this.port}`,
     );
+    await waitForSparqlEndpointAvailable(this.queryEndpoint.toString());
   }
 
   public async stop(): Promise<void> {
