@@ -1,3 +1,17 @@
+## 0.7.0 (2026-02-27)
+
+### 🚀 Features
+
+- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldengine/lde/pull/167))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset to 0.7.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.17 (2026-02-16)
 
 ### 🧱 Updated Dependencies

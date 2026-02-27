@@ -44,18 +44,14 @@ export class Dataset {
 
   public getDownloadDistributions(): Distribution[] {
     return [
-      ...this.distributions.filter((distribution) =>
-        distribution.mimeType?.endsWith('+gzip'),
-      ),
-      ...this.distributions.filter((distribution) =>
-        distribution.accessUrl?.toString().endsWith('.nt.gz'),
+      // Prefer compressed distributions.
+      ...this.distributions.filter(
+        (distribution) => distribution.compressFormat !== undefined,
       ),
       ...this.distributions.filter(
         (distribution) =>
-          undefined !== distribution.mimeType &&
-          ['application/n-triples', 'text/turtle'].includes(
-            distribution.mimeType,
-          ),
+          distribution.compressFormat === undefined &&
+          distribution.mimeType !== undefined,
       ),
     ];
   }

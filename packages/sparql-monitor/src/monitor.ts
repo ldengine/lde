@@ -7,17 +7,17 @@ import type { CheckResult } from './types.js';
  */
 function extractUrlCredentials(
   url: URL,
-  baseHeaders?: Headers
+  baseHeaders?: Headers,
 ): [URL, Headers] {
   const headers = new Headers(baseHeaders);
 
   if (url.username || url.password) {
     const credentials = `${decodeURIComponent(
-      url.username
+      url.username,
     )}:${decodeURIComponent(url.password)}`;
     headers.set(
       'Authorization',
-      `Basic ${Buffer.from(credentials).toString('base64')}`
+      `Basic ${Buffer.from(credentials).toString('base64')}`,
     );
 
     const cleanUrl = new URL(url.toString());
@@ -96,11 +96,11 @@ export class SparqlMonitor {
   }
 
   private prepareFetcherForUrl(
-    endpointUrl: URL
+    endpointUrl: URL,
   ): [string, SparqlEndpointFetcher] {
     const [url, headers] = extractUrlCredentials(
       endpointUrl,
-      this.options?.headers
+      this.options?.headers,
     );
     const hasCredentials =
       headers.has('Authorization') &&
@@ -118,7 +118,9 @@ export class SparqlMonitor {
     return [url.toString(), fetcher];
   }
 
-  private async consumeStream(stream: NodeJS.ReadableStream): Promise<void> {
+  private async consumeStream(
+    stream: NodeJS.ReadableStream | NodeJS.EventEmitter,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       stream.on('data', () => {
         // Just consume the data

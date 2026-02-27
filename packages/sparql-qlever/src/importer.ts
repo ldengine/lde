@@ -94,13 +94,10 @@ export class Importer implements ImporterInterface {
   private fileFormatFromMimeType(mimeType: string): fileFormat {
     switch (mimeType) {
       case 'application/n-triples':
-      case 'application/n-triples+gzip':
         return 'nt';
       case 'application/n-quads':
-      case 'application/n-quads+gzip':
         return 'nq';
       case 'text/turtle':
-      case 'text/turtle+gzip':
         return 'ttl';
       default:
         throw new Error(`Unsupported media type: ${mimeType}`);
