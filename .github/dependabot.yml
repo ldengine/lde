@@ -10,11 +10,6 @@ updates:
     schedule:
       interval: 'weekly'
     groups:
-      eslint:
-        patterns:
-          - '@typescript-eslint/*'
-          - 'eslint'
-          - 'eslint-plugin-svelte'
       fastify:
         patterns:
           - '@fastify/*'
@@ -27,3 +22,8 @@ updates:
       # Upgrade Nx manually with `nx migrate latest`
       - dependency-name: '@nx/*'
       - dependency-name: 'nx'
+      # ESLint major versions are tied to Nx; upgrade together with Nx
+      - dependency-name: '@eslint/*'
+      - dependency-name: '@typescript-eslint/*'
+      - dependency-name: 'eslint'
+      - dependency-name: 'eslint-plugin-svelte'
