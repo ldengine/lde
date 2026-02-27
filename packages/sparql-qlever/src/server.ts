@@ -2,7 +2,7 @@ import { SparqlServer } from '@lde/sparql-server';
 import { TaskRunner } from '@lde/task-runner';
 
 export class Server<Task> implements SparqlServer {
-  private taskRunner: TaskRunner<Task>;
+  private readonly taskRunner: TaskRunner<Task>;
   private readonly indexName: string;
   private task?: Task;
   private readonly port: number;
