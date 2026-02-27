@@ -3,7 +3,9 @@ import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import type { NamedNode, Quad } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { Generator, Parser, type ConstructQuery } from 'sparqljs';
+import { Parser } from '@traqula/parser-sparql-1-1';
+import { Generator } from '@traqula/generator-sparql-1-1';
+import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
 
@@ -83,7 +85,7 @@ export interface SparqlConstructExecutorOptions {
  */
 export class SparqlConstructExecutor implements Executor {
   private readonly rawQuery: string;
-  private readonly preParsed?: ConstructQuery;
+  private readonly preParsed?: QueryConstruct;
   private readonly fetcher: SparqlEndpointFetcher;
   private readonly generator = new Generator();
 
@@ -92,10 +94,10 @@ export class SparqlConstructExecutor implements Executor {
 
     if (!options.query.includes('#subjectFilter#')) {
       const parsed = new Parser().parse(options.query);
-      if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
+      if (parsed.type !== 'query' || parsed.subType !== 'construct') {
         throw new Error('Query must be a CONSTRUCT query');
       }
-      this.preParsed = parsed as ConstructQuery;
+      this.preParsed = parsed as QueryConstruct;
     }
 
     this.fetcher =
@@ -120,7 +122,7 @@ export class SparqlConstructExecutor implements Executor {
   ): Promise<AsyncIterable<Quad>> {
     const endpoint = distribution.accessUrl;
 
-    let ast: ConstructQuery;
+    let ast: QueryConstruct;
     if (this.preParsed) {
       ast = structuredClone(this.preParsed);
     } else {
@@ -129,10 +131,10 @@ export class SparqlConstructExecutor implements Executor {
         distribution.subjectFilter ?? '',
       );
       const parsed = new Parser().parse(substituted);
-      if (parsed.type !== 'query' || parsed.queryType !== 'CONSTRUCT') {
+      if (parsed.type !== 'query' || parsed.subType !== 'construct') {
         throw new Error('Query must be a CONSTRUCT query');
       }
-      ast = parsed as ConstructQuery;
+      ast = parsed as QueryConstruct;
     }
 
     if (distribution.namedGraph) {
@@ -144,7 +146,7 @@ export class SparqlConstructExecutor implements Executor {
       ast = injectValues(ast, bindings);
     }
 
-    let query = this.generator.stringify(ast);
+    let query = this.generator.generate(ast);
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
     return await this.fetcher.fetchTriples(endpoint.toString(), query);
