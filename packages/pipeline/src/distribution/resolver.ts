@@ -6,6 +6,7 @@ export class ResolvedDistribution {
   constructor(
     readonly distribution: Distribution,
     readonly probeResults: ProbeResultType[],
+    readonly importedFrom?: Distribution,
   ) {}
 }
 

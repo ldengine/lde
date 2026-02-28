@@ -12,6 +12,11 @@ import {
   NoDistributionAvailable,
 } from './distribution/resolver.js';
 import { SparqlDistributionResolver } from './distribution/index.js';
+import {
+  NetworkError,
+  SparqlProbeResult,
+  type ProbeResultType,
+} from './distribution/probe.js';
 import { NotSupported } from './sparql/executor.js';
 import type { StageOutputResolver } from './stageOutputResolver.js';
 import type { ProgressReporter } from './progressReporter.js';
@@ -125,10 +130,22 @@ export class Pipeline {
     this.reporter?.datasetStart(datasetIri);
 
     const resolved = await this.distributionResolver.resolve(dataset);
+
+    this.reporter?.distributionsAnalyzed(
+      datasetIri,
+      mapProbeResults(resolved.probeResults),
+    );
+
     if (resolved instanceof NoDistributionAvailable) {
       this.reporter?.datasetSkipped(datasetIri, resolved.message);
       return;
     }
+
+    this.reporter?.distributionSelected(datasetIri, {
+      accessUrl: resolved.distribution.accessUrl.toString(),
+      namedGraph: resolved.distribution.namedGraph,
+      importedFrom: resolved.importedFrom?.accessUrl?.toString(),
+    });
 
     try {
       for (const stage of this.stages) {
@@ -277,4 +294,32 @@ export class Pipeline {
       }
     }
   }
+}
+
+function mapProbeResults(probeResults: ProbeResultType[]): Array<{
+  accessUrl: string;
+  type: 'sparql' | 'data-dump' | 'network-error';
+  available: boolean;
+  statusCode?: number;
+  error?: string;
+}> {
+  return probeResults.map((result) => {
+    if (result instanceof NetworkError) {
+      return {
+        accessUrl: result.url,
+        type: 'network-error' as const,
+        available: false,
+        error: result.message,
+      };
+    }
+    return {
+      accessUrl: result.url,
+      type:
+        result instanceof SparqlProbeResult
+          ? ('sparql' as const)
+          : ('data-dump' as const),
+      available: result.isSuccess(),
+      statusCode: result.statusCode,
+    };
+  });
 }
