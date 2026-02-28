@@ -1,5 +1,6 @@
 # Add files here to ignore them from prettier formatting
 dist/
+package-lock.json
 /coverage
 /.nx/cache
 /.nx/workspace-data

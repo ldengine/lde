@@ -7,6 +7,7 @@ export class ResolvedDistribution {
     readonly distribution: Distribution,
     readonly probeResults: ProbeResultType[],
     readonly importedFrom?: Distribution,
+    readonly importDuration?: number,
   ) {}
 }
 

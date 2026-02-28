@@ -52,22 +52,29 @@ function makeWriter(): Writer & { write: ReturnType<typeof vi.fn> } {
   return { write: vi.fn().mockResolvedValue(undefined) };
 }
 
-function makeReporter(): ProgressReporter & {
-  [K in keyof ProgressReporter]: ReturnType<typeof vi.fn>;
-} {
+type RequiredReporter = Required<ProgressReporter> & {
+  [K in keyof Required<ProgressReporter>]: ReturnType<typeof vi.fn>;
+};
+
+function makeReporter(): RequiredReporter {
   return {
-    pipelineStart: vi.fn<ProgressReporter['pipelineStart']>(),
-    datasetStart: vi.fn<ProgressReporter['datasetStart']>(),
-    distributionsAnalyzed: vi.fn<ProgressReporter['distributionsAnalyzed']>(),
-    distributionSelected: vi.fn<ProgressReporter['distributionSelected']>(),
-    stageStart: vi.fn<ProgressReporter['stageStart']>(),
-    stageProgress: vi.fn<ProgressReporter['stageProgress']>(),
-    stageComplete: vi.fn<ProgressReporter['stageComplete']>(),
-    stageFailed: vi.fn<ProgressReporter['stageFailed']>(),
-    stageSkipped: vi.fn<ProgressReporter['stageSkipped']>(),
-    datasetComplete: vi.fn<ProgressReporter['datasetComplete']>(),
-    datasetSkipped: vi.fn<ProgressReporter['datasetSkipped']>(),
-    pipelineComplete: vi.fn<ProgressReporter['pipelineComplete']>(),
+    pipelineStart: vi.fn<NonNullable<ProgressReporter['pipelineStart']>>(),
+    datasetsSelected:
+      vi.fn<NonNullable<ProgressReporter['datasetsSelected']>>(),
+    datasetStart: vi.fn<NonNullable<ProgressReporter['datasetStart']>>(),
+    distributionsAnalyzed:
+      vi.fn<NonNullable<ProgressReporter['distributionsAnalyzed']>>(),
+    distributionSelected:
+      vi.fn<NonNullable<ProgressReporter['distributionSelected']>>(),
+    stageStart: vi.fn<NonNullable<ProgressReporter['stageStart']>>(),
+    stageProgress: vi.fn<NonNullable<ProgressReporter['stageProgress']>>(),
+    stageComplete: vi.fn<NonNullable<ProgressReporter['stageComplete']>>(),
+    stageFailed: vi.fn<NonNullable<ProgressReporter['stageFailed']>>(),
+    stageSkipped: vi.fn<NonNullable<ProgressReporter['stageSkipped']>>(),
+    datasetComplete: vi.fn<NonNullable<ProgressReporter['datasetComplete']>>(),
+    datasetSkipped: vi.fn<NonNullable<ProgressReporter['datasetSkipped']>>(),
+    pipelineComplete:
+      vi.fn<NonNullable<ProgressReporter['pipelineComplete']>>(),
   };
 }
 
@@ -152,7 +159,7 @@ describe('Pipeline', () => {
 
       expect(stage.run).not.toHaveBeenCalled();
       expect(reporter.datasetSkipped).toHaveBeenCalledWith(
-        dataset.iri.toString(),
+        dataset,
         'No SPARQL endpoint',
       );
     });
@@ -438,9 +445,7 @@ describe('Pipeline', () => {
       }
 
       expect(reporter.pipelineStart).toHaveBeenCalledWith('my-pipeline');
-      expect(reporter.datasetStart).toHaveBeenCalledWith(
-        dataset.iri.toString(),
-      );
+      expect(reporter.datasetStart).toHaveBeenCalledWith(dataset);
       expect(reporter.stageStart).toHaveBeenCalledWith('stage1');
       expect(reporter.pipelineComplete).toHaveBeenCalledWith(
         expect.objectContaining({ duration: expect.any(Number) }),
@@ -492,6 +497,24 @@ describe('Pipeline', () => {
 
     it('distributionsAnalyzed reports probe results correctly', async () => {
       const reporter = makeReporter();
+
+      const sparqlDist = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataDumpDist = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples',
+      );
+      const downDist = new Distribution(
+        new URL('http://example.org/down'),
+        'application/n-triples',
+      );
+
+      const datasetWithDists = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [sparqlDist, dataDumpDist, downDist],
+      });
+
       const sparqlResult = new SparqlProbeResult(
         'http://example.org/sparql',
         new Response('', {
@@ -509,11 +532,11 @@ describe('Pipeline', () => {
       );
 
       const pipeline = new Pipeline({
-        datasetSelector: makeDatasetSelector(dataset),
+        datasetSelector: makeDatasetSelector(datasetWithDists),
         stages: [makeStage('stage1')],
         writers: writer,
         distributionResolver: makeResolver(
-          new ResolvedDistribution(sparqlDistribution, [
+          new ResolvedDistribution(sparqlDist, [
             sparqlResult,
             dataDumpResult,
             networkError,
@@ -525,22 +548,22 @@ describe('Pipeline', () => {
       await pipeline.run();
 
       expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
-        dataset.iri.toString(),
+        datasetWithDists,
         [
           {
-            accessUrl: 'http://example.org/sparql',
+            distribution: sparqlDist,
             type: 'sparql',
             available: true,
             statusCode: 200,
           },
           {
-            accessUrl: 'http://example.org/data.nt',
+            distribution: dataDumpDist,
             type: 'data-dump',
             available: false,
             statusCode: 404,
           },
           {
-            accessUrl: 'http://example.org/down',
+            distribution: downDist,
             type: 'network-error',
             available: false,
             error: 'Connection refused',
@@ -572,28 +595,34 @@ describe('Pipeline', () => {
       await pipeline.run();
 
       expect(reporter.distributionSelected).toHaveBeenCalledWith(
-        dataset.iri.toString(),
-        {
-          accessUrl: 'http://example.org/sparql',
-          namedGraph: undefined,
-          importedFrom: 'http://example.org/data.nt',
-        },
+        dataset,
+        sparqlDistribution,
+        importedFromDistribution,
+        undefined,
       );
     });
 
     it('distributionsAnalyzed called even when dataset is skipped', async () => {
       const reporter = makeReporter();
+      const downDist = new Distribution(
+        new URL('http://example.org/down'),
+        'application/n-triples',
+      );
+      const datasetWithDist = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [downDist],
+      });
       const networkError = new NetworkError(
         'http://example.org/down',
         'Connection refused',
       );
 
       const pipeline = new Pipeline({
-        datasetSelector: makeDatasetSelector(dataset),
+        datasetSelector: makeDatasetSelector(datasetWithDist),
         stages: [makeStage('stage1')],
         writers: writer,
         distributionResolver: makeResolver(
-          new NoDistributionAvailable(dataset, 'No SPARQL endpoint', [
+          new NoDistributionAvailable(datasetWithDist, 'No SPARQL endpoint', [
             networkError,
           ]),
         ),
@@ -603,10 +632,10 @@ describe('Pipeline', () => {
       await pipeline.run();
 
       expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
-        dataset.iri.toString(),
+        datasetWithDist,
         [
           {
-            accessUrl: 'http://example.org/down',
+            distribution: downDist,
             type: 'network-error',
             available: false,
             error: 'Connection refused',
@@ -614,6 +643,24 @@ describe('Pipeline', () => {
         ],
       );
       expect(reporter.distributionSelected).not.toHaveBeenCalled();
+    });
+
+    it('works with partial reporter that only implements pipelineStart', async () => {
+      const partialReporter: ProgressReporter = {
+        pipelineStart: vi.fn(),
+      };
+
+      const pipeline = new Pipeline({
+        name: 'my-pipeline',
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+        reporter: partialReporter,
+      });
+
+      await expect(pipeline.run()).resolves.toBeUndefined();
+      expect(partialReporter.pipelineStart).toHaveBeenCalledWith('my-pipeline');
     });
   });
 
