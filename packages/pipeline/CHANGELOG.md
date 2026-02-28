@@ -1,3 +1,13 @@
+## 0.12.0 (2026-02-28)
+
+### 🚀 Features
+
+- **pipeline:** add distribution analysis and selection reporting ([#176](https://github.com/ldengine/lde/pull/176))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.11.0 (2026-02-27)
 
 ### 🧱 Updated Dependencies
