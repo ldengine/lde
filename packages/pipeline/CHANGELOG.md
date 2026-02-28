@@ -1,3 +1,13 @@
+## 0.13.0 (2026-02-28)
+
+### 🚀 Features
+
+- **pipeline:** refactor ProgressReporter with domain objects and extract console reporter ([#178](https://github.com/ldengine/lde/pull/178))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.12.0 (2026-02-28)
 
 ### 🚀 Features
