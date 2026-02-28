@@ -19,7 +19,10 @@ import {
 } from './distribution/probe.js';
 import { NotSupported } from './sparql/executor.js';
 import type { StageOutputResolver } from './stageOutputResolver.js';
-import type { ProgressReporter } from './progressReporter.js';
+import type {
+  DistributionAnalysisResult,
+  ProgressReporter,
+} from './progressReporter.js';
 
 /** Plugin that hooks into pipeline lifecycle events. */
 export interface PipelinePlugin {
@@ -114,38 +117,37 @@ export class Pipeline {
   async run(): Promise<void> {
     const start = Date.now();
 
-    this.reporter?.pipelineStart(this.name);
+    this.reporter?.pipelineStart?.(this.name);
 
     const datasets = await this.datasetSelector.select();
     for await (const dataset of datasets) {
       await this.processDataset(dataset);
     }
 
-    this.reporter?.pipelineComplete({ duration: Date.now() - start });
+    this.reporter?.pipelineComplete?.({ duration: Date.now() - start });
   }
 
   private async processDataset(dataset: Dataset): Promise<void> {
-    const datasetIri = dataset.iri.toString();
-
-    this.reporter?.datasetStart(datasetIri);
+    this.reporter?.datasetStart?.(dataset);
 
     const resolved = await this.distributionResolver.resolve(dataset);
 
-    this.reporter?.distributionsAnalyzed(
-      datasetIri,
-      mapProbeResults(resolved.probeResults),
+    this.reporter?.distributionsAnalyzed?.(
+      dataset,
+      mapProbeResults(dataset, resolved.probeResults),
     );
 
     if (resolved instanceof NoDistributionAvailable) {
-      this.reporter?.datasetSkipped(datasetIri, resolved.message);
+      this.reporter?.datasetSkipped?.(dataset, resolved.message);
       return;
     }
 
-    this.reporter?.distributionSelected(datasetIri, {
-      accessUrl: resolved.distribution.accessUrl.toString(),
-      namedGraph: resolved.distribution.namedGraph,
-      importedFrom: resolved.importedFrom?.accessUrl?.toString(),
-    });
+    this.reporter?.distributionSelected?.(
+      dataset,
+      resolved.distribution,
+      resolved.importedFrom,
+      resolved.importDuration,
+    );
 
     try {
       for (const stage of this.stages) {
@@ -156,7 +158,7 @@ export class Pipeline {
             await this.runStage(dataset, resolved.distribution, stage);
           }
         } catch (error) {
-          this.reporter?.stageFailed(
+          this.reporter?.stageFailed?.(
             stage.name,
             error instanceof Error ? error : new Error(String(error)),
           );
@@ -166,7 +168,7 @@ export class Pipeline {
       await this.distributionResolver.cleanup?.();
     }
 
-    this.reporter?.datasetComplete(datasetIri);
+    this.reporter?.datasetComplete?.(dataset);
   }
 
   private async runStage(
@@ -174,7 +176,7 @@ export class Pipeline {
     distribution: Distribution,
     stage: Stage,
   ): Promise<void> {
-    this.reporter?.stageStart(stage.name);
+    this.reporter?.stageStart?.(stage.name);
     const stageStart = Date.now();
 
     let elementsProcessed = 0;
@@ -184,14 +186,14 @@ export class Pipeline {
       onProgress: (elements, quads) => {
         elementsProcessed = elements;
         quadsGenerated = quads;
-        this.reporter?.stageProgress({ elementsProcessed, quadsGenerated });
+        this.reporter?.stageProgress?.({ elementsProcessed, quadsGenerated });
       },
     });
 
     if (result instanceof NotSupported) {
-      this.reporter?.stageSkipped(stage.name, result.message);
+      this.reporter?.stageSkipped?.(stage.name, result.message);
     } else {
-      this.reporter?.stageComplete(stage.name, {
+      this.reporter?.stageComplete?.(stage.name, {
         elementsProcessed,
         quadsGenerated,
         duration: Date.now() - stageStart,
@@ -256,7 +258,7 @@ export class Pipeline {
     stage: Stage,
     stageWriter: FileWriter,
   ): Promise<void> {
-    this.reporter?.stageStart(stage.name);
+    this.reporter?.stageStart?.(stage.name);
     const stageStart = Date.now();
 
     let elementsProcessed = 0;
@@ -266,18 +268,18 @@ export class Pipeline {
       onProgress: (elements, quads) => {
         elementsProcessed = elements;
         quadsGenerated = quads;
-        this.reporter?.stageProgress({ elementsProcessed, quadsGenerated });
+        this.reporter?.stageProgress?.({ elementsProcessed, quadsGenerated });
       },
     });
 
     if (result instanceof NotSupported) {
-      this.reporter?.stageSkipped(stage.name, result.message);
+      this.reporter?.stageSkipped?.(stage.name, result.message);
       throw new Error(
         `Stage '${stage.name}' returned NotSupported in chained mode`,
       );
     }
 
-    this.reporter?.stageComplete(stage.name, {
+    this.reporter?.stageComplete?.(stage.name, {
       elementsProcessed,
       quadsGenerated,
       duration: Date.now() - stageStart,
@@ -296,24 +298,21 @@ export class Pipeline {
   }
 }
 
-function mapProbeResults(probeResults: ProbeResultType[]): Array<{
-  accessUrl: string;
-  type: 'sparql' | 'data-dump' | 'network-error';
-  available: boolean;
-  statusCode?: number;
-  error?: string;
-}> {
-  return probeResults.map((result) => {
+function mapProbeResults(
+  dataset: Dataset,
+  probeResults: ProbeResultType[],
+): DistributionAnalysisResult[] {
+  return probeResults.map((result, index) => {
     if (result instanceof NetworkError) {
       return {
-        accessUrl: result.url,
+        distribution: dataset.distributions[index],
         type: 'network-error' as const,
         available: false,
         error: result.message,
       };
     }
     return {
-      accessUrl: result.url,
+      distribution: dataset.distributions[index],
       type:
         result instanceof SparqlProbeResult
           ? ('sparql' as const)

@@ -48,6 +48,9 @@
       "path": "./packages/fastify-rdf"
     },
     {
+      "path": "./packages/pipeline-console-reporter"
+    },
+    {
       "path": "./packages/pipeline-void"
     }
   ]

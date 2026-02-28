@@ -24,6 +24,7 @@ LDE is an [Nx](https://nx.dev) monorepo that includes the following packages:
 - [x] [@lde/fastify-rdf](packages/fastify-rdf): Fastify plugin for serving RDF data with content negotiation
 - [x] [@lde/local-sparql-endpoint](packages/pipeline): quickly start a local SPARQL endpoint for testing and development
 - [ ] [@lde/pipeline](packages/pipeline): build pipelines that query, transform and enrich Linked Data
+- [x] [@lde/pipeline-console-reporter](packages/pipeline-console-reporter): console progress reporter for pipelines
 - [x] [@lde/pipeline-void](packages/pipeline-void): VoID statistical analysis for RDF datasets
 - [x] [@lde/sparql-importer](packages/sparql-importer): import data dumps to a local SPARQL endpoint for querying
 - [x] [@lde/sparql-monitor](packages/sparql-monitor): monitor SPARQL endpoints with periodic checks

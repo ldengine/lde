@@ -33,6 +33,7 @@ export class ImportResolver implements DistributionResolver {
     if (result instanceof ResolvedDistribution) return result;
 
     const [dataset] = args;
+    const importStart = Date.now();
     const importResult = await this.options.importer.import(dataset);
 
     if (importResult instanceof ImportSuccessful) {
@@ -48,6 +49,7 @@ export class ImportResolver implements DistributionResolver {
         distribution,
         result.probeResults,
         importResult.distribution,
+        Date.now() - importStart,
       );
     }
 
