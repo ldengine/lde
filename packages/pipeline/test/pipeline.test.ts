@@ -8,6 +8,11 @@ import {
   NoDistributionAvailable,
   type DistributionResolver,
 } from '../src/distribution/resolver.js';
+import {
+  SparqlProbeResult,
+  DataDumpProbeResult,
+  NetworkError,
+} from '../src/distribution/probe.js';
 import type { Writer } from '../src/writer/writer.js';
 import type { ProgressReporter } from '../src/progressReporter.js';
 import type { StageOutputResolver } from '../src/stageOutputResolver.js';
@@ -53,6 +58,8 @@ function makeReporter(): ProgressReporter & {
   return {
     pipelineStart: vi.fn<ProgressReporter['pipelineStart']>(),
     datasetStart: vi.fn<ProgressReporter['datasetStart']>(),
+    distributionsAnalyzed: vi.fn<ProgressReporter['distributionsAnalyzed']>(),
+    distributionSelected: vi.fn<ProgressReporter['distributionSelected']>(),
     stageStart: vi.fn<ProgressReporter['stageStart']>(),
     stageProgress: vi.fn<ProgressReporter['stageProgress']>(),
     stageComplete: vi.fn<ProgressReporter['stageComplete']>(),
@@ -413,6 +420,8 @@ describe('Pipeline', () => {
       const callOrder = [
         reporter.pipelineStart,
         reporter.datasetStart,
+        reporter.distributionsAnalyzed,
+        reporter.distributionSelected,
         reporter.stageStart,
         reporter.stageComplete,
         reporter.datasetComplete,
@@ -479,6 +488,132 @@ describe('Pipeline', () => {
       });
 
       await expect(pipeline.run()).resolves.toBeUndefined();
+    });
+
+    it('distributionsAnalyzed reports probe results correctly', async () => {
+      const reporter = makeReporter();
+      const sparqlResult = new SparqlProbeResult(
+        'http://example.org/sparql',
+        new Response('', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+      const dataDumpResult = new DataDumpProbeResult(
+        'http://example.org/data.nt',
+        new Response('', { status: 404 }),
+      );
+      const networkError = new NetworkError(
+        'http://example.org/down',
+        'Connection refused',
+      );
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: makeResolver(
+          new ResolvedDistribution(sparqlDistribution, [
+            sparqlResult,
+            dataDumpResult,
+            networkError,
+          ]),
+        ),
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
+        dataset.iri.toString(),
+        [
+          {
+            accessUrl: 'http://example.org/sparql',
+            type: 'sparql',
+            available: true,
+            statusCode: 200,
+          },
+          {
+            accessUrl: 'http://example.org/data.nt',
+            type: 'data-dump',
+            available: false,
+            statusCode: 404,
+          },
+          {
+            accessUrl: 'http://example.org/down',
+            type: 'network-error',
+            available: false,
+            error: 'Connection refused',
+          },
+        ],
+      );
+    });
+
+    it('distributionSelected reports importedFrom when import was used', async () => {
+      const reporter = makeReporter();
+      const importedFromDistribution = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples',
+      );
+      const resolved = new ResolvedDistribution(
+        sparqlDistribution,
+        [],
+        importedFromDistribution,
+      );
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: makeResolver(resolved),
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(reporter.distributionSelected).toHaveBeenCalledWith(
+        dataset.iri.toString(),
+        {
+          accessUrl: 'http://example.org/sparql',
+          namedGraph: undefined,
+          importedFrom: 'http://example.org/data.nt',
+        },
+      );
+    });
+
+    it('distributionsAnalyzed called even when dataset is skipped', async () => {
+      const reporter = makeReporter();
+      const networkError = new NetworkError(
+        'http://example.org/down',
+        'Connection refused',
+      );
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: makeResolver(
+          new NoDistributionAvailable(dataset, 'No SPARQL endpoint', [
+            networkError,
+          ]),
+        ),
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
+        dataset.iri.toString(),
+        [
+          {
+            accessUrl: 'http://example.org/down',
+            type: 'network-error',
+            available: false,
+            error: 'Connection refused',
+          },
+        ],
+      );
+      expect(reporter.distributionSelected).not.toHaveBeenCalled();
     });
   });
 

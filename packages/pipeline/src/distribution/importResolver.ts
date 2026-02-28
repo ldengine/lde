@@ -44,7 +44,11 @@ export class ImportResolver implements DistributionResolver {
       );
       distribution.subjectFilter = importResult.distribution.subjectFilter;
 
-      return new ResolvedDistribution(distribution, result.probeResults);
+      return new ResolvedDistribution(
+        distribution,
+        result.probeResults,
+        importResult.distribution,
+      );
     }
 
     return new NoDistributionAvailable(

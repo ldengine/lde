@@ -1,6 +1,24 @@
 export interface ProgressReporter {
   pipelineStart(name: string): void;
   datasetStart(dataset: string): void;
+  distributionsAnalyzed(
+    dataset: string,
+    results: Array<{
+      accessUrl: string;
+      type: 'sparql' | 'data-dump' | 'network-error';
+      available: boolean;
+      statusCode?: number;
+      error?: string;
+    }>,
+  ): void;
+  distributionSelected(
+    dataset: string,
+    distribution: {
+      accessUrl: string;
+      namedGraph?: string;
+      importedFrom?: string;
+    },
+  ): void;
   stageStart(stage: string): void;
   stageProgress(update: {
     elementsProcessed: number;
