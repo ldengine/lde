@@ -1,3 +1,13 @@
+## 0.2.1 (2026-03-01)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** remove unnecessary URL underline styling ([#181](https://github.com/ldengine/lde/pull/181))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.0 (2026-02-28)
 
 ### 🚀 Features
