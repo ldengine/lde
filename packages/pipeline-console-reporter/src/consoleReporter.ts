@@ -37,7 +37,9 @@ export class ConsoleReporter implements ProgressReporter {
       ? ` ${chalk.dim(`[${this.datasetIndex}/${this.datasetTotal}]`)}`
       : '';
     console.info();
-    console.info(`Dataset ${chalk.bold(dataset.iri.toString())}${counter}`);
+    console.info(
+      `Dataset ${chalk.bold.underline(dataset.iri.toString())}${counter}`,
+    );
   }
 
   distributionsAnalyzed(
