@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Console progress reporter for @lde/pipeline",
   "repository": {
-    "url": "https://github.com/ldengine/lde",
+    "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/pipeline-console-reporter"
   },
   "type": "module",
