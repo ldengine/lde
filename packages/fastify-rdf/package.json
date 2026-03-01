@@ -3,7 +3,7 @@
   "version": "0.2.12",
   "description": "Fastify plugin for serving RDF data with content negotiation",
   "repository": {
-    "url": "https://github.com/ldengine/lde",
+    "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/fastify-rdf"
   },
   "type": "module",

@@ -2,7 +2,7 @@
   "name": "@lde/local-sparql-endpoint",
   "version": "0.2.12",
   "repository": {
-    "url": "https://github.com/ldengine/lde",
+    "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/local-sparql-endpoint"
   },
   "type": "module",

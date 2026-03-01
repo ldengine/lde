@@ -3,7 +3,7 @@
   "version": "0.5.13",
   "description": "Monitor SPARQL endpoints with periodic checks",
   "repository": {
-    "url": "https://github.com/ldengine/lde",
+    "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/sparql-monitor"
   },
   "type": "module",
@@ -20,7 +20,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "sparql-monitor": "./dist/cli.js"
+    "sparql-monitor": "dist/cli.js"
   },
   "files": [
     "dist",
