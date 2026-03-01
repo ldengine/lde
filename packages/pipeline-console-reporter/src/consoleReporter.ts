@@ -140,7 +140,7 @@ export class ConsoleReporter implements ProgressReporter {
           : result.type === 'data-dump'
             ? 'Data dump'
             : 'Network error';
-      const url = chalk.underline(resultUrl);
+      const url = resultUrl;
 
       const s = ora({ discardStdin: false });
       if (isSelected) {
@@ -149,9 +149,7 @@ export class ConsoleReporter implements ProgressReporter {
             importDuration !== undefined
               ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
               : '';
-          s.start(
-            `Imported ${url} (to ${chalk.underline(selectedUrl!)})${duration}`,
-          );
+          s.start(`Imported ${url} (to ${selectedUrl!})${duration}`);
         } else {
           s.start(`${typeLabel} ${url}`);
         }
