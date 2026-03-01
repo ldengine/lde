@@ -2,7 +2,7 @@
   "name": "@lde/dataset",
   "version": "0.7.0",
   "repository": {
-    "url": "https://github.com/ldengine/lde",
+    "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/dataset"
   },
   "type": "module",
