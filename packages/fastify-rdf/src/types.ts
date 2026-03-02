@@ -44,6 +44,15 @@ declare module 'fastify' {
      * @returns The data (when overrideSend is enabled) or Promise<FastifyReply>
      */
     sendRdf(data: RdfData): RdfData | Promise<FastifyReply>;
+
+    /**
+     * Send a Hydra error response with content negotiation.
+     * Uses `error.message` as `hydra:title` and `error.cause` (if a string) as `hydra:description`.
+     * Status code defaults to `error.statusCode` or 500.
+     */
+    sendHydraError(
+      error: Error & { statusCode?: number },
+    ): Promise<FastifyReply>;
   }
 
   interface FastifyContextConfig {

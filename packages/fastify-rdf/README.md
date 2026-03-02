@@ -92,6 +92,35 @@ await app.register(fastifyRdf, { parseRdf: true });
 
 Routes without per-route or plugin-level `parseRdf` get JSON fallback for `application/ld+json` (parsed as plain JSON) and 415 Unsupported Media Type for other RDF content types.
 
+### Hydra Error Responses with `reply.sendHydraError()`
+
+Send [Hydra](https://www.hydra-cg.com/spec/latest/core/) error responses with content negotiation. This maps `error.message` to `hydra:title` and `error.cause` (when it is a string) to `hydra:description`:
+
+```typescript
+app.get('/resource', async (request, reply) => {
+  const error = new Error('Not Found', {
+    cause: 'The requested dataset was not found',
+  }) as Error & { statusCode: number };
+  error.statusCode = 404;
+  return reply.sendHydraError(error);
+});
+```
+
+The status code is taken from `error.statusCode` (standard in Fastify and http-errors), defaulting to 500.
+
+For `Accept: application/ld+json`, the response is compact JSON-LD — no `jsonld` dependency needed:
+
+```json
+{
+  "@context": "http://www.w3.org/ns/hydra/core#",
+  "@type": "Error",
+  "title": "Not Found",
+  "description": "The requested dataset was not found"
+}
+```
+
+For all other RDF formats (Turtle, N-Triples, etc.), the error is serialised through the standard RDF pipeline.
+
 ### Custom Default Content Type
 
 By default, the plugin uses `text/turtle` when no `Accept` header is provided. You can change this:

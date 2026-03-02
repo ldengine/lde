@@ -11,6 +11,10 @@ import {
   type FastifyRdfOptions,
   type RdfData,
 } from './types.js';
+import {
+  serializeHydraErrorAsJsonLd,
+  createHydraErrorDataset,
+} from './hydra-error.js';
 
 /**
  * Collect a readable stream into a string.
@@ -205,6 +209,31 @@ async function fastifyRdfPlugin(
       },
     );
   }
+
+  server.decorateReply(
+    'sendHydraError',
+    async function (
+      this: FastifyReply,
+      error: Error & { statusCode?: number },
+    ): Promise<FastifyReply> {
+      this.status(error.statusCode ?? 500);
+      const title = error.message;
+      const description =
+        typeof error.cause === 'string' ? error.cause : undefined;
+      const contentType = negotiateContentType(
+        this.request,
+        supportedContentTypes,
+        defaultContentType,
+      );
+      if (contentType === 'application/ld+json') {
+        this.type('application/ld+json');
+        return this.send(serializeHydraErrorAsJsonLd(title, description));
+      }
+      const dataset = createHydraErrorDataset(title, description);
+      this.type(contentType);
+      return this.send(await serializeRdfToString(dataset, contentType));
+    },
+  );
 
   await registerRdfParsers(server, options.parseRdf ?? false);
 }
