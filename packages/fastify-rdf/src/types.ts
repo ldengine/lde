@@ -22,6 +22,13 @@ export interface FastifyRdfOptions {
    * @default false
    */
   overrideSend?: boolean;
+
+  /**
+   * Parse RDF request bodies into a DatasetCore on all routes.
+   * When not set, individual routes can opt in via `config: { parseRdf: true }`.
+   * @default false
+   */
+  parseRdf?: boolean;
 }
 
 /**
@@ -37,5 +44,9 @@ declare module 'fastify' {
      * @returns The data (when overrideSend is enabled) or Promise<FastifyReply>
      */
     sendRdf(data: RdfData): RdfData | Promise<FastifyReply>;
+  }
+
+  interface FastifyContextConfig {
+    parseRdf?: boolean;
   }
 }

@@ -43,8 +43,8 @@ app.get('/resource', async (request, reply) => {
     quad(
       namedNode('http://example.org/subject'),
       namedNode('http://example.org/predicate'),
-      literal('object')
-    )
+      literal('object'),
+    ),
   );
   return reply.sendRdf(store);
 });
@@ -66,12 +66,31 @@ app.get('/resource', async () => {
     quad(
       namedNode('http://example.org/subject'),
       namedNode('http://example.org/predicate'),
-      literal('object')
-    )
+      literal('object'),
+    ),
   );
   return store;
 });
 ```
+
+### Parsing RDF Request Bodies
+
+The plugin registers content type parsers for all RDF formats supported by [rdf-parse](https://github.com/rubensworks/rdf-parse.js). Individual routes opt in via `config: { parseRdf: true }` — the body is then parsed into a `DatasetCore`:
+
+```typescript
+app.post('/data', { config: { parseRdf: true } }, async (request) => {
+  const dataset = request.body as DatasetCore; // N3 Store
+  console.log(`Received ${dataset.size} quads`);
+});
+```
+
+To parse RDF bodies on **all** routes, enable `parseRdf` at the plugin level:
+
+```typescript
+await app.register(fastifyRdf, { parseRdf: true });
+```
+
+Routes without per-route or plugin-level `parseRdf` get JSON fallback for `application/ld+json` (parsed as plain JSON) and 415 Unsupported Media Type for other RDF content types.
 
 ### Custom Default Content Type
 
@@ -126,6 +145,12 @@ interface FastifyRdfOptions {
    * @default false
    */
   overrideSend?: boolean;
+
+  /**
+   * Parse RDF request bodies into a DatasetCore on all routes.
+   * @default false
+   */
+  parseRdf?: boolean;
 }
 ```
 
