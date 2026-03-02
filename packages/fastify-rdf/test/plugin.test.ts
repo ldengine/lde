@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fastify, { type FastifyInstance } from 'fastify';
+import type { DatasetCore } from '@rdfjs/types';
 import { DataFactory, Store, StreamParser } from 'n3';
 import { Readable } from 'node:stream';
 import { fastifyRdf } from '../src/index.js';
@@ -16,8 +17,8 @@ function createTestDataset(): Store {
     quad(
       namedNode('http://example.org/subject'),
       namedNode('http://example.org/predicate'),
-      literal('object')
-    )
+      literal('object'),
+    ),
   );
   return store;
 }
@@ -109,7 +110,7 @@ describe('fastifyRdf plugin', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toContain(
-        'application/n-triples'
+        'application/n-triples',
       );
       expect(response.body).toContain('<http://example.org/subject>');
     });
@@ -204,9 +205,147 @@ describe('fastifyRdf plugin', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toContain(
-        'application/n-triples'
+        'application/n-triples',
       );
       expect(response.body).toContain('<http://example.org/subject>');
+    });
+  });
+
+  describe('parseRdf option', () => {
+    it('should parse Turtle body into DatasetCore', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', { config: { parseRdf: true } }, async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'text/turtle' },
+        body: '<http://example.org/s> <http://example.org/p> "o" .',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ size: 1 });
+    });
+
+    it('should parse JSON-LD body into DatasetCore', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', { config: { parseRdf: true } }, async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/ld+json' },
+        body: JSON.stringify({
+          '@id': 'http://example.org/s',
+          'http://example.org/p': 'o',
+        }),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ size: 1 });
+    });
+
+    it('should parse N-Triples body into DatasetCore', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', { config: { parseRdf: true } }, async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/n-triples' },
+        body: '<http://example.org/s> <http://example.org/p> "o" .\n',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ size: 1 });
+    });
+
+    it('should fall back to plain JSON for application/ld+json without parseRdf config', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', async (request) => {
+        return { body: request.body };
+      });
+      await app.ready();
+
+      const jsonLd = {
+        '@id': 'http://example.org/s',
+        'http://example.org/p': 'o',
+      };
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/ld+json' },
+        body: JSON.stringify(jsonLd),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ body: jsonLd });
+    });
+
+    it('should return 415 for text/turtle without parseRdf config', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', async (request) => {
+        return { body: request.body };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'text/turtle' },
+        body: '<http://example.org/s> <http://example.org/p> "o" .',
+      });
+
+      expect(response.statusCode).toBe(415);
+    });
+
+    it('should not register parsers when parseRdf option is not set', async () => {
+      await app.register(fastifyRdf);
+      app.post('/data', async (request) => {
+        return { body: request.body };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'text/turtle' },
+        body: '<http://example.org/s> <http://example.org/p> "o" .',
+      });
+
+      // Fastify returns 415 by default for unrecognised content types when
+      // the route has no matching parser.
+      expect(response.statusCode).toBe(415);
+    });
+
+    it('should return 400 for malformed RDF body', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', { config: { parseRdf: true } }, async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'text/turtle' },
+        body: 'this is not valid turtle {{{',
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 
@@ -244,7 +383,7 @@ describe('fastifyRdf plugin', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toContain(
-        'application/n-triples'
+        'application/n-triples',
       );
       expect(response.body).toContain('<http://example.org/subject>');
     });
