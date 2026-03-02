@@ -1,3 +1,13 @@
+## 0.15.0 (2026-03-02)
+
+### 🚀 Features
+
+- **pipeline:** show dataset selection duration in console reporter ([#184](https://github.com/ldengine/lde/pull/184))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.14.0 (2026-03-02)
 
 ### 🚀 Features
