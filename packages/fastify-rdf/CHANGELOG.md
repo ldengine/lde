@@ -1,3 +1,13 @@
+## 0.3.0 (2026-03-02)
+
+### 🚀 Features
+
+- **fastify-rdf:** add RDF content type parser for request bodies ([#187](https://github.com/ldengine/lde/pull/187))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.12 (2026-02-16)
 
 This was a version bump only for @lde/fastify-rdf to align it with other projects, there were no code changes.
