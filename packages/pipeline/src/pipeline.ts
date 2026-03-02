@@ -127,7 +127,9 @@ export class Pipeline {
 
     this.reporter?.pipelineStart?.(this.name);
 
+    const selectStart = Date.now();
     const datasets = await this.datasetSelector.select();
+    this.reporter?.datasetsSelected?.(datasets.total, Date.now() - selectStart);
     for await (const dataset of datasets) {
       await this.processDataset(dataset);
     }

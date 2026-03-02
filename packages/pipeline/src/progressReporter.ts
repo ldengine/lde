@@ -10,7 +10,7 @@ export interface DistributionAnalysisResult {
 
 export interface ProgressReporter {
   pipelineStart?(name: string): void;
-  datasetsSelected?(count: number): void;
+  datasetsSelected?(count: number, duration: number): void;
   datasetStart?(dataset: Dataset): void;
   distributionsAnalyzed?(
     dataset: Dataset,
