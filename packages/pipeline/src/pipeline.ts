@@ -60,6 +60,10 @@ class FanOutWriter implements Writer {
       );
     }
   }
+
+  async flush(dataset: Dataset): Promise<void> {
+    for (const w of this.writers) await w.flush?.(dataset);
+  }
 }
 
 class TransformWriter implements Writer {
@@ -70,6 +74,10 @@ class TransformWriter implements Writer {
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
     await this.inner.write(dataset, this.transform(quads, dataset));
+  }
+
+  async flush(dataset: Dataset): Promise<void> {
+    await this.inner.flush?.(dataset);
   }
 }
 
@@ -168,6 +176,7 @@ export class Pipeline {
       await this.distributionResolver.cleanup?.();
     }
 
+    await this.writer.flush?.(dataset);
     this.reporter?.datasetComplete?.(dataset);
   }
 

@@ -49,6 +49,7 @@ describe('FileWriter', () => {
           ),
         ),
       );
+      await writer.flush(dataset);
 
       const files = await readFile(
         join(tempDir, 'example.com-dataset-1.nt'),
@@ -77,6 +78,7 @@ describe('FileWriter', () => {
           ),
         ),
       );
+      await writer.flush(dataset);
 
       const content = await readFile(
         join(tempDir, 'example.com-dataset-1.nt'),
@@ -91,13 +93,14 @@ describe('FileWriter', () => {
       const dataset = createDataset('http://example.com/dataset/1');
 
       await writer.write(dataset, quadsOf());
+      await writer.flush(dataset);
 
       await expect(
         readFile(join(tempDir, 'example.com-dataset-1.nt')),
       ).rejects.toThrow();
     });
 
-    it('appends quads from a second write to the same dataset (n-triples)', async () => {
+    it('combines quads from multiple write calls into a single file', async () => {
       const writer = new FileWriter({
         outputDir: tempDir,
         format: 'n-triples',
@@ -127,6 +130,8 @@ describe('FileWriter', () => {
         ),
       );
 
+      await writer.flush(dataset);
+
       const content = await readFile(
         join(tempDir, 'example.com-dataset-1.nt'),
         'utf-8',
@@ -155,6 +160,7 @@ describe('FileWriter', () => {
           ),
         ),
       );
+      await writer.flush(dataset);
 
       const content = await readFile(
         join(tempDir, 'example.com_dataset_1.nt'),
@@ -179,12 +185,134 @@ describe('FileWriter', () => {
           ),
         ),
       );
+      await writer.flush(dataset);
 
       const content = await readFile(
         join(nestedDir, 'example.com-dataset-1.nt'),
         'utf-8',
       );
       expect(content).toBeTruthy();
+    });
+  });
+
+  describe('flush', () => {
+    it('is a no-op when no write was made for the dataset', async () => {
+      const writer = new FileWriter({ outputDir: tempDir });
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      // Should not throw.
+      await writer.flush(dataset);
+    });
+  });
+
+  describe('Turtle prefixes', () => {
+    it('writes prefix declarations and compacts IRIs', async () => {
+      const writer = new FileWriter({
+        outputDir: tempDir,
+        format: 'turtle',
+        prefixes: {
+          ex: 'http://example.com/',
+        },
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/subject'),
+            namedNode('http://example.com/predicate'),
+            literal('object'),
+          ),
+        ),
+      );
+      await writer.flush(dataset);
+
+      const content = await readFile(
+        join(tempDir, 'example.com-dataset-1.ttl'),
+        'utf-8',
+      );
+      expect(content).toContain('@prefix ex: <http://example.com/>');
+      expect(content).toContain('ex:subject');
+      expect(content).toContain('ex:predicate');
+    });
+
+    it('writes a single prefix block across multiple write calls', async () => {
+      const writer = new FileWriter({
+        outputDir: tempDir,
+        format: 'turtle',
+        prefixes: {
+          ex: 'http://example.com/',
+        },
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s1'),
+            namedNode('http://example.com/p'),
+            literal('first'),
+          ),
+        ),
+      );
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/s2'),
+            namedNode('http://example.com/p'),
+            literal('second'),
+          ),
+        ),
+      );
+
+      await writer.flush(dataset);
+
+      const content = await readFile(
+        join(tempDir, 'example.com-dataset-1.ttl'),
+        'utf-8',
+      );
+
+      // Prefix block should appear exactly once.
+      const prefixCount = content.split('@prefix').length - 1;
+      expect(prefixCount).toBe(1);
+
+      // Both triples should be present.
+      expect(content).toContain('"first"');
+      expect(content).toContain('"second"');
+    });
+
+    it('writes full IRIs when no prefixes are provided', async () => {
+      const writer = new FileWriter({
+        outputDir: tempDir,
+        format: 'turtle',
+      });
+
+      const dataset = createDataset('http://example.com/dataset/1');
+
+      await writer.write(
+        dataset,
+        quadsOf(
+          quad(
+            namedNode('http://example.com/subject'),
+            namedNode('http://example.com/predicate'),
+            literal('object'),
+          ),
+        ),
+      );
+      await writer.flush(dataset);
+
+      const content = await readFile(
+        join(tempDir, 'example.com-dataset-1.ttl'),
+        'utf-8',
+      );
+      expect(content).toContain('<http://example.com/subject>');
+      expect(content).not.toContain('@prefix');
     });
   });
 });
