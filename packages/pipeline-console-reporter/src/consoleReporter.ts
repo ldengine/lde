@@ -21,10 +21,10 @@ export class ConsoleReporter implements ProgressReporter {
     }).start();
   }
 
-  datasetsSelected(count: number): void {
+  datasetsSelected(count: number, duration: number): void {
     this.datasetTotal = count;
     if (this.stageSpinner) {
-      this.stageSpinner.text = `Selected datasets: found ${chalk.bold(count)} datasets`;
+      this.stageSpinner.text = `Selected datasets: found ${chalk.bold(count)} datasets in ${chalk.bold(prettyMilliseconds(duration))}`;
     }
   }
 
