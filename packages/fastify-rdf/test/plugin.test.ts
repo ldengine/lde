@@ -349,6 +349,174 @@ describe('fastifyRdf plugin', () => {
     });
   });
 
+  describe('reply.sendHydraError', () => {
+    it('should return compact JSON-LD Hydra error for Accept: application/ld+json', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found') as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/ld+json' },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.headers['content-type']).toContain('application/ld+json');
+      const json = response.json();
+      expect(json['@context']).toBe('http://www.w3.org/ns/hydra/core#');
+      expect(json['@type']).toBe('Error');
+      expect(json['title']).toBe('Not Found');
+    });
+
+    it('should include description from string error.cause', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found', {
+          cause: 'The dataset was not found',
+        }) as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/ld+json' },
+      });
+
+      const json = response.json();
+      expect(json['description']).toBe('The dataset was not found');
+    });
+
+    it('should omit description when cause is not a string', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Internal error', {
+          cause: new Error('underlying'),
+        }) as Error & { statusCode: number };
+        error.statusCode = 500;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/ld+json' },
+      });
+
+      const json = response.json();
+      expect(json).not.toHaveProperty('description');
+    });
+
+    it('should default to status 500 when statusCode is absent', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        return reply.sendHydraError(new Error('Something broke'));
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/ld+json' },
+      });
+
+      expect(response.statusCode).toBe(500);
+    });
+
+    it('should serialise as Turtle for Accept: text/turtle', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found') as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'text/turtle' },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.headers['content-type']).toContain('text/turtle');
+      expect(response.body).toContain('http://www.w3.org/ns/hydra/core#Error');
+      expect(response.body).toContain('Not Found');
+    });
+
+    it('should serialise as N-Triples for Accept: application/n-triples', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found') as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/n-triples' },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.headers['content-type']).toContain(
+        'application/n-triples',
+      );
+      expect(response.body).toContain(
+        '<http://www.w3.org/ns/hydra/core#Error>',
+      );
+    });
+
+    it('should work correctly under overrideSend mode', async () => {
+      await app.register(fastifyRdf, { overrideSend: true });
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found') as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+        headers: { accept: 'application/ld+json' },
+      });
+
+      expect(response.statusCode).toBe(404);
+      const json = response.json();
+      expect(json['@type']).toBe('Error');
+      expect(json['title']).toBe('Not Found');
+    });
+
+    it('should use default content type when no Accept header', async () => {
+      await app.register(fastifyRdf);
+      app.get('/error', async (_request, reply) => {
+        const error = new Error('Not Found') as Error & { statusCode: number };
+        error.statusCode = 404;
+        return reply.sendHydraError(error);
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/error',
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.headers['content-type']).toContain('text/turtle');
+      expect(response.body).toContain('Not Found');
+    });
+  });
+
   describe('overrideSend option', () => {
     it('should serialize DatasetCore returned from handler', async () => {
       await app.register(fastifyRdf, { overrideSend: true });
