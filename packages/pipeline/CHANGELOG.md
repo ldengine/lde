@@ -1,3 +1,13 @@
+## 0.14.0 (2026-03-02)
+
+### 🚀 Features
+
+- **pipeline:** add flush() to Writer and Turtle prefix support to FileWriter ([#182](https://github.com/ldengine/lde/pull/182))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.13.0 (2026-02-28)
 
 ### 🚀 Features
