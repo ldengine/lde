@@ -1,3 +1,13 @@
+## 0.4.0 (2026-03-02)
+
+### 🚀 Features
+
+- **fastify-rdf:** add reply.sendHydraError() for Hydra error responses ([#189](https://github.com/ldengine/lde/pull/189))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.3.0 (2026-03-02)
 
 ### 🚀 Features
