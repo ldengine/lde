@@ -75,7 +75,7 @@ app.get('/resource', async () => {
 
 ### Parsing RDF Request Bodies
 
-The plugin registers content type parsers for all RDF formats supported by [rdf-parse](https://github.com/rubensworks/rdf-parse.js). Routes opt in to RDF body parsing via `config: { parseRdf: true }` — the body is then parsed into a `DatasetCore`:
+The plugin registers content type parsers for all RDF formats supported by [rdf-parse](https://github.com/rubensworks/rdf-parse.js). Individual routes opt in via `config: { parseRdf: true }` — the body is then parsed into a `DatasetCore`:
 
 ```typescript
 app.post('/data', { config: { parseRdf: true } }, async (request) => {
@@ -84,7 +84,13 @@ app.post('/data', { config: { parseRdf: true } }, async (request) => {
 });
 ```
 
-Routes **without** `config: { parseRdf: true }` get JSON fallback for `application/ld+json` (parsed as plain JSON) and 415 Unsupported Media Type for other RDF content types.
+To parse RDF bodies on **all** routes, enable `parseRdf` at the plugin level:
+
+```typescript
+await app.register(fastifyRdf, { parseRdf: true });
+```
+
+Routes without per-route or plugin-level `parseRdf` get JSON fallback for `application/ld+json` (parsed as plain JSON) and 415 Unsupported Media Type for other RDF content types.
 
 ### Custom Default Content Type
 
@@ -139,6 +145,12 @@ interface FastifyRdfOptions {
    * @default false
    */
   overrideSend?: boolean;
+
+  /**
+   * Parse RDF request bodies into a DatasetCore on all routes.
+   * @default false
+   */
+  parseRdf?: boolean;
 }
 ```
 

@@ -294,6 +294,25 @@ describe('fastifyRdf plugin', () => {
       expect(response.json()).toEqual({ body: jsonLd });
     });
 
+    it('should parse all routes when plugin-level parseRdf is set', async () => {
+      await app.register(fastifyRdf, { parseRdf: true });
+      app.post('/data', async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'text/turtle' },
+        body: '<http://example.org/s> <http://example.org/p> "o" .',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ size: 1 });
+    });
+
     it('should return 415 for text/turtle without parseRdf config', async () => {
       await app.register(fastifyRdf);
       app.post('/data', async (request) => {

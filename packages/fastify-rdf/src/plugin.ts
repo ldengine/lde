@@ -73,11 +73,15 @@ async function streamToDataset(
 /**
  * Register Fastify content type parsers for all RDF formats.
  *
- * Routes with `config: { parseRdf: true }` get the body parsed into a
- * DatasetCore. Routes without that config get JSON fallback for
+ * When `parseAll` is true (from the plugin-level `parseRdf` option), every
+ * route gets RDF body parsing. Otherwise, routes opt in individually via
+ * `config: { parseRdf: true }`. Non-opted-in routes get JSON fallback for
  * `application/ld+json` and 415 for other RDF types.
  */
-async function registerRdfParsers(server: FastifyInstance): Promise<void> {
+async function registerRdfParsers(
+  server: FastifyInstance,
+  parseAll: boolean,
+): Promise<void> {
   const contentTypes = (await rdfParser.getContentTypes()).filter(
     (type) => type !== 'application/json',
   );
@@ -106,7 +110,7 @@ async function registerRdfParsers(server: FastifyInstance): Promise<void> {
       return;
     }
 
-    if (request.routeOptions.config.parseRdf) {
+    if (parseAll || request.routeOptions.config.parseRdf) {
       try {
         const bodyStream = Readable.from(request.body);
         const quadStream = rdfParser.parse(bodyStream, { contentType });
@@ -202,7 +206,7 @@ async function fastifyRdfPlugin(
     );
   }
 
-  await registerRdfParsers(server);
+  await registerRdfParsers(server, options.parseRdf ?? false);
 }
 
 /**
