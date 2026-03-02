@@ -211,9 +211,9 @@ describe('fastifyRdf plugin', () => {
     });
   });
 
-  describe('parseRdf option', () => {
+  describe('RDF body parsing', () => {
     it('should parse Turtle body into DatasetCore', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
+      await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
         const dataset = request.body as DatasetCore;
         return { size: dataset.size };
@@ -232,7 +232,7 @@ describe('fastifyRdf plugin', () => {
     });
 
     it('should parse JSON-LD body into DatasetCore', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
+      await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
         const dataset = request.body as DatasetCore;
         return { size: dataset.size };
@@ -254,7 +254,7 @@ describe('fastifyRdf plugin', () => {
     });
 
     it('should parse N-Triples body into DatasetCore', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
+      await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
         const dataset = request.body as DatasetCore;
         return { size: dataset.size };
@@ -273,7 +273,7 @@ describe('fastifyRdf plugin', () => {
     });
 
     it('should fall back to plain JSON for application/ld+json without parseRdf config', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
+      await app.register(fastifyRdf);
       app.post('/data', async (request) => {
         return { body: request.body };
       });
@@ -295,23 +295,6 @@ describe('fastifyRdf plugin', () => {
     });
 
     it('should return 415 for text/turtle without parseRdf config', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
-      app.post('/data', async (request) => {
-        return { body: request.body };
-      });
-      await app.ready();
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/data',
-        headers: { 'content-type': 'text/turtle' },
-        body: '<http://example.org/s> <http://example.org/p> "o" .',
-      });
-
-      expect(response.statusCode).toBe(415);
-    });
-
-    it('should not register parsers when parseRdf option is not set', async () => {
       await app.register(fastifyRdf);
       app.post('/data', async (request) => {
         return { body: request.body };
@@ -325,13 +308,11 @@ describe('fastifyRdf plugin', () => {
         body: '<http://example.org/s> <http://example.org/p> "o" .',
       });
 
-      // Fastify returns 415 by default for unrecognised content types when
-      // the route has no matching parser.
       expect(response.statusCode).toBe(415);
     });
 
     it('should return 400 for malformed RDF body', async () => {
-      await app.register(fastifyRdf, { parseRdf: true });
+      await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
         const dataset = request.body as DatasetCore;
         return { size: dataset.size };

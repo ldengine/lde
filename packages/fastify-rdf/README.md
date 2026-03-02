@@ -75,11 +75,9 @@ app.get('/resource', async () => {
 
 ### Parsing RDF Request Bodies
 
-Enable `parseRdf` to register content type parsers for all RDF formats supported by [rdf-parse](https://github.com/rubensworks/rdf-parse.js). Individual routes opt in via `config: { parseRdf: true }` — the body is then parsed into a `DatasetCore`:
+The plugin registers content type parsers for all RDF formats supported by [rdf-parse](https://github.com/rubensworks/rdf-parse.js). Routes opt in to RDF body parsing via `config: { parseRdf: true }` — the body is then parsed into a `DatasetCore`:
 
 ```typescript
-await app.register(fastifyRdf, { parseRdf: true });
-
 app.post('/data', { config: { parseRdf: true } }, async (request) => {
   const dataset = request.body as DatasetCore; // N3 Store
   console.log(`Received ${dataset.size} quads`);
@@ -141,13 +139,6 @@ interface FastifyRdfOptions {
    * @default false
    */
   overrideSend?: boolean;
-
-  /**
-   * Register content type parsers for RDF request bodies.
-   * Routes opt in via config: { parseRdf: true }.
-   * @default false
-   */
-  parseRdf?: boolean;
 }
 ```
 

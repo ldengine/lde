@@ -138,7 +138,7 @@ async function registerRdfParsers(server: FastifyInstance): Promise<void> {
  * - Optionally overrides reply.send() to serialize all responses as RDF
  * - Handles content negotiation via Accept headers
  * - Defaults to Turtle when no Accept header is provided
- * - Optionally registers content type parsers for RDF request bodies
+ * - Registers content type parsers for RDF request bodies
  */
 async function fastifyRdfPlugin(
   server: FastifyInstance,
@@ -202,9 +202,7 @@ async function fastifyRdfPlugin(
     );
   }
 
-  if (options.parseRdf) {
-    await registerRdfParsers(server);
-  }
+  await registerRdfParsers(server);
 }
 
 /**

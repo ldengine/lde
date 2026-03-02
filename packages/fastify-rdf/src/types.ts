@@ -22,15 +22,6 @@ export interface FastifyRdfOptions {
    * @default false
    */
   overrideSend?: boolean;
-
-  /**
-   * Register content type parsers for RDF request bodies.
-   * Routes opt in via `config: { parseRdf: true }`, which parses the body
-   * into a DatasetCore. Routes without that config get JSON fallback for
-   * `application/ld+json` and 415 for other RDF types.
-   * @default false
-   */
-  parseRdf?: boolean;
 }
 
 /**
