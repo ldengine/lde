@@ -48,8 +48,14 @@ function makeResolvedDistribution(): ResolvedDistribution {
   return new ResolvedDistribution(sparqlDistribution, []);
 }
 
-function makeWriter(): Writer & { write: ReturnType<typeof vi.fn> } {
-  return { write: vi.fn().mockResolvedValue(undefined) };
+function makeWriter(): Writer & {
+  write: ReturnType<typeof vi.fn>;
+  flush: ReturnType<typeof vi.fn>;
+} {
+  return {
+    write: vi.fn().mockResolvedValue(undefined),
+    flush: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 type RequiredReporter = Required<ProgressReporter> & {
@@ -182,6 +188,42 @@ describe('Pipeline', () => {
         .calls[0][2];
       expect(usedWriter).not.toBe(writer);
       expect(usedWriter).not.toBe(writer2);
+    });
+
+    it('calls flush on writer after all stages complete for a dataset', async () => {
+      const stage1 = makeStage('stage1');
+      const stage2 = makeStage('stage2');
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [stage1, stage2],
+        writers: writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(writer.flush).toHaveBeenCalledWith(dataset);
+      expect(writer.flush).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls flush once per dataset', async () => {
+      const dataset1 = makeDataset('http://example.org/dataset/1');
+      const dataset2 = makeDataset('http://example.org/dataset/2');
+      const stage = makeStage('stage1');
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset1, dataset2),
+        stages: [stage],
+        writers: writer,
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(writer.flush).toHaveBeenCalledTimes(2);
+      expect(writer.flush).toHaveBeenCalledWith(dataset1);
+      expect(writer.flush).toHaveBeenCalledWith(dataset2);
     });
 
     it('skips stage returning NotSupported', async () => {

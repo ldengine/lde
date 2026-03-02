@@ -1,6 +1,6 @@
 import { Dataset } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, type WriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import filenamifyUrl from 'filenamify-url';
@@ -22,6 +22,11 @@ export interface FileWriterOptions {
    * @default '-'
    */
   replacementCharacter?: string;
+  /**
+   * Turtle prefix declarations. Keys are prefix names, values are namespace IRIs.
+   * Only used when format is 'turtle'.
+   */
+  prefixes?: Record<string, string>;
 }
 
 /**
@@ -29,13 +34,9 @@ export interface FileWriterOptions {
  *
  * Files are named based on the dataset IRI using filenamify-url.
  *
- * The first {@link write} call for a given dataset creates (or overwrites) the file.
- * Subsequent calls for the same dataset append to it, so that multiple pipeline stages
- * can each contribute quads to a single output file.
- *
- * **Note:** With `format: 'turtle'` each append will repeat the prefix declarations
- * at the start of each chunk. The default `format: 'n-triples'` produces clean
- * line-oriented output without repeated headers.
+ * A single N3Writer is kept open per dataset across all {@link write} calls,
+ * so Turtle prefix declarations are written once and triples can be grouped
+ * by subject. Call {@link flush} after all stages complete to finalize the file.
  */
 const formatMap: Record<string, string> = {
   turtle: 'Turtle',
@@ -47,12 +48,17 @@ export class FileWriter implements Writer {
   private readonly outputDir: string;
   readonly format: 'turtle' | 'n-triples' | 'n-quads';
   private readonly replacementCharacter: string;
-  private readonly writtenFiles = new Set<string>();
+  private readonly prefixes?: Record<string, string>;
+  private readonly activeWriters = new Map<
+    string,
+    { n3Writer: N3Writer; stream: WriteStream }
+  >();
 
   constructor(options: FileWriterOptions) {
     this.outputDir = options.outputDir;
     this.format = options.format ?? 'n-triples';
     this.replacementCharacter = options.replacementCharacter ?? '-';
+    this.prefixes = options.prefixes;
   }
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
@@ -61,22 +67,22 @@ export class FileWriter implements Writer {
     const first = await iterator.next();
     if (first.done) return;
 
-    const filePath = join(this.outputDir, this.getFilename(dataset));
-    await mkdir(dirname(filePath), { recursive: true });
+    const { n3Writer } = await this.getOrCreateWriter(dataset);
 
-    const flags = this.writtenFiles.has(filePath) ? 'a' : 'w';
-    this.writtenFiles.add(filePath);
-
-    const stream = createWriteStream(filePath, { flags });
-    const writer = new N3Writer(stream, { format: formatMap[this.format] });
-
-    writer.addQuad(first.value);
+    n3Writer.addQuad(first.value);
     for await (const quad of { [Symbol.asyncIterator]: () => iterator }) {
-      writer.addQuad(quad);
+      n3Writer.addQuad(quad);
     }
+  }
 
+  async flush(dataset: Dataset): Promise<void> {
+    const key = this.getFilePath(dataset);
+    const entry = this.activeWriters.get(key);
+    if (!entry) return;
+
+    this.activeWriters.delete(key);
     await new Promise<void>((resolve, reject) => {
-      writer.end((error) => {
+      entry.n3Writer.end((error) => {
         if (error) reject(error);
         else resolve();
       });
@@ -84,7 +90,7 @@ export class FileWriter implements Writer {
   }
 
   getOutputPath(dataset: Dataset): string {
-    return join(this.outputDir, this.getFilename(dataset));
+    return this.getFilePath(dataset);
   }
 
   getFilename(dataset: Dataset): string {
@@ -93,6 +99,30 @@ export class FileWriter implements Writer {
       replacement: this.replacementCharacter,
     });
     return `${baseName}.${extension}`;
+  }
+
+  private getFilePath(dataset: Dataset): string {
+    return join(this.outputDir, this.getFilename(dataset));
+  }
+
+  private async getOrCreateWriter(
+    dataset: Dataset,
+  ): Promise<{ n3Writer: N3Writer; stream: WriteStream }> {
+    const key = this.getFilePath(dataset);
+    const existing = this.activeWriters.get(key);
+    if (existing) return existing;
+
+    await mkdir(dirname(key), { recursive: true });
+
+    const stream = createWriteStream(key, { flags: 'w' });
+    const n3Writer = new N3Writer(stream, {
+      format: formatMap[this.format],
+      prefixes: this.prefixes,
+    });
+
+    const entry = { n3Writer, stream };
+    this.activeWriters.set(key, entry);
+    return entry;
   }
 
   private getExtension(): string {
