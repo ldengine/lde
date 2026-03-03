@@ -90,49 +90,57 @@ async function registerRdfParsers(
     (type) => type !== 'application/json',
   );
 
-  server.addContentTypeParser(contentTypes, function (_request, payload, done) {
-    // Collect the raw body; the preParsing hook is not needed because
-    // Fastify passes the raw payload stream here.
+  const jsonLdType = 'application/ld+json';
+
+  // JSON-LD is JSON.parse'd eagerly so the body is a plain object when
+  // Fastify runs preValidation (schema checks happen before preHandler).
+  // Other RDF types are stored as a raw Buffer for the preHandler hook.
+  server.addContentTypeParser(contentTypes, function (request, payload, done) {
+    const isJsonLd =
+      request.headers['content-type']?.split(';')[0].trim() === jsonLdType;
     const chunks: Buffer[] = [];
     payload.on('data', (chunk: Buffer) => chunks.push(chunk));
-    payload.on('end', () => done(null, Buffer.concat(chunks)));
+    payload.on('end', () => {
+      if (!isJsonLd) return done(null, Buffer.concat(chunks));
+      try {
+        done(null, JSON.parse(Buffer.concat(chunks).toString('utf8')));
+      } catch (err) {
+        done(err as Error);
+      }
+    });
     payload.on('error', done);
   });
 
   server.addHook('preHandler', async (request) => {
-    // Only act on requests that matched an RDF content type parser.
-    if (
-      !request.body ||
-      !Buffer.isBuffer(request.body) ||
-      !request.headers['content-type']
-    ) {
-      return;
-    }
-
+    if (!request.body || !request.headers['content-type']) return;
     const contentType = request.headers['content-type'].split(';')[0].trim();
-    if (!contentTypes.includes(contentType)) {
-      return;
-    }
+    if (!contentTypes.includes(contentType)) return;
 
-    if (parseAll || request.routeOptions.config.parseRdf) {
-      try {
-        const bodyStream = Readable.from(request.body);
-        const quadStream = rdfParser.parse(bodyStream, { contentType });
-        request.body = await streamToDataset(quadStream);
-      } catch (cause) {
-        const error = new Error('Invalid RDF body', {
-          cause,
-        }) as Error & { statusCode: number };
-        error.statusCode = 400;
+    if (!(parseAll || request.routeOptions.config.parseRdf)) {
+      // Not a parseRdf route: JSON-LD is already parsed; reject other RDF.
+      if (contentType !== jsonLdType) {
+        const error = new Error(
+          `Unsupported Media Type: ${contentType}`,
+        ) as Error & { statusCode: number };
+        error.statusCode = 415;
         throw error;
       }
-    } else if (contentType === 'application/ld+json') {
-      request.body = JSON.parse((request.body as Buffer).toString('utf8'));
-    } else {
-      const error = new Error(
-        `Unsupported Media Type: ${contentType}`,
-      ) as Error & { statusCode: number };
-      error.statusCode = 415;
+      return;
+    }
+
+    try {
+      // JSON-LD body is already an object; re-stringify for rdf-parse.
+      const raw = Buffer.isBuffer(request.body)
+        ? request.body
+        : Buffer.from(JSON.stringify(request.body));
+      request.body = await streamToDataset(
+        rdfParser.parse(Readable.from(raw), { contentType }),
+      );
+    } catch (cause) {
+      const error = new Error('Invalid RDF body', {
+        cause,
+      }) as Error & { statusCode: number };
+      error.statusCode = 400;
       throw error;
     }
   });
