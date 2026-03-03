@@ -330,6 +330,73 @@ describe('fastifyRdf plugin', () => {
       expect(response.statusCode).toBe(415);
     });
 
+    it('should pass Fastify body schema validation for application/ld+json', async () => {
+      await app.register(fastifyRdf);
+      app.post(
+        '/data',
+        {
+          config: { parseRdf: true },
+          schema: {
+            body: {
+              type: 'object',
+              required: ['@id'],
+              properties: { '@id': { type: 'string' } },
+            },
+          },
+        },
+        async (request) => {
+          // After preHandler, parseRdf converts the body to a DatasetCore.
+          const dataset = request.body as DatasetCore;
+          return { size: dataset.size };
+        },
+      );
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/ld+json' },
+        body: JSON.stringify({
+          '@id': 'http://example.org/s',
+          'http://example.org/p': 'o',
+        }),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ size: 1 });
+    });
+
+    it('should reject application/ld+json that fails body schema validation', async () => {
+      await app.register(fastifyRdf);
+      app.post(
+        '/data',
+        {
+          config: { parseRdf: true },
+          schema: {
+            body: {
+              type: 'object',
+              required: ['@id'],
+              properties: { '@id': { type: 'string' } },
+            },
+          },
+        },
+        async (request) => {
+          const dataset = request.body as DatasetCore;
+          return { size: dataset.size };
+        },
+      );
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/ld+json' },
+        body: JSON.stringify({ 'http://example.org/p': 'o' }),
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
     it('should return 400 for malformed RDF body', async () => {
       await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
