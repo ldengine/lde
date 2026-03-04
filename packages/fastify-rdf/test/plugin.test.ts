@@ -397,6 +397,24 @@ describe('fastifyRdf plugin', () => {
       expect(response.statusCode).toBe(400);
     });
 
+    it('should return 400 for malformed JSON-LD body', async () => {
+      await app.register(fastifyRdf);
+      app.post('/data', { config: { parseRdf: true } }, async (request) => {
+        const dataset = request.body as DatasetCore;
+        return { size: dataset.size };
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/data',
+        headers: { 'content-type': 'application/ld+json' },
+        body: 'this is not valid json {{{',
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
     it('should return 400 for malformed RDF body', async () => {
       await app.register(fastifyRdf);
       app.post('/data', { config: { parseRdf: true } }, async (request) => {
