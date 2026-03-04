@@ -105,6 +105,7 @@ async function registerRdfParsers(
       try {
         done(null, JSON.parse(Buffer.concat(chunks).toString('utf8')));
       } catch (err) {
+        (err as Error & { statusCode?: number }).statusCode = 400;
         done(err as Error);
       }
     });
