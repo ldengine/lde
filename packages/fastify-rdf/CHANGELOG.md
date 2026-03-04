@@ -1,3 +1,13 @@
+## 0.4.2 (2026-03-04)
+
+### 🩹 Fixes
+
+- **fastify-rdf:** return 400 for malformed JSON-LD body ([#194](https://github.com/ldengine/lde/pull/194))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.1 (2026-03-04)
 
 ### 🩹 Fixes
