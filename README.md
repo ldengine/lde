@@ -157,11 +157,7 @@ await pipeline.run();
 
 ## Who uses LDE
 
-The [NDE Dataset Knowledge Graph](https://github.com/netwerk-digitaal-erfgoed/dataset-knowledge-graph)
-uses six `@lde/` packages (`dataset`, `dataset-registry-client`, `pipeline`,
-`pipeline-console-reporter`, `pipeline-void`, `sparql-qlever`) to build a
-knowledge graph from all datasets registered in the Dutch digital heritage
-network.
+<a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle">&nbsp;Netwerk Digitaal Erfgoed</a>
 
 ## Comparison
 
