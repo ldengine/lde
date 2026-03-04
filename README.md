@@ -208,12 +208,12 @@ graph TD
 
 ## Comparison
 
-|                       | **LDE**                   | **TriplyETL**        | **rdf-connect**       |
-| --------------------- | ------------------------- | -------------------- | --------------------- |
-| **Focus**             | SPARQL-native pipelines   | RDF ETL platform     | RDF stream processing |
-| **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL       | Declarative (RML)     |
-| **Lock-in**           | None – plain SPARQL files | Proprietary platform | Framework-specific    |
-| **License**           | MIT                       | Proprietary          | MIT                   |
+|                       | **LDE**                   | **[TriplyETL](https://docs.triply.cc/triply-etl/)** | **[rdf-connect](https://rdf-connect.github.io)** |
+| --------------------- | ------------------------- | --------------------------------------------------- | ------------------------------------------------ |
+| **Focus**             | SPARQL-native pipelines   | RDF ETL platform                                    | RDF stream processing                            |
+| **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL                                      | Declarative (RML)                                |
+| **Lock-in**           | None – plain SPARQL files | Proprietary platform                                | Framework-specific                               |
+| **License**           | MIT                       | Proprietary                                         | MIT                                              |
 
 ## Development
 
