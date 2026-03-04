@@ -38,7 +38,7 @@ originated at [Netwerk Digitaal Erfgoed](https://www.networkdigitalheritage.nl/)
 ## Architecture
 
 ```mermaid
-graph LR
+graph TD
   subgraph Discovery
     DR[dataset-registry-client]
     DS[dataset]
@@ -115,45 +115,74 @@ await pipeline.run();
 
 ### Discovery
 
-| Package                                                          | Version                                                                                                                         | Description                                               |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [@lde/dataset](packages/dataset)                                 | [![npm](https://img.shields.io/npm/v/@lde/dataset)](https://www.npmjs.com/package/@lde/dataset)                                 | Core dataset and distribution objects                     |
-| [@lde/dataset-registry-client](packages/dataset-registry-client) | [![npm](https://img.shields.io/npm/v/@lde/dataset-registry-client)](https://www.npmjs.com/package/@lde/dataset-registry-client) | Retrieve dataset descriptions from DCAT-AP 3.0 registries |
+_Find and retrieve dataset descriptions from registries._
+
+**[@lde/dataset](packages/dataset)** [![npm](https://img.shields.io/npm/v/@lde/dataset)](https://www.npmjs.com/package/@lde/dataset)
+Core dataset and distribution objects.
+
+**[@lde/dataset-registry-client](packages/dataset-registry-client)** [![npm](https://img.shields.io/npm/v/@lde/dataset-registry-client)](https://www.npmjs.com/package/@lde/dataset-registry-client)
+Retrieve dataset descriptions from DCAT-AP 3.0 registries.
 
 ### Processing
 
-| Package                                                          | Version                                                                                                                         | Description                                                  |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [@lde/pipeline](packages/pipeline)                               | [![npm](https://img.shields.io/npm/v/@lde/pipeline)](https://www.npmjs.com/package/@lde/pipeline)                               | Build pipelines that query, transform and enrich Linked Data |
-| [@lde/pipeline-void](packages/pipeline-void)                     | [![npm](https://img.shields.io/npm/v/@lde/pipeline-void)](https://www.npmjs.com/package/@lde/pipeline-void)                     | VoID statistical analysis for RDF datasets                   |
-| [@lde/distribution-downloader](packages/distribution-downloader) | [![npm](https://img.shields.io/npm/v/@lde/distribution-downloader)](https://www.npmjs.com/package/@lde/distribution-downloader) | Download distributions for local processing                  |
-| [@lde/sparql-importer](packages/sparql-importer)                 | [![npm](https://img.shields.io/npm/v/@lde/sparql-importer)](https://www.npmjs.com/package/@lde/sparql-importer)                 | Import data dumps to a local SPARQL endpoint for querying    |
+_Transform, enrich and analyse datasets with SPARQL pipelines._
+
+**[@lde/pipeline](packages/pipeline)** [![npm](https://img.shields.io/npm/v/@lde/pipeline)](https://www.npmjs.com/package/@lde/pipeline)
+Build pipelines that query, transform and enrich Linked Data.
+
+**[@lde/pipeline-void](packages/pipeline-void)** [![npm](https://img.shields.io/npm/v/@lde/pipeline-void)](https://www.npmjs.com/package/@lde/pipeline-void)
+VoID statistical analysis for RDF datasets.
+
+**[@lde/distribution-downloader](packages/distribution-downloader)** [![npm](https://img.shields.io/npm/v/@lde/distribution-downloader)](https://www.npmjs.com/package/@lde/distribution-downloader)
+Download distributions for local processing.
+
+**[@lde/sparql-importer](packages/sparql-importer)** [![npm](https://img.shields.io/npm/v/@lde/sparql-importer)](https://www.npmjs.com/package/@lde/sparql-importer)
+Import data dumps to a local SPARQL endpoint for querying.
 
 ### Publication
 
-| Package                                  | Version                                                                                                 | Description                                                         |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [@lde/fastify-rdf](packages/fastify-rdf) | [![npm](https://img.shields.io/npm/v/@lde/fastify-rdf)](https://www.npmjs.com/package/@lde/fastify-rdf) | Fastify plugin for RDF content negotiation and request body parsing |
-| [@lde/docgen](packages/docgen)           | [![npm](https://img.shields.io/npm/v/@lde/docgen)](https://www.npmjs.com/package/@lde/docgen)           | Generate documentation from RDF such as SHACL shapes                |
+_Serve and document your data._
+
+**[@lde/fastify-rdf](packages/fastify-rdf)** [![npm](https://img.shields.io/npm/v/@lde/fastify-rdf)](https://www.npmjs.com/package/@lde/fastify-rdf)
+Fastify plugin for RDF content negotiation and request body parsing.
+
+**[@lde/docgen](packages/docgen)** [![npm](https://img.shields.io/npm/v/@lde/docgen)](https://www.npmjs.com/package/@lde/docgen)
+Generate documentation from RDF such as SHACL shapes.
 
 ### Monitoring
 
-| Package                                                              | Version                                                                                                                             | Description                                   |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [@lde/sparql-monitor](packages/sparql-monitor)                       | [![npm](https://img.shields.io/npm/v/@lde/sparql-monitor)](https://www.npmjs.com/package/@lde/sparql-monitor)                       | Monitor SPARQL endpoints with periodic checks |
-| [@lde/pipeline-console-reporter](packages/pipeline-console-reporter) | [![npm](https://img.shields.io/npm/v/@lde/pipeline-console-reporter)](https://www.npmjs.com/package/@lde/pipeline-console-reporter) | Console progress reporter for pipelines       |
+_Observe pipeline runs and endpoint health._
+
+**[@lde/sparql-monitor](packages/sparql-monitor)** [![npm](https://img.shields.io/npm/v/@lde/sparql-monitor)](https://www.npmjs.com/package/@lde/sparql-monitor)
+Monitor SPARQL endpoints with periodic checks.
+
+**[@lde/pipeline-console-reporter](packages/pipeline-console-reporter)** [![npm](https://img.shields.io/npm/v/@lde/pipeline-console-reporter)](https://www.npmjs.com/package/@lde/pipeline-console-reporter)
+Console progress reporter for pipelines.
 
 ### Infrastructure
 
-| Package                                                      | Version                                                                                                                     | Description                                                       |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [@lde/local-sparql-endpoint](packages/local-sparql-endpoint) | [![npm](https://img.shields.io/npm/v/@lde/local-sparql-endpoint)](https://www.npmjs.com/package/@lde/local-sparql-endpoint) | Quickly start a local SPARQL endpoint for testing and development |
-| [@lde/sparql-server](packages/sparql-server)                 | [![npm](https://img.shields.io/npm/v/@lde/sparql-server)](https://www.npmjs.com/package/@lde/sparql-server)                 | Start, stop and control SPARQL servers                            |
-| [@lde/sparql-qlever](packages/sparql-qlever)                 | [![npm](https://img.shields.io/npm/v/@lde/sparql-qlever)](https://www.npmjs.com/package/@lde/sparql-qlever)                 | QLever SPARQL adapter for importing and serving data              |
-| [@lde/wait-for-sparql](packages/wait-for-sparql)             | [![npm](https://img.shields.io/npm/v/@lde/wait-for-sparql)](https://www.npmjs.com/package/@lde/wait-for-sparql)             | Wait for a SPARQL endpoint to become available                    |
-| [@lde/task-runner](packages/task-runner)                     | [![npm](https://img.shields.io/npm/v/@lde/task-runner)](https://www.npmjs.com/package/@lde/task-runner)                     | Task runner core classes and interfaces                           |
-| [@lde/task-runner-docker](packages/task-runner-docker)       | [![npm](https://img.shields.io/npm/v/@lde/task-runner-docker)](https://www.npmjs.com/package/@lde/task-runner-docker)       | Run tasks in Docker containers                                    |
-| [@lde/task-runner-native](packages/task-runner-native)       | [![npm](https://img.shields.io/npm/v/@lde/task-runner-native)](https://www.npmjs.com/package/@lde/task-runner-native)       | Run tasks natively on the host system                             |
+_Manage SPARQL servers and run tasks._
+
+**[@lde/local-sparql-endpoint](packages/local-sparql-endpoint)** [![npm](https://img.shields.io/npm/v/@lde/local-sparql-endpoint)](https://www.npmjs.com/package/@lde/local-sparql-endpoint)
+Quickly start a local SPARQL endpoint for testing and development.
+
+**[@lde/sparql-server](packages/sparql-server)** [![npm](https://img.shields.io/npm/v/@lde/sparql-server)](https://www.npmjs.com/package/@lde/sparql-server)
+Start, stop and control SPARQL servers.
+
+**[@lde/sparql-qlever](packages/sparql-qlever)** [![npm](https://img.shields.io/npm/v/@lde/sparql-qlever)](https://www.npmjs.com/package/@lde/sparql-qlever)
+QLever SPARQL adapter for importing and serving data.
+
+**[@lde/wait-for-sparql](packages/wait-for-sparql)** [![npm](https://img.shields.io/npm/v/@lde/wait-for-sparql)](https://www.npmjs.com/package/@lde/wait-for-sparql)
+Wait for a SPARQL endpoint to become available.
+
+**[@lde/task-runner](packages/task-runner)** [![npm](https://img.shields.io/npm/v/@lde/task-runner)](https://www.npmjs.com/package/@lde/task-runner)
+Task runner core classes and interfaces.
+
+**[@lde/task-runner-docker](packages/task-runner-docker)** [![npm](https://img.shields.io/npm/v/@lde/task-runner-docker)](https://www.npmjs.com/package/@lde/task-runner-docker)
+Run tasks in Docker containers.
+
+**[@lde/task-runner-native](packages/task-runner-native)** [![npm](https://img.shields.io/npm/v/@lde/task-runner-native)](https://www.npmjs.com/package/@lde/task-runner-native)
+Run tasks natively on the host system.
 
 ## Who uses LDE
 
@@ -161,14 +190,12 @@ await pipeline.run();
 
 ## Comparison
 
-|                       | **LDE**                   | **TriplyETL**        | **rdf-connect**       | **Comunica**              | **Apache Jena**                   |
-| --------------------- | ------------------------- | -------------------- | --------------------- | ------------------------- | --------------------------------- |
-| **Focus**             | SPARQL-native pipelines   | RDF ETL platform     | RDF stream processing | Federated SPARQL querying | RDF storage and SPARQL processing |
-| **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL       | Declarative (RML)     | SPARQL                    | CLI / Java                        |
-| **Lock-in**           | None — plain SPARQL files | Proprietary platform | Framework-specific    | None                      | None                              |
-| **Licence**           | MIT                       | Proprietary          | MIT                   | MIT                       | Apache 2.0                        |
-
-Comunica is complementary: LDE uses it internally as a query engine.
+|                       | **LDE**                   | **TriplyETL**        | **rdf-connect**       |
+| --------------------- | ------------------------- | -------------------- | --------------------- |
+| **Focus**             | SPARQL-native pipelines   | RDF ETL platform     | RDF stream processing |
+| **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL       | Declarative (RML)     |
+| **Lock-in**           | None — plain SPARQL files | Proprietary platform | Framework-specific    |
+| **Licence**           | MIT                       | Proprietary          | MIT                   |
 
 ## Development
 
