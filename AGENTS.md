@@ -16,6 +16,7 @@ Uses TypeScript with ESNext modules and Vite for building/testing.
 ## Development
 
 - We’re pre-release, so be aggressive about removing dead code. Do not yet care about backward compatibility.
+- With all code changes, ensure all README.md files (including diagrams) are still accurate.
 
 ## Development Commands
 
