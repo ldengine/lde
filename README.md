@@ -1,28 +1,26 @@
 # LDE — Linked Data Engine
 
+**Composable building blocks for the full Linked Data lifecycle.**
+
 [![CI](https://github.com/ldengine/lde/actions/workflows/ci.yml/badge.svg)](https://github.com/ldengine/lde/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Every organisation working with Linked Data ends up building the same
-infrastructure from scratch: endpoint management, data import, SPARQL
-transformation pipelines, dataset discovery.
-**LDE** is a shared, open-source toolkit of composable Node.js libraries that
-eliminates this duplication.
-All data transformations are expressed as plain SPARQL queries — portable,
-transparent and free of vendor lock-in.
-LDE builds on open standards (SPARQL 1.1, SHACL, DCAT-AP 3.0, RDF/JS) and
-originated at [Netwerk Digitaal Erfgoed](https://www.networkdigitalheritage.nl/)
-(NDE), the Dutch national digital heritage network.
+Every organization working with Linked Data ends up building the same infrastructure from scratch:
+endpoint management, data import, transformation pipelines, dataset discovery.
+
+**LDE** covers the **full Linked Data lifecycle** – from discovery and ingestion through transformation to publication —
+as an **open-source toolkit of composable building blocks** for Node.js.
+
+Data transformations are expressed as plain SPARQL queries: portable, transparent and free of vendor lock-in.
 
 ## Key capabilities
 
 - **Discover** datasets from DCAT-AP 3.0 registries.
 - **Download** and import data dumps to a local SPARQL endpoint for querying.
-- **Transform** datasets with pure SPARQL CONSTRUCT queries — composable stages with fan-out item selection.
-- **Analyse** datasets with VoID statistics and SPARQL monitoring.
+- **Transform** datasets with pure SPARQL CONSTRUCT queries: composable stages with fan-out item selection.
+- **Analyze** datasets with VoID statistics and SPARQL monitoring.
 - **Publish** results to SPARQL endpoints or local files.
 - **Serve** RDF data over HTTP with content negotiation (Fastify plugin).
-- YAML-based pipeline configuration (planned).
 
 ## Standards
 
@@ -34,100 +32,6 @@ originated at [Netwerk Digitaal Erfgoed](https://www.networkdigitalheritage.nl/)
 | [VoID](https://www.w3.org/TR/void/)                              | Statistical analysis of RDF datasets (`@lde/pipeline-void`)       |
 | [RDF/JS](https://rdf.js.org/)                                    | Internal data model (N3, Comunica)                                |
 | [LDES](https://semiceu.github.io/LinkedDataEventStreams/)        | Event stream consumption (planned)                                |
-
-## Architecture
-
-### Variant A: Categories only
-
-```mermaid
-graph TD
-  Processing --> Discovery
-  Processing --> Infrastructure
-  Monitoring --> Processing
-  Monitoring --> Discovery
-  Infrastructure --> Discovery
-  Publication
-```
-
-### Variant B: Categories + key packages
-
-```mermaid
-graph TD
-  subgraph Discovery
-    dataset
-    dataset-registry-client --> dataset
-  end
-
-  subgraph Processing
-    pipeline --> dataset-registry-client
-    pipeline --> sparql-server
-    pipeline --> sparql-importer
-    pipeline-void --> pipeline
-    distribution-downloader --> dataset
-    sparql-importer --> dataset
-  end
-
-  subgraph Publication
-    fastify-rdf
-    docgen
-  end
-
-  subgraph Monitoring
-    pipeline-console-reporter --> pipeline
-    sparql-monitor
-  end
-
-  subgraph Infrastructure
-    sparql-qlever --> sparql-importer
-    sparql-qlever --> sparql-server
-    sparql-qlever --> task-runner-docker
-    task-runner-docker --> task-runner
-    task-runner-native --> task-runner
-    sparql-server
-    local-sparql-endpoint
-    wait-for-sparql
-  end
-```
-
-### Variant C: Categories + key packages (horizontal)
-
-```mermaid
-graph LR
-  subgraph Discovery
-    dataset
-    dataset-registry-client --> dataset
-  end
-
-  subgraph Processing
-    pipeline --> dataset-registry-client
-    pipeline --> sparql-server
-    pipeline --> sparql-importer
-    pipeline-void --> pipeline
-    distribution-downloader --> dataset
-    sparql-importer --> dataset
-  end
-
-  subgraph Publication
-    fastify-rdf
-    docgen
-  end
-
-  subgraph Monitoring
-    pipeline-console-reporter --> pipeline
-    sparql-monitor
-  end
-
-  subgraph Infrastructure
-    sparql-qlever --> sparql-importer
-    sparql-qlever --> sparql-server
-    sparql-qlever --> task-runner-docker
-    task-runner-docker --> task-runner
-    task-runner-native --> task-runner
-    sparql-server
-    local-sparql-endpoint
-    wait-for-sparql
-  end
-```
 
 ## Quick example
 
@@ -257,6 +161,46 @@ await pipeline.run();
   <td>Run tasks natively on the host system</td>
 </tr>
 </table>
+
+## Architecture
+
+```mermaid
+graph TD
+  subgraph Discovery
+    dataset
+    dataset-registry-client --> dataset
+  end
+
+  subgraph Processing
+    pipeline --> dataset-registry-client
+    pipeline --> sparql-server
+    pipeline --> sparql-importer
+    pipeline-void --> pipeline
+    distribution-downloader --> dataset
+    sparql-importer --> dataset
+  end
+
+  subgraph Publication
+    fastify-rdf
+    docgen
+  end
+
+  subgraph Monitoring
+    pipeline-console-reporter --> pipeline
+    sparql-monitor
+  end
+
+  subgraph Infrastructure
+    sparql-qlever --> sparql-importer
+    sparql-qlever --> sparql-server
+    sparql-qlever --> task-runner-docker
+    task-runner-docker --> task-runner
+    task-runner-native --> task-runner
+    sparql-server
+    local-sparql-endpoint
+    wait-for-sparql
+  end
+```
 
 ## Who uses LDE
 
