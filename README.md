@@ -1,4 +1,4 @@
-# LDE — Linked Data Engine
+# LDE – Linked Data Engine
 
 **Composable building blocks for the full Linked Data lifecycle.**
 
@@ -8,7 +8,7 @@
 Every organization working with Linked Data ends up building the same infrastructure from scratch:
 endpoint management, data import, transformation pipelines, dataset discovery.
 
-**LDE** covers the **full Linked Data lifecycle** – from discovery and ingestion through transformation to publication —
+**LDE** covers the **full Linked Data lifecycle** – from discovery and ingestion through transformation to publication –
 as an **open-source toolkit of composable building blocks** for Node.js.
 
 Data transformations are expressed as plain SPARQL queries: portable, transparent and free of vendor lock-in.
@@ -70,7 +70,7 @@ await pipeline.run();
 ## Packages
 
 <table>
-<tr><th colspan="3" align="left">Discovery — Find and retrieve dataset descriptions from registries</th></tr>
+<tr><th colspan="3" align="left">Discovery – Find and retrieve dataset descriptions from registries</th></tr>
 <tr>
   <td><a href="packages/dataset">@lde/dataset</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/dataset"><img src="https://img.shields.io/npm/v/@lde/dataset" alt="npm"></a></td>
@@ -81,7 +81,7 @@ await pipeline.run();
   <td><a href="https://www.npmjs.com/package/@lde/dataset-registry-client"><img src="https://img.shields.io/npm/v/@lde/dataset-registry-client" alt="npm"></a></td>
   <td>Retrieve dataset descriptions from DCAT-AP 3.0 registries</td>
 </tr>
-<tr><th colspan="3" align="left">Processing — Transform, enrich and analyse datasets with SPARQL pipelines</th></tr>
+<tr><th colspan="3" align="left">Processing – Transform, enrich and analyse datasets with SPARQL pipelines</th></tr>
 <tr>
   <td><a href="packages/pipeline">@lde/pipeline</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/pipeline"><img src="https://img.shields.io/npm/v/@lde/pipeline" alt="npm"></a></td>
@@ -102,7 +102,7 @@ await pipeline.run();
   <td><a href="https://www.npmjs.com/package/@lde/sparql-importer"><img src="https://img.shields.io/npm/v/@lde/sparql-importer" alt="npm"></a></td>
   <td>Import data dumps to a local SPARQL endpoint for querying</td>
 </tr>
-<tr><th colspan="3" align="left">Publication — Serve and document your data</th></tr>
+<tr><th colspan="3" align="left">Publication – Serve and document your data</th></tr>
 <tr>
   <td><a href="packages/fastify-rdf">@lde/fastify-rdf</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/fastify-rdf"><img src="https://img.shields.io/npm/v/@lde/fastify-rdf" alt="npm"></a></td>
@@ -113,7 +113,7 @@ await pipeline.run();
   <td><a href="https://www.npmjs.com/package/@lde/docgen"><img src="https://img.shields.io/npm/v/@lde/docgen" alt="npm"></a></td>
   <td>Generate documentation from RDF such as SHACL shapes</td>
 </tr>
-<tr><th colspan="3" align="left">Monitoring — Observe pipeline runs and endpoint health</th></tr>
+<tr><th colspan="3" align="left">Monitoring – Observe pipeline runs and endpoint health</th></tr>
 <tr>
   <td><a href="packages/sparql-monitor">@lde/sparql-monitor</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/sparql-monitor"><img src="https://img.shields.io/npm/v/@lde/sparql-monitor" alt="npm"></a></td>
@@ -124,7 +124,7 @@ await pipeline.run();
   <td><a href="https://www.npmjs.com/package/@lde/pipeline-console-reporter"><img src="https://img.shields.io/npm/v/@lde/pipeline-console-reporter" alt="npm"></a></td>
   <td>Console progress reporter for pipelines</td>
 </tr>
-<tr><th colspan="3" align="left">Infrastructure — Manage SPARQL servers and run tasks</th></tr>
+<tr><th colspan="3" align="left">Infrastructure – Manage SPARQL servers and run tasks</th></tr>
 <tr>
   <td><a href="packages/local-sparql-endpoint">@lde/local-sparql-endpoint</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/local-sparql-endpoint"><img src="https://img.shields.io/npm/v/@lde/local-sparql-endpoint" alt="npm"></a></td>
@@ -212,7 +212,7 @@ graph TD
 | --------------------- | ------------------------- | -------------------- | --------------------- |
 | **Focus**             | SPARQL-native pipelines   | RDF ETL platform     | RDF stream processing |
 | **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL       | Declarative (RML)     |
-| **Lock-in**           | None — plain SPARQL files | Proprietary platform | Framework-specific    |
+| **Lock-in**           | None – plain SPARQL files | Proprietary platform | Framework-specific    |
 | **License**           | MIT                       | Proprietary          | MIT                   |
 
 ## Development
@@ -230,7 +230,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE).
 
 ## Acknowledgements
 
