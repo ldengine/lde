@@ -1,6 +1,6 @@
 # LDE – Linked Data Engine
 
-**Composable building blocks for the full Linked Data lifecycle.**
+**Shared building blocks for the full Linked Data lifecycle.**
 
 [![CI](https://github.com/ldengine/lde/actions/workflows/ci.yml/badge.svg)](https://github.com/ldengine/lde/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -24,14 +24,14 @@ Data transformations are expressed as plain SPARQL queries: portable, transparen
 
 ## Standards
 
-| Standard                                                         | Usage in LDE                                                      |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) | Dataset discovery and registry queries                            |
-| [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)              | All data transformations, dataset queries and endpoint management |
-| [SHACL](https://www.w3.org/TR/shacl/)                            | Documentation generation from shapes (`@lde/docgen`)              |
-| [VoID](https://www.w3.org/TR/void/)                              | Statistical analysis of RDF datasets (`@lde/pipeline-void`)       |
-| [RDF/JS](https://rdf.js.org/)                                    | Internal data model (N3, Comunica)                                |
-| [LDES](https://semiceu.github.io/LinkedDataEventStreams/)        | Event stream consumption (planned)                                |
+| Standard                                                              | Usage in LDE                                                  |
+| --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) (EU) | Dataset discovery and registry queries                        |
+| [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)                   | Data transformations, dataset queries and endpoint management |
+| [SHACL](https://www.w3.org/TR/shacl/)                                 | Documentation generation from shapes (`@lde/docgen`)          |
+| [VoID](https://www.w3.org/TR/void/)                                   | Statistical analysis of RDF datasets (`@lde/pipeline-void`)   |
+| [RDF/JS](https://rdf.js.org/)                                         | Internal data model (N3)                                      |
+| [LDES](https://semiceu.github.io/LinkedDataEventStreams/) (EU)        | Event stream consumption and publication (planned)            |
 
 ## Quick example
 
@@ -204,7 +204,7 @@ graph TD
 
 ## Who uses LDE
 
-<a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle"></a>&ensp;<a href="https://netwerkdigitaalerfgoed.nl/en/">Netwerk Digitaal Erfgoed</a>
+<a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle"></a>&ensp;<a href="https://netwerkdigitaalerfgoed.nl/en/">Netwerk Digitaal Erfgoed</a> — Dutch national digital heritage infrastructure, commissioned by the Ministry of Education, Culture and Science
 
 ## Comparison
 
