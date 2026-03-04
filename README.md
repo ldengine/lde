@@ -26,9 +26,9 @@ Data transformations are expressed as plain SPARQL queries: portable, transparen
 
 | Standard                                                         | Usage in LDE                                                      |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) | Dataset discovery and registry queries                            |
 | [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)              | All data transformations, dataset queries and endpoint management |
 | [SHACL](https://www.w3.org/TR/shacl/)                            | Documentation generation from shapes (`@lde/docgen`)              |
-| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) | Dataset discovery and registry queries                            |
 | [VoID](https://www.w3.org/TR/void/)                              | Statistical analysis of RDF datasets (`@lde/pipeline-void`)       |
 | [RDF/JS](https://rdf.js.org/)                                    | Internal data model (N3, Comunica)                                |
 | [LDES](https://semiceu.github.io/LinkedDataEventStreams/)        | Event stream consumption (planned)                                |
