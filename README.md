@@ -157,7 +157,7 @@ await pipeline.run();
 
 ## Who uses LDE
 
-<a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle">&nbsp;Netwerk Digitaal Erfgoed</a>
+<a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle"></a>&ensp;<a href="https://netwerkdigitaalerfgoed.nl/en/">Netwerk Digitaal Erfgoed</a>
 
 ## Comparison
 
