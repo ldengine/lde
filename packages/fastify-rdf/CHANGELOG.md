@@ -1,3 +1,13 @@
+## 0.4.1 (2026-03-04)
+
+### 🩹 Fixes
+
+- **fastify-rdf:** parse JSON-LD in content type parser for schema validation ([#190](https://github.com/ldengine/lde/pull/190))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.0 (2026-03-02)
 
 ### 🚀 Features
