@@ -6,6 +6,7 @@ import { Server } from './server.js';
 
 export type QleverOptions = {
   indexName?: string;
+  /** @default 7001 */
   port?: number;
 } & (
   | {
@@ -18,13 +19,14 @@ export type QleverOptions = {
 );
 
 export function createQlever(options: QleverOptions) {
+  const port = options.port ?? 7001;
   const taskRunner: TaskRunner<unknown> =
     options.mode === 'docker'
       ? new DockerTaskRunner({
           image: options.image,
           containerName: options.containerName,
           mountDir: options.mountDir,
-          port: options.port,
+          port,
         })
       : new NativeTaskRunner({ cwd: options.cwd });
 
@@ -33,7 +35,7 @@ export function createQlever(options: QleverOptions) {
     server: new Server({
       taskRunner,
       indexName: options.indexName ?? 'data',
-      port: options.port,
+      port,
     }),
   };
 }
