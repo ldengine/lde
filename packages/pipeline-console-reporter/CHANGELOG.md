@@ -1,3 +1,17 @@
+## 0.6.0 (2026-03-06)
+
+### 🚀 Features
+
+- **pipeline:** add distribution selection strategy to ImportResolver ([c3406b4](https://github.com/ldelements/lde/commit/c3406b4))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.17.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.0 (2026-03-06)
 
 ### 🚀 Features
