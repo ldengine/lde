@@ -1,8 +1,11 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import { DatasetSchema } from './schema.js';
+import { type SchemaSearchInterface } from 'ldkit';
 import { createLens } from 'ldkit';
 import { prepareQuery } from './query.js';
 import { Paginator } from './paginator.js';
+
+export type SearchCriteria = SchemaSearchInterface<typeof DatasetSchema>;
 
 export class Client {
   constructor(
@@ -10,9 +13,11 @@ export class Client {
     private readonly schema = DatasetSchema,
   ) {}
 
-  public query(criteria: object): Promise<Paginator<Dataset>>;
+  public query(criteria: SearchCriteria): Promise<Paginator<Dataset>>;
   public query(constructQuery: string): Promise<Paginator<Dataset>>;
-  public async query(args: object | string = {}): Promise<Paginator<Dataset>> {
+  public async query(
+    args: SearchCriteria | string = {},
+  ): Promise<Paginator<Dataset>> {
     const datasets = createLens(this.schema, {
       sources: [this.sparqlEndpoint.toString()],
       // logQuery: (query) => console.debug(query),
@@ -29,7 +34,7 @@ export class Client {
       pageSize = total;
     } else {
       // With search criteria the results are paginated.
-      total = await datasets.count({ ...args });
+      total = await datasets.count({ where: args });
       pageSize = 1000;
     }
 
@@ -41,7 +46,11 @@ export class Client {
           // TODO: we could add a convention here like {OFFSET} {LIMIT} in the query string.
           items = await datasets.query(prepareQuery(args));
         } else {
-          items = await datasets.find({ ...args, take: limit, skip: offset });
+          items = await datasets.find({
+            where: args,
+            take: limit,
+            skip: offset,
+          });
         }
         return items.map(
           (dataset) =>
