@@ -1,4 +1,4 @@
-import { Distribution } from '@lde/dataset';
+import { type Dataset, Distribution } from '@lde/dataset';
 import type { Importer } from '@lde/sparql-importer';
 import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
@@ -11,14 +11,29 @@ import {
 export interface ImportResolverOptions {
   importer: Importer;
   server: SparqlServer;
+  /**
+   * Controls how a dataset's distribution is selected.
+   *
+   * - `'sparql'` (default) — use a dataset's own SPARQL endpoint when one is
+   *   available; fall back to importing a data dump only when no endpoint
+   *   responds.
+   * - `'import'` — always import a data dump into a local SPARQL server,
+   *   even when the dataset advertises a working SPARQL endpoint. Useful when
+   *   the remote endpoint is too slow or unreliable.
+   *
+   * In both modes the inner resolver still runs so that probe results are
+   * collected for reporting and the dataset knowledge graph.
+   */
+  strategy?: 'sparql' | 'import';
 }
 
 /**
- * A {@link DistributionResolver} decorator that adds import-as-fallback logic.
+ * A {@link DistributionResolver} decorator that adds data-dump import logic.
  *
- * Delegates to an inner resolver first. If the inner resolver returns
- * {@link NoDistributionAvailable}, tries importing the dataset and optionally
- * starts a SPARQL server.
+ * Wraps an inner resolver (typically {@link SparqlDistributionResolver}) and
+ * adds the ability to import a data dump into a local SPARQL server. The
+ * {@link ImportResolverOptions.strategy | strategy} option controls whether the
+ * inner resolver's SPARQL endpoint is preferred or bypassed.
  */
 export class ImportResolver implements DistributionResolver {
   constructor(
@@ -29,10 +44,25 @@ export class ImportResolver implements DistributionResolver {
   async resolve(
     ...args: Parameters<DistributionResolver['resolve']>
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
-    const result = await this.inner.resolve(...args);
-    if (result instanceof ResolvedDistribution) return result;
-
     const [dataset] = args;
+    const result = await this.inner.resolve(...args);
+
+    // 'sparql' strategy (default): use SPARQL endpoint if inner found one.
+    if (
+      this.options.strategy !== 'import' &&
+      result instanceof ResolvedDistribution
+    ) {
+      return result;
+    }
+
+    // Either 'import' strategy or inner found nothing: import a data dump.
+    return this.importDataset(dataset, result.probeResults);
+  }
+
+  private async importDataset(
+    dataset: Dataset,
+    probeResults: NoDistributionAvailable['probeResults'],
+  ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const importStart = Date.now();
     const importResult = await this.options.importer.import(dataset);
 
@@ -47,7 +77,7 @@ export class ImportResolver implements DistributionResolver {
 
       return new ResolvedDistribution(
         distribution,
-        result.probeResults,
+        probeResults,
         importResult.distribution,
         Date.now() - importStart,
       );
@@ -56,7 +86,7 @@ export class ImportResolver implements DistributionResolver {
     return new NoDistributionAvailable(
       dataset,
       'No SPARQL endpoint or importable data dump available',
-      result.probeResults,
+      probeResults,
       importResult instanceof ImportFailed ? importResult : undefined,
     );
   }
