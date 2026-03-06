@@ -7,35 +7,32 @@ import { Dataset, Distribution } from '@lde/dataset';
  * This assumes that all Distributions of the Dataset are roughly equivalent:
  * https://docs.nde.nl/requirements-datasets/#dataset-distributions.
  */
-// export interface Importer extends EventEmitter<Events> {
 export interface Importer {
   /**
    * Import a {@link Dataset} to a SPARQL server.
    */
-  import(
-    dataset: Dataset
-  ): Promise<NotSupported | ImportFailed | ImportSuccessful>;
+  import(dataset: Dataset): Promise<ImportResult>;
 }
 
-// interface Events {
-//   imported: [statements: number];
-//   end: [statements: number];
-// }
+/** Discriminated union of all possible import outcomes. */
+export type ImportResult = ImportSuccessful | ImportFailed | NotSupported;
 
-export class ImportSuccessful {
-  constructor(
-    public readonly distribution: Distribution,
-    public readonly identifier?: string
-  ) {}
+/** The distribution was successfully imported. */
+export interface ImportSuccessful {
+  readonly type: 'successful';
+  readonly distribution: Distribution;
+  readonly identifier?: string;
 }
 
-export class ImportFailed {
-  constructor(
-    public readonly distribution: Distribution,
-    public readonly error: string
-  ) {}
+/** The import was attempted but failed. */
+export interface ImportFailed {
+  readonly type: 'failed';
+  readonly distribution: Distribution;
+  readonly error: string;
 }
 
-export class NotSupported {
-  constructor(public readonly distribution?: Distribution) {}
+/** The importer does not support this dataset's distributions. */
+export interface NotSupported {
+  readonly type: 'not-supported';
+  readonly distribution?: Distribution;
 }

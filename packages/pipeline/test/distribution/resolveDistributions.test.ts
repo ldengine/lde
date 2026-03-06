@@ -5,7 +5,7 @@ import {
   type DistributionResolver,
 } from '../../src/distribution/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
-import { ImportFailed } from '@lde/sparql-importer';
+import type { ImportFailed } from '@lde/sparql-importer';
 import {
   SparqlProbeResult,
   DataDumpProbeResult,
@@ -22,7 +22,7 @@ async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 }
 
 function mockResolver(
-  result: ResolvedDistribution | NoDistributionAvailable
+  result: ResolvedDistribution | NoDistributionAvailable,
 ): DistributionResolver {
   return { resolve: async () => result };
 }
@@ -30,21 +30,21 @@ function mockResolver(
 describe('resolveDistributions', () => {
   it('returns resolved distribution and probe report quads', async () => {
     const distribution = Distribution.sparql(
-      new URL('http://example.org/sparql')
+      new URL('http://example.org/sparql'),
     );
     const probeResult = new SparqlProbeResult(
       'http://example.org/sparql',
       new Response('{}', {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
-      })
+      }),
     );
     const dataset = new Dataset({
       iri: new URL('http://example.org/dataset'),
       distributions: [distribution],
     });
     const resolver = mockResolver(
-      new ResolvedDistribution(distribution, [probeResult])
+      new ResolvedDistribution(distribution, [probeResult]),
     );
 
     const result = await resolveDistributions(dataset, resolver);
@@ -64,14 +64,14 @@ describe('resolveDistributions', () => {
     });
     const networkError = new NetworkError(
       'http://example.org/sparql',
-      'Connection refused'
+      'Connection refused',
     );
     const resolver = mockResolver(
       new NoDistributionAvailable(
         dataset,
         'No SPARQL endpoint or importable data dump available',
-        [networkError]
-      )
+        [networkError],
+      ),
     );
 
     const result = await resolveDistributions(dataset, resolver);
@@ -81,7 +81,7 @@ describe('resolveDistributions', () => {
     const quads = await collect(result.quads);
     expect(quads.length).toBeGreaterThan(0);
     const errorQuad = quads.find(
-      (q) => q.predicate.value === 'https://schema.org/error'
+      (q) => q.predicate.value === 'https://schema.org/error',
     );
     expect(errorQuad).toBeDefined();
     expect(errorQuad!.object.value).toBe('Connection refused');
@@ -90,7 +90,7 @@ describe('resolveDistributions', () => {
   it('returns null distribution and import error quads when importer fails', async () => {
     const dataDumpDistribution = new Distribution(
       new URL('http://example.org/data.nt'),
-      'application/n-triples'
+      'application/n-triples',
     );
     const dataset = new Dataset({
       iri: new URL('http://example.org/dataset'),
@@ -101,16 +101,20 @@ describe('resolveDistributions', () => {
       new Response('', {
         status: 200,
         headers: { 'Content-Length': '1000' },
-      })
+      }),
     );
-    const importFailed = new ImportFailed(dataDumpDistribution, 'Parse error');
+    const importFailed: ImportFailed = {
+      type: 'failed',
+      distribution: dataDumpDistribution,
+      error: 'Parse error',
+    };
     const resolver = mockResolver(
       new NoDistributionAvailable(
         dataset,
         'No SPARQL endpoint or importable data dump available',
         [probeResult],
-        importFailed
-      )
+        importFailed,
+      ),
     );
 
     const result = await resolveDistributions(dataset, resolver);
@@ -122,21 +126,21 @@ describe('resolveDistributions', () => {
     const errorQuad = quads.find(
       (q) =>
         q.predicate.value === 'https://schema.org/error' &&
-        q.object.value === 'Parse error'
+        q.object.value === 'Parse error',
     );
     expect(errorQuad).toBeDefined();
   });
 
   it('works with a custom DistributionResolver implementation', async () => {
     const distribution = Distribution.sparql(
-      new URL('http://custom.org/sparql')
+      new URL('http://custom.org/sparql'),
     );
     const probeResult = new SparqlProbeResult(
       'http://custom.org/sparql',
       new Response('{}', {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
-      })
+      }),
     );
     const dataset = new Dataset({
       iri: new URL('http://custom.org/dataset'),

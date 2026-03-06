@@ -1,8 +1,8 @@
-import {
+import type {
   Importer as ImporterInterface,
   ImportFailed,
+  ImportResult,
   ImportSuccessful,
-  NotSupported,
 } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
 import {
@@ -45,9 +45,7 @@ export class Importer implements ImporterInterface {
     };
   }
 
-  public async import(
-    dataset: Dataset,
-  ): Promise<NotSupported | ImportSuccessful | ImportFailed> {
+  public async import(dataset: Dataset): Promise<ImportResult> {
     const downloadDistributions = dataset
       .getDownloadDistributions()
       .filter(
@@ -55,14 +53,14 @@ export class Importer implements ImporterInterface {
           distribution.mimeType !== undefined,
       );
     if (downloadDistributions.length === 0) {
-      return new NotSupported();
+      return { type: 'not-supported' };
     }
 
     let result!: ImportSuccessful | ImportFailed;
     for (const downloadDistribution of downloadDistributions) {
       try {
         result = await this.doImport(downloadDistribution);
-        if (result instanceof ImportSuccessful) {
+        if (result.type === 'successful') {
           return result;
         }
       } catch (error) {
@@ -72,7 +70,11 @@ export class Importer implements ImporterInterface {
         } else {
           errorMessage = (error as Error).message;
         }
-        result = new ImportFailed(downloadDistribution, errorMessage);
+        result = {
+          type: 'failed',
+          distribution: downloadDistribution,
+          error: errorMessage,
+        };
       }
     }
 
@@ -88,7 +90,7 @@ export class Importer implements ImporterInterface {
       this.fileFormatFromMimeType(distribution.mimeType),
     );
 
-    return new ImportSuccessful(distribution);
+    return { type: 'successful', distribution };
   }
 
   private fileFormatFromMimeType(mimeType: string): fileFormat {

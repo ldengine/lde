@@ -1,6 +1,5 @@
 import { type Dataset, Distribution } from '@lde/dataset';
 import type { Importer } from '@lde/sparql-importer';
-import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
 import {
   type DistributionResolver,
@@ -66,7 +65,7 @@ export class ImportResolver implements DistributionResolver {
     const importStart = Date.now();
     const importResult = await this.options.importer.import(dataset);
 
-    if (importResult instanceof ImportSuccessful) {
+    if (importResult.type === 'successful') {
       await this.options.server.start();
 
       const distribution = Distribution.sparql(
@@ -87,7 +86,7 @@ export class ImportResolver implements DistributionResolver {
       dataset,
       'No SPARQL endpoint or importable data dump available',
       probeResults,
-      importResult instanceof ImportFailed ? importResult : undefined,
+      importResult.type === 'failed' ? importResult : undefined,
     );
   }
 

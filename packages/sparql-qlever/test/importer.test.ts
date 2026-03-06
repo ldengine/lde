@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Importer } from '../src/importer.js';
 import { DockerTaskRunner } from '@lde/task-runner-docker';
-import { ImportSuccessful } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
 import { resolve } from 'node:path';
 
@@ -35,7 +34,7 @@ describe('Importer', () => {
       });
 
       const result = await importer.import(dataset);
-      expect(result).toBeInstanceOf(ImportSuccessful);
+      expect(result.type).toBe('successful');
     }, 30_000);
   });
 });

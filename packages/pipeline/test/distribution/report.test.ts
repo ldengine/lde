@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Store } from 'n3';
 import { Distribution } from '@lde/dataset';
-import { ImportFailed } from '@lde/sparql-importer';
+import type { ImportFailed } from '@lde/sparql-importer';
 import {
   probeResultsToQuads,
   NetworkError,
@@ -179,7 +179,11 @@ describe('probeResultsToQuads', () => {
         headers: { 'Content-Length': '1000' },
       }),
     );
-    const importError = new ImportFailed(distribution, 'Parse error');
+    const importError: ImportFailed = {
+      type: 'failed',
+      distribution,
+      error: 'Parse error',
+    };
 
     const store = await collect(
       probeResultsToQuads(
