@@ -1,5 +1,9 @@
 import { Dataset } from '@lde/dataset';
-import { Client, Paginator } from '@lde/dataset-registry-client';
+import {
+  Client,
+  Paginator,
+  type SearchCriteria,
+} from '@lde/dataset-registry-client';
 
 /**
  * Select {@link Dataset}s for processing in a pipeline.
@@ -29,12 +33,12 @@ export class ManualDatasetSelection implements DatasetSelector {
  * @param {object} options
  * @param Client options.registry The Dataset Registry Client to query for datasets.
  * @param string options.query Optional custom SPARQL query to select datasets.
- * @param object options.criteria Optional search criteria to select datasets.
+ * @param SearchCriteria options.criteria Optional search criteria to select datasets.
  */
 export class RegistrySelector implements DatasetSelector {
   private readonly registry: Client;
   private readonly query?: string;
-  private readonly criteria?: object;
+  private readonly criteria?: SearchCriteria;
 
   constructor({
     registry,
@@ -43,7 +47,7 @@ export class RegistrySelector implements DatasetSelector {
   }: {
     registry: Client;
     query?: string;
-    criteria?: object;
+    criteria?: SearchCriteria;
   }) {
     this.registry = registry;
     this.query = query;
