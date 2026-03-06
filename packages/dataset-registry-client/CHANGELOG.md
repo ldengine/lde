@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldengine/lde/pull/167))
+- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldelements/lde/pull/167))
 
 ### 🧱 Updated Dependencies
 
@@ -117,7 +117,7 @@
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### 🧱 Updated Dependencies
 
@@ -131,7 +131,7 @@
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### 🧱 Updated Dependencies
 
@@ -153,7 +153,7 @@
 
 ### 🩹 Fixes
 
-- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+- make distribution mediaType optional ([#35](https://github.com/ldelements/lde/pull/35))
 
 ### 🧱 Updated Dependencies
 
@@ -173,7 +173,7 @@
 
 ### 🩹 Fixes
 
-- add repository URL, required for provenance ([bc1cfd5](https://github.com/ldengine/lde/commit/bc1cfd5))
+- add repository URL, required for provenance ([bc1cfd5](https://github.com/ldelements/lde/commit/bc1cfd5))
 
 ### 🧱 Updated Dependencies
 
@@ -193,7 +193,7 @@
 
 ### 🚀 Features
 
-- optimize count ([#27](https://github.com/ldengine/lde/pull/27))
+- optimize count ([#27](https://github.com/ldelements/lde/pull/27))
 
 ### ❤️ Thank You
 
@@ -203,7 +203,7 @@
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### 🧱 Updated Dependencies
 
@@ -218,7 +218,7 @@
 
 ### 🚀 Features
 
-- extend dataset properties ([#15](https://github.com/ldengine/lde/pull/15))
+- extend dataset properties ([#15](https://github.com/ldelements/lde/pull/15))
 
 ### 🧱 Updated Dependencies
 
@@ -232,13 +232,13 @@
 
 ### 🚀 Features
 
-- add pipeline ([#11](https://github.com/ldengine/lde/pull/11))
-- paginate datasets ([#7](https://github.com/ldengine/lde/pull/7))
-- add dataset-registry-client ([#4](https://github.com/ldengine/lde/pull/4))
+- add pipeline ([#11](https://github.com/ldelements/lde/pull/11))
+- paginate datasets ([#7](https://github.com/ldelements/lde/pull/7))
+- add dataset-registry-client ([#4](https://github.com/ldelements/lde/pull/4))
 
 ### 🩹 Fixes
 
-- paginator ([#10](https://github.com/ldengine/lde/pull/10))
+- paginator ([#10](https://github.com/ldelements/lde/pull/10))
 
 ### 🧱 Updated Dependencies
 

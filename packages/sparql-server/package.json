@@ -2,7 +2,7 @@
   "name": "@lde/sparql-server",
   "version": "0.4.10",
   "repository": {
-    "url": "git+https://github.com/ldengine/lde.git",
+    "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/sparql-server"
   },
   "type": "module",

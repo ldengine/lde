@@ -2,7 +2,7 @@
 
 ### 🩹 Fixes
 
-- **sparql-monitor:** resolve stream type incompatibility with @types/node 25 ([f839619](https://github.com/ldengine/lde/commit/f839619))
+- **sparql-monitor:** resolve stream type incompatibility with @types/node 25 ([f839619](https://github.com/ldelements/lde/commit/f839619))
 
 ### ❤️ Thank You
 
@@ -56,7 +56,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### ❤️ Thank You
 
@@ -74,7 +74,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🚀 Features
 
-- **sparql-monitor:** support Basic auth credentials in endpoint URLs ([#44](https://github.com/ldengine/lde/pull/44))
+- **sparql-monitor:** support Basic auth credentials in endpoint URLs ([#44](https://github.com/ldelements/lde/pull/44))
 
 ### ❤️ Thank You
 
@@ -84,7 +84,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🚀 Features
 
-- **sparql-monitor:** export SparqlMonitor class and options type ([#43](https://github.com/ldengine/lde/pull/43))
+- **sparql-monitor:** export SparqlMonitor class and options type ([#43](https://github.com/ldelements/lde/pull/43))
 
 ### ❤️ Thank You
 
@@ -94,7 +94,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🩹 Fixes
 
-- **sparql-monitor:** use generateMigration instead of broken pushSchema ([#40](https://github.com/ldengine/lde/pull/40))
+- **sparql-monitor:** use generateMigration instead of broken pushSchema ([#40](https://github.com/ldelements/lde/pull/40))
 
 ### ❤️ Thank You
 
@@ -104,7 +104,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🩹 Fixes
 
-- **sparql-monitor:** upgrade Drizzle to fix ESM compatibility ([#39](https://github.com/ldengine/lde/pull/39))
+- **sparql-monitor:** upgrade Drizzle to fix ESM compatibility ([#39](https://github.com/ldelements/lde/pull/39))
 
 ### ❤️ Thank You
 
@@ -114,7 +114,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🚀 Features
 
-- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldengine/lde/pull/38))
+- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldelements/lde/pull/38))
 
 ### ❤️ Thank You
 
@@ -124,7 +124,7 @@ This was a version bump only for @lde/sparql-monitor to align it with other proj
 
 ### 🚀 Features
 
-- add @lde/sparql-monitor package ([#37](https://github.com/ldengine/lde/pull/37))
+- add @lde/sparql-monitor package ([#37](https://github.com/ldelements/lde/pull/37))
 
 ### ❤️ Thank You
 

@@ -46,7 +46,7 @@ This was a version bump only for @lde/wait-for-sparql to align it with other pro
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### ❤️ Thank You
 
@@ -60,7 +60,7 @@ This was a version bump only for @lde/wait-for-sparql to align it with other pro
 
 ### 🩹 Fixes
 
-- add repository URL to all packages ([6cf66dc](https://github.com/ldengine/lde/commit/6cf66dc))
+- add repository URL to all packages ([6cf66dc](https://github.com/ldelements/lde/commit/6cf66dc))
 
 ### ❤️ Thank You
 
@@ -70,7 +70,7 @@ This was a version bump only for @lde/wait-for-sparql to align it with other pro
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### ❤️ Thank You
 
@@ -80,7 +80,7 @@ This was a version bump only for @lde/wait-for-sparql to align it with other pro
 
 ### 🩹 Fixes
 
-- add dataset ([517c270](https://github.com/ldengine/lde/commit/517c270))
+- add dataset ([517c270](https://github.com/ldelements/lde/commit/517c270))
 
 ### ❤️ Thank You
 

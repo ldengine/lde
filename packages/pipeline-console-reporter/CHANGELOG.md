@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** show dataset selection duration in console reporter ([#184](https://github.com/ldengine/lde/pull/184))
+- **pipeline:** show dataset selection duration in console reporter ([#184](https://github.com/ldelements/lde/pull/184))
 
 ### 🧱 Updated Dependencies
 
@@ -22,7 +22,7 @@
 
 ### 🩹 Fixes
 
-- **pipeline-console-reporter:** remove unnecessary URL underline styling ([#181](https://github.com/ldengine/lde/pull/181))
+- **pipeline-console-reporter:** remove unnecessary URL underline styling ([#181](https://github.com/ldelements/lde/pull/181))
 
 ### ❤️ Thank You
 
@@ -32,7 +32,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** refactor ProgressReporter with domain objects and extract console reporter ([#178](https://github.com/ldengine/lde/pull/178))
+- **pipeline:** refactor ProgressReporter with domain objects and extract console reporter ([#178](https://github.com/ldelements/lde/pull/178))
 
 ### 🧱 Updated Dependencies
 

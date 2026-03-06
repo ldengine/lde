@@ -2,7 +2,7 @@
   "name": "@lde/sparql-qlever",
   "version": "0.8.3",
   "repository": {
-    "url": "git+https://github.com/ldengine/lde.git",
+    "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/sparql-qlever"
   },
   "type": "module",

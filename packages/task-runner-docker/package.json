@@ -2,7 +2,7 @@
   "name": "@lde/task-runner-docker",
   "version": "0.2.11",
   "repository": {
-    "url": "git+https://github.com/ldengine/lde.git",
+    "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/task-runner-docker"
   },
   "type": "module",

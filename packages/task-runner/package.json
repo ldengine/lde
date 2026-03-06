@@ -2,7 +2,7 @@
   "name": "@lde/task-runner",
   "version": "0.2.10",
   "repository": {
-    "url": "git+https://github.com/ldengine/lde.git",
+    "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/task-runner"
   },
   "type": "module",

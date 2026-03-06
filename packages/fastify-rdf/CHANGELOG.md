@@ -2,7 +2,7 @@
 
 ### 🩹 Fixes
 
-- **fastify-rdf:** return 400 for malformed JSON-LD body ([#194](https://github.com/ldengine/lde/pull/194))
+- **fastify-rdf:** return 400 for malformed JSON-LD body ([#194](https://github.com/ldelements/lde/pull/194))
 
 ### ❤️ Thank You
 
@@ -12,7 +12,7 @@
 
 ### 🩹 Fixes
 
-- **fastify-rdf:** parse JSON-LD in content type parser for schema validation ([#190](https://github.com/ldengine/lde/pull/190))
+- **fastify-rdf:** parse JSON-LD in content type parser for schema validation ([#190](https://github.com/ldelements/lde/pull/190))
 
 ### ❤️ Thank You
 
@@ -22,7 +22,7 @@
 
 ### 🚀 Features
 
-- **fastify-rdf:** add reply.sendHydraError() for Hydra error responses ([#189](https://github.com/ldengine/lde/pull/189))
+- **fastify-rdf:** add reply.sendHydraError() for Hydra error responses ([#189](https://github.com/ldelements/lde/pull/189))
 
 ### ❤️ Thank You
 
@@ -32,7 +32,7 @@
 
 ### 🚀 Features
 
-- **fastify-rdf:** add RDF content type parser for request bodies ([#187](https://github.com/ldengine/lde/pull/187))
+- **fastify-rdf:** add RDF content type parser for request bodies ([#187](https://github.com/ldelements/lde/pull/187))
 
 ### ❤️ Thank You
 
@@ -86,7 +86,7 @@ This was a version bump only for @lde/fastify-rdf to align it with other project
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### ❤️ Thank You
 
@@ -104,7 +104,7 @@ This was a version bump only for @lde/fastify-rdf to align it with other project
 
 ### 🚀 Features
 
-- **fastify-rdf:** add Fastify plugin for RDF content negotiation ([#45](https://github.com/ldengine/lde/pull/45))
+- **fastify-rdf:** add Fastify plugin for RDF content negotiation ([#45](https://github.com/ldelements/lde/pull/45))
 
 ### ❤️ Thank You
 

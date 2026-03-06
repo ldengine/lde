@@ -6,7 +6,7 @@ started.
 ## Getting started
 
 ```sh
-git clone https://github.com/ldengine/lde.git
+git clone https://github.com/ldelements/lde.git
 cd lde
 npm install
 ```

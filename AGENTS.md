@@ -4,7 +4,7 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-LDE (Linked Data Engine) is an Nx monorepo of Node.js libraries for building Linked Data applications and pipelines.
+LDE (Linked Data Elements) is an Nx monorepo of Node.js libraries for building Linked Data applications and pipelines.
 Built on SPARQL, SHACL, and DCAT-AP 3.0 standards.
 Uses TypeScript with ESNext modules and Vite for building/testing.
 
