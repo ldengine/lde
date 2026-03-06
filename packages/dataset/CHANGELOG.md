@@ -1,3 +1,13 @@
+## 0.7.1 (2026-03-06)
+
+### 🩹 Fixes
+
+- **dataset:** exclude SPARQL endpoint distributions from getDownloadDistributions() ([#210](https://github.com/ldelements/lde/pull/210))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.0 (2026-02-27)
 
 ### 🚀 Features

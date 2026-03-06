@@ -1,3 +1,11 @@
+## 0.17.1 (2026-03-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.7.3
+- Updated @lde/sparql-importer to 0.3.1
+- Updated @lde/dataset to 0.7.1
+
 ## 0.17.0 (2026-03-06)
 
 ### 🚀 Features
