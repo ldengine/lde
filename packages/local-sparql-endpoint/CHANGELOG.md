@@ -46,7 +46,7 @@ This was a version bump only for @lde/local-sparql-endpoint to align it with oth
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### ❤️ Thank You
 
@@ -64,7 +64,7 @@ This was a version bump only for @lde/local-sparql-endpoint to align it with oth
 
 ### 🩹 Fixes
 
-- add repository URL to all packages ([6cf66dc](https://github.com/ldengine/lde/commit/6cf66dc))
+- add repository URL to all packages ([6cf66dc](https://github.com/ldelements/lde/commit/6cf66dc))
 
 ### ❤️ Thank You
 
@@ -74,7 +74,7 @@ This was a version bump only for @lde/local-sparql-endpoint to align it with oth
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### ❤️ Thank You
 

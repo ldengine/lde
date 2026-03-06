@@ -2,7 +2,7 @@
 
 ### 🩹 Fixes
 
-- **sparql-qlever:** wait for SPARQL endpoint to be ready after server start ([#175](https://github.com/ldengine/lde/pull/175))
+- **sparql-qlever:** wait for SPARQL endpoint to be ready after server start ([#175](https://github.com/ldelements/lde/pull/175))
 
 ### ❤️ Thank You
 
@@ -18,7 +18,7 @@
 
 ### 🩹 Fixes
 
-- **sparql-qlever:** update QLever CLI binaries to new names ([#172](https://github.com/ldengine/lde/pull/172), [#170](https://github.com/ldengine/lde/issues/170))
+- **sparql-qlever:** update QLever CLI binaries to new names ([#172](https://github.com/ldelements/lde/pull/172), [#170](https://github.com/ldelements/lde/issues/170))
 
 ### ❤️ Thank You
 
@@ -28,7 +28,7 @@
 
 ### 🚀 Features
 
-- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldengine/lde/pull/167))
+- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldelements/lde/pull/167))
 
 ### 🧱 Updated Dependencies
 
@@ -44,7 +44,7 @@
 
 ### 🚀 Features
 
-- **sparql-qlever:** add createQlever factory function ([#127](https://github.com/ldengine/lde/pull/127))
+- **sparql-qlever:** add createQlever factory function ([#127](https://github.com/ldelements/lde/pull/127))
 
 ### ❤️ Thank You
 
@@ -130,7 +130,7 @@
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### ❤️ Thank You
 
@@ -140,7 +140,7 @@
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### 🧱 Updated Dependencies
 
@@ -155,7 +155,7 @@
 
 ### 🚀 Features
 
-- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldengine/lde/pull/38))
+- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldelements/lde/pull/38))
 
 ### ❤️ Thank You
 
@@ -165,7 +165,7 @@
 
 ### 🚀 Features
 
-- add @lde/sparql-monitor package ([#37](https://github.com/ldengine/lde/pull/37))
+- add @lde/sparql-monitor package ([#37](https://github.com/ldelements/lde/pull/37))
 
 ### ❤️ Thank You
 
@@ -175,7 +175,7 @@
 
 ### 🩹 Fixes
 
-- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+- make distribution mediaType optional ([#35](https://github.com/ldelements/lde/pull/35))
 
 ### 🧱 Updated Dependencies
 
@@ -191,7 +191,7 @@
 
 ### 🩹 Fixes
 
-- add repository URL ([7bb2f77](https://github.com/ldengine/lde/commit/7bb2f77))
+- add repository URL ([7bb2f77](https://github.com/ldelements/lde/commit/7bb2f77))
 
 ### ❤️ Thank You
 
@@ -233,7 +233,7 @@
 
 ### 🩹 Fixes
 
-- rename distribution-download to distribution-downloader ([#29](https://github.com/ldengine/lde/pull/29))
+- rename distribution-download to distribution-downloader ([#29](https://github.com/ldelements/lde/pull/29))
 
 ### 🧱 Updated Dependencies
 
@@ -247,7 +247,7 @@
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### 🧱 Updated Dependencies
 
@@ -267,7 +267,7 @@
 
 ### 🚀 Features
 
-- extend dataset properties ([#15](https://github.com/ldengine/lde/pull/15))
+- extend dataset properties ([#15](https://github.com/ldelements/lde/pull/15))
 
 ### 🧱 Updated Dependencies
 
@@ -283,11 +283,11 @@
 
 ### 🚀 Features
 
-- add pipeline ([#11](https://github.com/ldengine/lde/pull/11))
+- add pipeline ([#11](https://github.com/ldelements/lde/pull/11))
 
 ### 🩹 Fixes
 
-- add dataset ([517c270](https://github.com/ldengine/lde/commit/517c270))
+- add dataset ([517c270](https://github.com/ldelements/lde/commit/517c270))
 
 ### 🧱 Updated Dependencies
 

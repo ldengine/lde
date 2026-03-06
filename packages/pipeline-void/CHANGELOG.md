@@ -69,7 +69,7 @@
 
 ### 🚀 Features
 
-- **pipeline-void:** shorten stage factory function names ([#135](https://github.com/ldengine/lde/pull/135))
+- **pipeline-void:** shorten stage factory function names ([#135](https://github.com/ldelements/lde/pull/135))
 
 ### ❤️ Thank You
 
@@ -79,7 +79,7 @@
 
 ### 🩹 Fixes
 
-- **pipeline-void:** resolve query files in published package ([#128](https://github.com/ldengine/lde/pull/128))
+- **pipeline-void:** resolve query files in published package ([#128](https://github.com/ldelements/lde/pull/128))
 
 ### ❤️ Thank You
 
@@ -108,7 +108,7 @@
 
 ### 🚀 Features
 
-- **pipeline-void:** add generic UriSpaceExecutor decorator ([#115](https://github.com/ldengine/lde/pull/115))
+- **pipeline-void:** add generic UriSpaceExecutor decorator ([#115](https://github.com/ldelements/lde/pull/115))
 
 ### ❤️ Thank You
 
@@ -134,7 +134,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- **pipeline-void:** use @zazuko/prefixes for vocabulary detection ([#110](https://github.com/ldengine/lde/pull/110))
+- **pipeline-void:** use @zazuko/prefixes for vocabulary detection ([#110](https://github.com/ldelements/lde/pull/110))
 
 ### ❤️ Thank You
 
@@ -156,7 +156,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- **pipeline:** defer #subjectFilter# substitution to runtime ([#107](https://github.com/ldengine/lde/pull/107))
+- **pipeline:** defer #subjectFilter# substitution to runtime ([#107](https://github.com/ldelements/lde/pull/107))
 
 ### 🧱 Updated Dependencies
 
@@ -201,7 +201,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- **pipeline:** integrate Writer into Stage.run() ([#87](https://github.com/ldengine/lde/pull/87))
+- **pipeline:** integrate Writer into Stage.run() ([#87](https://github.com/ldelements/lde/pull/87))
 
 ### 🧱 Updated Dependencies
 
@@ -247,7 +247,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- **pipeline:** extract DistributionResolver, pass distribution explicitly ([#73](https://github.com/ldengine/lde/pull/73))
+- **pipeline:** extract DistributionResolver, pass distribution explicitly ([#73](https://github.com/ldelements/lde/pull/73))
 
 ### 🧱 Updated Dependencies
 
@@ -268,7 +268,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- **pipeline:** AST-based query manipulation for SparqlConstructExecutor ([#69](https://github.com/ldengine/lde/pull/69))
+- **pipeline:** AST-based query manipulation for SparqlConstructExecutor ([#69](https://github.com/ldelements/lde/pull/69))
 
 ### 🧱 Updated Dependencies
 
@@ -360,7 +360,7 @@ This was a version bump only for @lde/pipeline-void to align it with other proje
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### 🧱 Updated Dependencies
 

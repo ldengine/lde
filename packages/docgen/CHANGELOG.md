@@ -10,7 +10,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🩹 Fixes
 
-- **docgen:** embed blank node shapes in all locations ([#104](https://github.com/ldengine/lde/pull/104))
+- **docgen:** embed blank node shapes in all locations ([#104](https://github.com/ldelements/lde/pull/104))
 
 ### ❤️ Thank You
 
@@ -56,7 +56,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🩹 Fixes
 
-- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldengine/lde/pull/64))
+- include vite.config.ts in tsconfig.spec.json for all packages ([#64](https://github.com/ldelements/lde/pull/64))
 
 ### ❤️ Thank You
 
@@ -74,7 +74,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🩹 Fixes
 
-- re-add class to frame ([e8e0146](https://github.com/ldengine/lde/commit/e8e0146))
+- re-add class to frame ([e8e0146](https://github.com/ldelements/lde/commit/e8e0146))
 
 ### ❤️ Thank You
 
@@ -84,7 +84,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🚀 Features
 
-- frame RDF lists ([#32](https://github.com/ldengine/lde/pull/32))
+- frame RDF lists ([#32](https://github.com/ldelements/lde/pull/32))
 
 ### ❤️ Thank You
 
@@ -94,7 +94,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🚀 Features
 
-- add rdf namespace to context ([25d3338](https://github.com/ldengine/lde/commit/25d3338))
+- add rdf namespace to context ([25d3338](https://github.com/ldelements/lde/commit/25d3338))
 
 ### ❤️ Thank You
 
@@ -104,7 +104,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🩹 Fixes
 
-- use http:// for schema.org ([#31](https://github.com/ldengine/lde/pull/31))
+- use http:// for schema.org ([#31](https://github.com/ldelements/lde/pull/31))
 
 ### ❤️ Thank You
 
@@ -114,7 +114,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🩹 Fixes
 
-- example ([c096adf](https://github.com/ldengine/lde/commit/c096adf))
+- example ([c096adf](https://github.com/ldelements/lde/commit/c096adf))
 
 ### ❤️ Thank You
 
@@ -124,7 +124,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🚀 Features
 
-- frame datatype ([2fc13d2](https://github.com/ldengine/lde/commit/2fc13d2))
+- frame datatype ([2fc13d2](https://github.com/ldelements/lde/commit/2fc13d2))
 
 ### ❤️ Thank You
 
@@ -134,7 +134,7 @@ This was a version bump only for @lde/docgen to align it with other projects, th
 
 ### 🚀 Features
 
-- add docgen ([#30](https://github.com/ldengine/lde/pull/30))
+- add docgen ([#30](https://github.com/ldelements/lde/pull/30))
 
 ### ❤️ Thank You
 

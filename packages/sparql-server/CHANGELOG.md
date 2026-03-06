@@ -50,7 +50,7 @@ This was a version bump only for @lde/sparql-server to align it with other proje
 
 ### 🩹 Fixes
 
-- add repository URL to all packages ([6cf66dc](https://github.com/ldengine/lde/commit/6cf66dc))
+- add repository URL to all packages ([6cf66dc](https://github.com/ldelements/lde/commit/6cf66dc))
 
 ### ❤️ Thank You
 
@@ -60,7 +60,7 @@ This was a version bump only for @lde/sparql-server to align it with other proje
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### ❤️ Thank You
 
@@ -70,7 +70,7 @@ This was a version bump only for @lde/sparql-server to align it with other proje
 
 ### 🚀 Features
 
-- add pipeline ([#11](https://github.com/ldengine/lde/pull/11))
+- add pipeline ([#11](https://github.com/ldelements/lde/pull/11))
 
 ### ❤️ Thank You
 

@@ -2,7 +2,7 @@
 
 ### 🩹 Fixes
 
-- **task-runner-docker:** remove debug logging from container run ([#174](https://github.com/ldengine/lde/pull/174))
+- **task-runner-docker:** remove debug logging from container run ([#174](https://github.com/ldelements/lde/pull/174))
 
 ### ❤️ Thank You
 
@@ -72,7 +72,7 @@
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### 🧱 Updated Dependencies
 
@@ -92,7 +92,7 @@
 
 ### 🩹 Fixes
 
-- add repository URL to all packages ([6cf66dc](https://github.com/ldengine/lde/commit/6cf66dc))
+- add repository URL to all packages ([6cf66dc](https://github.com/ldelements/lde/commit/6cf66dc))
 
 ### 🧱 Updated Dependencies
 
@@ -106,7 +106,7 @@
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### 🧱 Updated Dependencies
 
@@ -120,7 +120,7 @@
 
 ### 🩹 Fixes
 
-- add dataset ([517c270](https://github.com/ldengine/lde/commit/517c270))
+- add dataset ([517c270](https://github.com/ldelements/lde/commit/517c270))
 
 ### 🧱 Updated Dependencies
 

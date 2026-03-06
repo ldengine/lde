@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldengine/lde/pull/167))
+- **dataset:** replace +gzip media types with dcat:compressFormat ([#167](https://github.com/ldelements/lde/pull/167))
 
 ### ❤️ Thank You
 
@@ -60,7 +60,7 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🩹 Fixes
 
-- make distribution mediaType optional ([#35](https://github.com/ldengine/lde/pull/35))
+- make distribution mediaType optional ([#35](https://github.com/ldelements/lde/pull/35))
 
 ### ❤️ Thank You
 
@@ -70,7 +70,7 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🩹 Fixes
 
-- add repository URL, required for provenance ([bc1cfd5](https://github.com/ldengine/lde/commit/bc1cfd5))
+- add repository URL, required for provenance ([bc1cfd5](https://github.com/ldelements/lde/commit/bc1cfd5))
 
 ### ❤️ Thank You
 
@@ -80,7 +80,7 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🚀 Features
 
-- use SPARQL protocol URI for conformsTo ([#34](https://github.com/ldengine/lde/pull/34))
+- use SPARQL protocol URI for conformsTo ([#34](https://github.com/ldelements/lde/pull/34))
 
 ### ❤️ Thank You
 
@@ -90,7 +90,7 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### ❤️ Thank You
 
@@ -100,7 +100,7 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🚀 Features
 
-- extend dataset properties ([#15](https://github.com/ldengine/lde/pull/15))
+- extend dataset properties ([#15](https://github.com/ldelements/lde/pull/15))
 
 ### ❤️ Thank You
 
@@ -110,11 +110,11 @@ This was a version bump only for @lde/dataset to align it with other projects, t
 
 ### 🚀 Features
 
-- add pipeline ([#11](https://github.com/ldengine/lde/pull/11))
+- add pipeline ([#11](https://github.com/ldelements/lde/pull/11))
 
 ### 🩹 Fixes
 
-- add dataset ([517c270](https://github.com/ldengine/lde/commit/517c270))
+- add dataset ([517c270](https://github.com/ldelements/lde/commit/517c270))
 
 ### ❤️ Thank You
 

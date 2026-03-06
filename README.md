@@ -1,8 +1,8 @@
-# LDE – Linked Data Engine
+# LDE – Linked Data Elements
 
 **Shared building blocks for the full Linked Data lifecycle.**
 
-[![CI](https://github.com/ldengine/lde/actions/workflows/ci.yml/badge.svg)](https://github.com/ldengine/lde/actions/workflows/ci.yml)
+[![CI](https://github.com/ldelements/lde/actions/workflows/ci.yml/badge.svg)](https://github.com/ldelements/lde/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Every organization working with Linked Data ends up building the same infrastructure from scratch:
@@ -24,7 +24,7 @@ Data transformations are expressed as plain SPARQL queries: portable, transparen
 
 ## Standards
 
-| Standard                                                              | Usage in LDE                                                  |
+| Standard                                                              | Usage                                                         |
 | --------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) (EU) | Dataset discovery and registry queries                        |
 | [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)                   | Data transformations, dataset queries and endpoint management |
@@ -202,13 +202,13 @@ graph TD
   end
 ```
 
-## Who uses LDE
+## Who uses LD Elements
 
 <a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle"></a>&ensp;<a href="https://netwerkdigitaalerfgoed.nl/en/">Netwerk Digitaal Erfgoed</a> — Dutch national digital heritage infrastructure, commissioned by the Ministry of Education, Culture and Science
 
 ## Comparison
 
-|                       | **LDE**                   | **[TriplyETL](https://docs.triply.cc/triply-etl/)** | **[rdf-connect](https://rdf-connect.github.io)** |
+|                       | **LD Elements**           | **[TriplyETL](https://docs.triply.cc/triply-etl/)** | **[rdf-connect](https://rdf-connect.github.io)** |
 | --------------------- | ------------------------- | --------------------------------------------------- | ------------------------------------------------ |
 | **Focus**             | SPARQL-native pipelines   | RDF ETL platform                                    | RDF stream processing                            |
 | **Pipeline language** | SPARQL + TypeScript       | TypeScript DSL                                      | Declarative (RML)                                |
@@ -234,4 +234,4 @@ MIT – see [LICENSE](LICENSE).
 
 ## Acknowledgements
 
-LDE originated at the [Dutch national infrastructure for digital heritage](https://netwerkdigitaalerfgoed.nl/en/) (NDE).
+LD Elements originated at the [Dutch national infrastructure for digital heritage](https://netwerkdigitaalerfgoed.nl/en/) (NDE).

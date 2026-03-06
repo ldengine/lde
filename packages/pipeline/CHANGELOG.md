@@ -16,7 +16,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** show dataset selection duration in console reporter ([#184](https://github.com/ldengine/lde/pull/184))
+- **pipeline:** show dataset selection duration in console reporter ([#184](https://github.com/ldelements/lde/pull/184))
 
 ### ❤️ Thank You
 
@@ -26,7 +26,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** add flush() to Writer and Turtle prefix support to FileWriter ([#182](https://github.com/ldengine/lde/pull/182))
+- **pipeline:** add flush() to Writer and Turtle prefix support to FileWriter ([#182](https://github.com/ldelements/lde/pull/182))
 
 ### ❤️ Thank You
 
@@ -36,7 +36,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** refactor ProgressReporter with domain objects and extract console reporter ([#178](https://github.com/ldengine/lde/pull/178))
+- **pipeline:** refactor ProgressReporter with domain objects and extract console reporter ([#178](https://github.com/ldelements/lde/pull/178))
 
 ### ❤️ Thank You
 
@@ -46,7 +46,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** add distribution analysis and selection reporting ([#176](https://github.com/ldengine/lde/pull/176))
+- **pipeline:** add distribution analysis and selection reporting ([#176](https://github.com/ldelements/lde/pull/176))
 
 ### ❤️ Thank You
 
@@ -64,7 +64,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** isolate errors per stage in processDataset() ([#160](https://github.com/ldengine/lde/pull/160))
+- **pipeline:** isolate errors per stage in processDataset() ([#160](https://github.com/ldelements/lde/pull/160))
 
 ### ❤️ Thank You
 
@@ -74,7 +74,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** make FileWriter replacement character configurable ([#159](https://github.com/ldengine/lde/pull/159))
+- **pipeline:** make FileWriter replacement character configurable ([#159](https://github.com/ldelements/lde/pull/159))
 
 ### ❤️ Thank You
 
@@ -84,7 +84,7 @@
 
 ### 🩹 Fixes
 
-- **pipeline:** preserve subjectFilter when importing distributions ([#150](https://github.com/ldengine/lde/pull/150))
+- **pipeline:** preserve subjectFilter when importing distributions ([#150](https://github.com/ldelements/lde/pull/150))
 
 ### ❤️ Thank You
 
@@ -94,7 +94,7 @@
 
 ### 🚀 Features
 
-- change FileWriter default format to N-Triples ([#149](https://github.com/ldengine/lde/pull/149))
+- change FileWriter default format to N-Triples ([#149](https://github.com/ldelements/lde/pull/149))
 
 ### ❤️ Thank You
 
@@ -104,7 +104,7 @@
 
 ### 🩹 Fixes
 
-- **pipeline:** clear graph and truncate file at most once per writer instance ([#140](https://github.com/ldengine/lde/pull/140))
+- **pipeline:** clear graph and truncate file at most once per writer instance ([#140](https://github.com/ldelements/lde/pull/140))
 
 ### ❤️ Thank You
 
@@ -114,7 +114,7 @@
 
 ### 🚀 Features
 
-- document pipeline changes ([5489e18](https://github.com/ldengine/lde/commit/5489e18))
+- document pipeline changes ([5489e18](https://github.com/ldelements/lde/commit/5489e18))
 
 ### ❤️ Thank You
 
@@ -134,7 +134,7 @@
 
 ### 🚀 Features
 
-- **pipeline:** add SparqlServer support to distribution resolver ([#118](https://github.com/ldengine/lde/pull/118))
+- **pipeline:** add SparqlServer support to distribution resolver ([#118](https://github.com/ldelements/lde/pull/118))
 
 ### ❤️ Thank You
 
@@ -144,7 +144,7 @@
 
 ### 🩹 Fixes
 
-- **pipeline:** don't mark empty distributions as valid ([#114](https://github.com/ldengine/lde/pull/114))
+- **pipeline:** don't mark empty distributions as valid ([#114](https://github.com/ldelements/lde/pull/114))
 
 ### ❤️ Thank You
 
@@ -166,7 +166,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** defer #subjectFilter# substitution to runtime ([#107](https://github.com/ldengine/lde/pull/107))
+- **pipeline:** defer #subjectFilter# substitution to runtime ([#107](https://github.com/ldelements/lde/pull/107))
 
 ### ❤️ Thank You
 
@@ -176,7 +176,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** rewrite Pipeline with multi-stage chaining ([#105](https://github.com/ldengine/lde/pull/105))
+- **pipeline:** rewrite Pipeline with multi-stage chaining ([#105](https://github.com/ldelements/lde/pull/105))
 
 ### 🧱 Updated Dependencies
 
@@ -193,7 +193,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** add concurrent executor execution in Stage.run() ([#103](https://github.com/ldengine/lde/pull/103))
+- **pipeline:** add concurrent executor execution in Stage.run() ([#103](https://github.com/ldelements/lde/pull/103))
 
 ### 🧱 Updated Dependencies
 
@@ -208,7 +208,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** support authentication in SparqlUpdateWriter ([#91](https://github.com/ldengine/lde/pull/91))
+- **pipeline:** support authentication in SparqlUpdateWriter ([#91](https://github.com/ldelements/lde/pull/91))
 
 ### ❤️ Thank You
 
@@ -222,7 +222,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** add CLEAR GRAPH and on-the-fly batching to SparqlUpdateWriter ([#89](https://github.com/ldengine/lde/pull/89))
+- **pipeline:** add CLEAR GRAPH and on-the-fly batching to SparqlUpdateWriter ([#89](https://github.com/ldelements/lde/pull/89))
 
 ### ❤️ Thank You
 
@@ -232,7 +232,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** integrate Writer into Stage.run() ([#87](https://github.com/ldengine/lde/pull/87))
+- **pipeline:** integrate Writer into Stage.run() ([#87](https://github.com/ldelements/lde/pull/87))
 
 ### ❤️ Thank You
 
@@ -242,7 +242,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** batch selector bindings to executor ([#85](https://github.com/ldengine/lde/pull/85))
+- **pipeline:** batch selector bindings to executor ([#85](https://github.com/ldelements/lde/pull/85))
 
 ### ❤️ Thank You
 
@@ -252,7 +252,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** add resolveDistributions stage function ([#84](https://github.com/ldengine/lde/pull/84), [#76](https://github.com/ldengine/lde/issues/76))
+- **pipeline:** add resolveDistributions stage function ([#84](https://github.com/ldelements/lde/pull/84), [#76](https://github.com/ldelements/lde/issues/76))
 
 ### ❤️ Thank You
 
@@ -270,7 +270,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** extract DistributionResolver, pass distribution explicitly ([#73](https://github.com/ldengine/lde/pull/73))
+- **pipeline:** extract DistributionResolver, pass distribution explicitly ([#73](https://github.com/ldelements/lde/pull/73))
 
 ### ❤️ Thank You
 
@@ -290,7 +290,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** AST-based query manipulation for SparqlConstructExecutor ([#69](https://github.com/ldengine/lde/pull/69))
+- **pipeline:** AST-based query manipulation for SparqlConstructExecutor ([#69](https://github.com/ldelements/lde/pull/69))
 
 ### ❤️ Thank You
 
@@ -300,7 +300,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** add StageSelector interface and SparqlSelector ([#68](https://github.com/ldengine/lde/pull/68))
+- **pipeline:** add StageSelector interface and SparqlSelector ([#68](https://github.com/ldelements/lde/pull/68))
 
 ### 🧱 Updated Dependencies
 
@@ -318,7 +318,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **pipeline:** add Stage abstraction for pipeline composition ([#67](https://github.com/ldengine/lde/pull/67))
+- **pipeline:** add Stage abstraction for pipeline composition ([#67](https://github.com/ldelements/lde/pull/67))
 
 ### 🧱 Updated Dependencies
 
@@ -413,7 +413,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldengine/lde/pull/48))
+- add pipeline-void package and extend pipeline with analyzers, writers, and SPARQL utilities ([#48](https://github.com/ldelements/lde/pull/48))
 
 ### 🧱 Updated Dependencies
 
@@ -441,7 +441,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldengine/lde/pull/38))
+- **sparql-monitor:** add CLI with TypeScript config support ([#38](https://github.com/ldelements/lde/pull/38))
 
 ### ❤️ Thank You
 
@@ -451,7 +451,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- add @lde/sparql-monitor package ([#37](https://github.com/ldengine/lde/pull/37))
+- add @lde/sparql-monitor package ([#37](https://github.com/ldelements/lde/pull/37))
 
 ### ❤️ Thank You
 
@@ -469,7 +469,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🩹 Fixes
 
-- add repository URL ([7bb2f77](https://github.com/ldengine/lde/commit/7bb2f77))
+- add repository URL ([7bb2f77](https://github.com/ldelements/lde/commit/7bb2f77))
 
 ### ❤️ Thank You
 
@@ -515,7 +515,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🩹 Fixes
 
-- standardize exports field order in all packages ([#20](https://github.com/ldengine/lde/pull/20))
+- standardize exports field order in all packages ([#20](https://github.com/ldelements/lde/pull/20))
 
 ### 🧱 Updated Dependencies
 
@@ -533,7 +533,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- extend dataset properties ([#15](https://github.com/ldengine/lde/pull/15))
+- extend dataset properties ([#15](https://github.com/ldelements/lde/pull/15))
 
 ### 🧱 Updated Dependencies
 
@@ -549,7 +549,7 @@ This was a version bump only for @lde/pipeline to align it with other projects, 
 
 ### 🚀 Features
 
-- add pipeline ([#11](https://github.com/ldengine/lde/pull/11))
+- add pipeline ([#11](https://github.com/ldelements/lde/pull/11))
 
 ### 🧱 Updated Dependencies
 
