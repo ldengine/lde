@@ -43,12 +43,16 @@ export class Dataset {
   }
 
   public getDownloadDistributions(): Distribution[] {
+    const downloadable = this.distributions.filter(
+      (distribution) => !distribution.isSparql(),
+    );
+
     return [
       // Prefer compressed distributions.
-      ...this.distributions.filter(
+      ...downloadable.filter(
         (distribution) => distribution.compressFormat !== undefined,
       ),
-      ...this.distributions.filter(
+      ...downloadable.filter(
         (distribution) =>
           distribution.compressFormat === undefined &&
           distribution.mimeType !== undefined,
