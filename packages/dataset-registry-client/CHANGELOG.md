@@ -1,3 +1,13 @@
+## 0.7.2 (2026-03-06)
+
+### 🩹 Fixes
+
+- **dataset-registry-client:** work around LDkit count() ignoring $id filter ([#207](https://github.com/ldelements/lde/pull/207))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.1 (2026-03-06)
 
 ### 🩹 Fixes

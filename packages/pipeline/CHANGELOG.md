@@ -1,3 +1,9 @@
+## 0.15.2 (2026-03-06)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.7.2
+
 ## 0.15.1 (2026-03-06)
 
 ### 🩹 Fixes
