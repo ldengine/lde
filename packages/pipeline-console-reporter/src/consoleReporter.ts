@@ -151,7 +151,7 @@ export class ConsoleReporter implements ProgressReporter {
               : '';
           s.start(`Imported ${url} (to ${selectedUrl!})${duration}`);
         } else {
-          s.start(`${typeLabel} ${url}`);
+          s.start(`${typeLabel} ${url} ${chalk.dim('(selected)')}`);
         }
         s.succeed();
       } else if (result.available) {
