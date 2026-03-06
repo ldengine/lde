@@ -1,3 +1,13 @@
+## 0.6.2 (2026-03-06)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** use singular 'dataset' and hide counter for single dataset ([#213](https://github.com/ldelements/lde/pull/213))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.1 (2026-03-06)
 
 ### 🧱 Updated Dependencies
