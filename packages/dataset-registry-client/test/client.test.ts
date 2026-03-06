@@ -83,6 +83,21 @@ describe('Client', () => {
       expect(count).toEqual(expectedTotal);
     });
 
+    it('queries a dataset by $id', async () => {
+      const results = await client.query({
+        $id: 'http://foo.org/id/dataset/foo',
+      });
+
+      expect(results.total).toEqual(1);
+      let count = 0;
+      for await (const result of results) {
+        expect(result).toBeInstanceOf(Dataset);
+        expect(result.iri).toEqual(new URL('http://foo.org/id/dataset/foo'));
+        count++;
+      }
+      expect(count).toEqual(1);
+    });
+
     it('throws an error for non-CONSTRUCT queries', async () => {
       const query = `
         PREFIX dcat: <http://www.w3.org/ns/dcat#>

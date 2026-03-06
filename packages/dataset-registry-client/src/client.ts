@@ -1,6 +1,6 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import { DatasetSchema } from './schema.js';
-import { type SchemaSearchInterface } from 'ldkit';
+import { type SchemaSearchInterface, type SchemaInterface } from 'ldkit';
 import { createLens } from 'ldkit';
 import { prepareQuery } from './query.js';
 import { Paginator } from './paginator.js';
@@ -23,13 +23,19 @@ export class Client {
       // logQuery: (query) => console.debug(query),
     });
 
-    let results;
+    let results: SchemaInterface<typeof this.schema>[] | undefined;
     let total;
     let pageSize;
 
     if (typeof args === 'string') {
       // Custom query has no paginated results.
       results = await datasets.query(prepareQuery(args));
+      total = results.length;
+      pageSize = total;
+    } else if (args.$id) {
+      // Work around LDkit bug: count() ignores $id.
+      // IRI lookups don't need pagination.
+      results = await datasets.find({ where: args });
       total = results.length;
       pageSize = total;
     } else {
@@ -45,6 +51,9 @@ export class Client {
           // Custom query has no paginated results.
           // TODO: we could add a convention here like {OFFSET} {LIMIT} in the query string.
           items = await datasets.query(prepareQuery(args));
+        } else if (results) {
+          // Pre-fetched results ($id workaround): return them directly.
+          items = results;
         } else {
           items = await datasets.find({
             where: args,
