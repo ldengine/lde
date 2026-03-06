@@ -190,14 +190,14 @@ export class Pipeline {
     this.reporter?.stageStart?.(stage.name);
     const stageStart = Date.now();
 
-    let elementsProcessed = 0;
+    let itemsProcessed = 0;
     let quadsGenerated = 0;
 
     const result = await stage.run(dataset, distribution, this.writer, {
-      onProgress: (elements, quads) => {
-        elementsProcessed = elements;
+      onProgress: (items, quads) => {
+        itemsProcessed = items;
         quadsGenerated = quads;
-        this.reporter?.stageProgress?.({ elementsProcessed, quadsGenerated });
+        this.reporter?.stageProgress?.({ itemsProcessed, quadsGenerated });
       },
     });
 
@@ -205,7 +205,7 @@ export class Pipeline {
       this.reporter?.stageSkipped?.(stage.name, result.message);
     } else {
       this.reporter?.stageComplete?.(stage.name, {
-        elementsProcessed,
+        itemsProcessed,
         quadsGenerated,
         duration: Date.now() - stageStart,
       });
@@ -272,14 +272,14 @@ export class Pipeline {
     this.reporter?.stageStart?.(stage.name);
     const stageStart = Date.now();
 
-    let elementsProcessed = 0;
+    let itemsProcessed = 0;
     let quadsGenerated = 0;
 
     const result = await stage.run(dataset, distribution, stageWriter, {
-      onProgress: (elements, quads) => {
-        elementsProcessed = elements;
+      onProgress: (items, quads) => {
+        itemsProcessed = items;
         quadsGenerated = quads;
-        this.reporter?.stageProgress?.({ elementsProcessed, quadsGenerated });
+        this.reporter?.stageProgress?.({ itemsProcessed, quadsGenerated });
       },
     });
 
@@ -291,7 +291,7 @@ export class Pipeline {
     }
 
     this.reporter?.stageComplete?.(stage.name, {
-      elementsProcessed,
+      itemsProcessed,
       quadsGenerated,
       duration: Date.now() - stageStart,
     });

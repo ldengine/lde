@@ -24,13 +24,13 @@ export interface ProgressReporter {
   ): void;
   stageStart?(stage: string): void;
   stageProgress?(update: {
-    elementsProcessed: number;
+    itemsProcessed: number;
     quadsGenerated: number;
   }): void;
   stageComplete?(
     stage: string,
     result: {
-      elementsProcessed: number;
+      itemsProcessed: number;
       quadsGenerated: number;
       duration: number;
     },
