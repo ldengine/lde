@@ -1,3 +1,17 @@
+## 0.5.0 (2026-03-06)
+
+### 🚀 Features
+
+- **pipeline:** show elapsed time and compact numbers during stage progress ([#208](https://github.com/ldelements/lde/pull/208))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.16.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.2 (2026-03-06)
 
 ### 🧱 Updated Dependencies
