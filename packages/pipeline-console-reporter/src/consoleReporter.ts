@@ -7,8 +7,14 @@ import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import prettyMilliseconds from 'pretty-ms';
 
+const compactNumber = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
 export class ConsoleReporter implements ProgressReporter {
   private stageSpinner?: Ora;
+  private stageStartTime = 0;
   private datasetStartTime = 0;
   private datasetTotal = 0;
   private datasetIndex = 0;
@@ -57,23 +63,25 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   stageStart(stage: string): void {
+    this.stageStartTime = Date.now();
     this.stageSpinner = ora({ discardStdin: false }).start();
     this.stageSpinner.text = `Stage ${chalk.bold(stage)}`;
   }
 
   stageProgress(update: {
-    elementsProcessed: number;
+    itemsProcessed: number;
     quadsGenerated: number;
   }): void {
     if (this.stageSpinner) {
-      this.stageSpinner.suffixText = `${update.elementsProcessed} elements, ${update.quadsGenerated} quads`;
+      const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
+      this.stageSpinner.suffixText = `${compactNumber.format(update.itemsProcessed)} items, ${compactNumber.format(update.quadsGenerated)} quads, ${elapsed}`;
     }
   }
 
   stageComplete(
     _stage: string,
     result: {
-      elementsProcessed: number;
+      itemsProcessed: number;
       quadsGenerated: number;
       duration: number;
     },

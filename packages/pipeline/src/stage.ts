@@ -25,7 +25,7 @@ export interface StageOptions {
 }
 
 export interface RunOptions {
-  onProgress?: (elementsProcessed: number, quadsGenerated: number) => void;
+  onProgress?: (itemsProcessed: number, quadsGenerated: number) => void;
 }
 
 export class Stage {
@@ -99,7 +99,7 @@ export class Stage {
     })();
 
     const queue = new AsyncQueue<Quad>();
-    let elementsProcessed = 0;
+    let itemsProcessed = 0;
     let quadsGenerated = 0;
     let hasResults = false;
 
@@ -145,8 +145,8 @@ export class Stage {
                     quadsGenerated++;
                   }
                 }
-                elementsProcessed += bindings.length;
-                options?.onProgress?.(elementsProcessed, quadsGenerated);
+                itemsProcessed += bindings.length;
+                options?.onProgress?.(itemsProcessed, quadsGenerated);
               })(),
             );
           }

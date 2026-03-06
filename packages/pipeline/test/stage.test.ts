@@ -13,17 +13,17 @@ const { namedNode, quad } = DataFactory;
 const q1 = quad(
   namedNode('http://example.org/s1'),
   namedNode('http://example.org/p'),
-  namedNode('http://example.org/o1')
+  namedNode('http://example.org/o1'),
 );
 const q2 = quad(
   namedNode('http://example.org/s2'),
   namedNode('http://example.org/p'),
-  namedNode('http://example.org/o2')
+  namedNode('http://example.org/o2'),
 );
 const q3 = quad(
   namedNode('http://example.org/s3'),
   namedNode('http://example.org/p'),
-  namedNode('http://example.org/o3')
+  namedNode('http://example.org/o3'),
 );
 
 function mockExecutor(quads: Quad[]): Executor {
@@ -31,7 +31,7 @@ function mockExecutor(quads: Quad[]): Executor {
     async execute(
       _dataset: Dataset,
       _distribution: Distribution,
-      _options?: ExecuteOptions
+      _options?: ExecuteOptions,
     ): Promise<AsyncIterable<Quad> | NotSupported> {
       return (async function* () {
         yield* quads;
@@ -48,12 +48,12 @@ function capturingExecutor(quads: Quad[]): Executor & {
       async (
         _dataset: Dataset,
         _distribution: Distribution,
-        _options?: ExecuteOptions
+        _options?: ExecuteOptions,
       ): Promise<AsyncIterable<Quad> | NotSupported> => {
         return (async function* () {
           yield* quads;
         })();
-      }
+      },
     ),
   };
   return executor;
@@ -68,7 +68,7 @@ function notSupportedExecutor(message = 'not supported'): Executor {
 }
 
 function mockItemSelector(
-  rows: Record<string, ReturnType<typeof namedNode>>[]
+  rows: Record<string, ReturnType<typeof namedNode>>[],
 ): ItemSelector {
   return {
     async *select() {
@@ -119,7 +119,7 @@ describe('Stage', () => {
     const result = await stage.run(dataset, distribution, writer);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
-      'All executors returned NotSupported'
+      'All executors returned NotSupported',
     );
     expect(writer.quads).toEqual([]);
   });
@@ -162,7 +162,7 @@ describe('Stage', () => {
     const result = await stage.run(dataset, distribution, writer);
     expect(result).toBeInstanceOf(NotSupported);
     expect((result as NotSupported).message).toBe(
-      'All executors returned NotSupported'
+      'All executors returned NotSupported',
     );
     expect(writer.quads).toEqual([]);
   });
@@ -273,7 +273,7 @@ describe('Stage', () => {
     const executor = capturingExecutor([q1]);
     const namedGraphDistribution = Distribution.sparql(
       new URL('http://example.org/sparql'),
-      'http://example.org/graph'
+      'http://example.org/graph',
     );
 
     const stage = new Stage({
@@ -286,7 +286,7 @@ describe('Stage', () => {
 
     expect(executor.execute).toHaveBeenCalledWith(
       dataset,
-      namedGraphDistribution
+      namedGraphDistribution,
     );
   });
 
@@ -336,13 +336,13 @@ describe('Stage', () => {
     function delayExecutor(
       quads: Quad[],
       delayMs: number,
-      tracker: { current: number; max: number }
+      tracker: { current: number; max: number },
     ): Executor {
       return {
         async execute(
           _dataset: Dataset,
           _distribution: Distribution,
-          _options?: ExecuteOptions
+          _options?: ExecuteOptions,
         ): Promise<AsyncIterable<Quad> | NotSupported> {
           tracker.current++;
           tracker.max = Math.max(tracker.max, tracker.current);
@@ -431,7 +431,7 @@ describe('Stage', () => {
 
       const writer = collectingWriter();
       await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
-        'executor failure'
+        'executor failure',
       );
     });
 
@@ -462,13 +462,13 @@ describe('Stage', () => {
       };
 
       await expect(
-        stage.run(dataset, distribution, failingWriter)
+        stage.run(dataset, distribution, failingWriter),
       ).rejects.toThrow('writer failure');
     });
 
     it('calls onProgress callback', async () => {
       const progressCalls: Array<{
-        elements: number;
+        items: number;
         quads: number;
       }> = [];
 
@@ -486,8 +486,8 @@ describe('Stage', () => {
 
       const writer = collectingWriter();
       const options: RunOptions = {
-        onProgress: (elements, quads) => {
-          progressCalls.push({ elements, quads });
+        onProgress: (items, quads) => {
+          progressCalls.push({ items, quads });
         },
       };
 
@@ -495,9 +495,9 @@ describe('Stage', () => {
 
       expect(progressCalls).toHaveLength(3);
       // With maxConcurrency=1, execution is sequential so progress is monotonic.
-      expect(progressCalls[0].elements).toBe(1);
-      expect(progressCalls[1].elements).toBe(2);
-      expect(progressCalls[2].elements).toBe(3);
+      expect(progressCalls[0].items).toBe(1);
+      expect(progressCalls[1].items).toBe(2);
+      expect(progressCalls[2].items).toBe(3);
     });
 
     it('returns NotSupported when all executors return NotSupported with item selector', async () => {
