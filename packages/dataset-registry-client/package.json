@@ -1,6 +1,6 @@
 {
   "name": "@lde/dataset-registry-client",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "repository": {
     "url": "git+https://github.com/ldengine/lde.git",
     "directory": "packages/dataset-registry-client"

@@ -1,3 +1,13 @@
+## 0.7.1 (2026-03-06)
+
+### 🩹 Fixes
+
+- **dataset-registry-client:** pass search criteria via ldkit's `where` option ([#205](https://github.com/ldelements/lde/pull/205))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.0 (2026-02-27)
 
 ### 🚀 Features
