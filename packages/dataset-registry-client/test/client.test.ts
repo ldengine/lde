@@ -25,11 +25,9 @@ describe('Client', () => {
   describe('query', () => {
     it('queries datasets from SPARQL endpoint with criteria', async () => {
       const results = await client.query({
-        where: {
-          distribution: {
-            mediaType: {
-              $in: [...sparqlMediaTypes, ...rdfMediaTypes],
-            },
+        distribution: {
+          mediaType: {
+            $in: [...sparqlMediaTypes, ...rdfMediaTypes],
           },
         },
       });
@@ -49,10 +47,10 @@ describe('Client', () => {
       expect(firstResult).toBeInstanceOf(Dataset);
       expect(firstResult?.language).toEqual(['nl-NL']);
       expect(firstResult?.license).toEqual(
-        new URL('http://creativecommons.org/licenses/by/4.0/')
+        new URL('http://creativecommons.org/licenses/by/4.0/'),
       );
       expect(firstResult?.distributions[0]?.conformsTo).toEqual(
-        new URL('https://www.w3.org/TR/sparql11-protocol/')
+        new URL('https://www.w3.org/TR/sparql11-protocol/'),
       );
       expect(firstResult?.publisher?.iri).toEqual(new URL('http://foo.org'));
       expect(firstResult?.publisher?.name).toEqual({ '': 'Foo Organization' });
@@ -94,7 +92,7 @@ describe('Client', () => {
       `;
 
       await expect(client.query(query)).rejects.toThrow(
-        'Must be CONSTRUCT query'
+        'Must be CONSTRUCT query',
       );
     });
   });
