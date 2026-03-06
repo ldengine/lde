@@ -1,3 +1,13 @@
+## 0.8.5 (2026-03-06)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** default port to 7001 in createQlever ([#211](https://github.com/ldelements/lde/pull/211))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.4 (2026-03-06)
 
 ### 🧱 Updated Dependencies
