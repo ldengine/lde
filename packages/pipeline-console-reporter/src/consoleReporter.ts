@@ -30,7 +30,9 @@ export class ConsoleReporter implements ProgressReporter {
   datasetsSelected(count: number, duration: number): void {
     this.datasetTotal = count;
     if (this.stageSpinner) {
-      this.stageSpinner.text = `Selected datasets: found ${chalk.bold(count)} datasets in ${chalk.bold(prettyMilliseconds(duration))}`;
+      this.stageSpinner.text = `Selected datasets: found ${chalk.bold(count)} ${
+        count === 1 ? 'dataset' : 'datasets'
+      } in ${chalk.bold(prettyMilliseconds(duration))}`;
     }
   }
 
@@ -39,16 +41,17 @@ export class ConsoleReporter implements ProgressReporter {
     this.stageSpinner = undefined;
     this.datasetStartTime = Date.now();
     this.datasetIndex++;
-    const counter = this.datasetTotal
-      ? ` ${chalk.dim(`[${this.datasetIndex}/${this.datasetTotal}]`)}`
-      : '';
+    const counter =
+      this.datasetTotal > 1
+        ? ` ${chalk.dim(`[${this.datasetIndex}/${this.datasetTotal}]`)}`
+        : '';
     console.info();
     console.info(`Dataset ${chalk.bold(dataset.iri.toString())}${counter}`);
   }
 
   distributionsAnalyzed(
     _dataset: Dataset,
-    results: DistributionAnalysisResult[],
+    results: DistributionAnalysisResult[]
   ): void {
     this.analysisResults = results;
   }
@@ -57,7 +60,7 @@ export class ConsoleReporter implements ProgressReporter {
     _dataset: Dataset,
     distribution: Distribution,
     importedFrom?: Distribution,
-    importDuration?: number,
+    importDuration?: number
   ): void {
     this.printAnalysisResults(distribution, importedFrom, importDuration);
   }
@@ -74,7 +77,11 @@ export class ConsoleReporter implements ProgressReporter {
   }): void {
     if (this.stageSpinner) {
       const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
-      this.stageSpinner.suffixText = `${compactNumber.format(update.itemsProcessed)} items, ${compactNumber.format(update.quadsGenerated)} quads, ${elapsed}`;
+      this.stageSpinner.suffixText = `${compactNumber.format(
+        update.itemsProcessed
+      )} items, ${compactNumber.format(
+        update.quadsGenerated
+      )} quads, ${elapsed}`;
     }
   }
 
@@ -84,10 +91,12 @@ export class ConsoleReporter implements ProgressReporter {
       itemsProcessed: number;
       quadsGenerated: number;
       duration: number;
-    },
+    }
   ): void {
     if (this.stageSpinner) {
-      this.stageSpinner.suffixText = `took ${chalk.bold(prettyMilliseconds(result.duration))}`;
+      this.stageSpinner.suffixText = `took ${chalk.bold(
+        prettyMilliseconds(result.duration)
+      )}`;
       this.stageSpinner.succeed();
       this.stageSpinner = undefined;
     }
@@ -112,7 +121,9 @@ export class ConsoleReporter implements ProgressReporter {
   datasetComplete(_dataset: Dataset): void {
     const s = ora({
       discardStdin: false,
-      text: `Completed in ${chalk.bold(prettyMilliseconds(Date.now() - this.datasetStartTime))}`,
+      text: `Completed in ${chalk.bold(
+        prettyMilliseconds(Date.now() - this.datasetStartTime)
+      )}`,
     }).start();
     s.succeed();
   }
@@ -129,7 +140,7 @@ export class ConsoleReporter implements ProgressReporter {
   private printAnalysisResults(
     selected?: Distribution,
     importedFrom?: Distribution,
-    importDuration?: number,
+    importDuration?: number
   ): void {
     // Match by selected distribution URL, or by importedFrom URL (when a data
     // dump was imported to a local SPARQL endpoint, the selected distribution
@@ -146,8 +157,8 @@ export class ConsoleReporter implements ProgressReporter {
         result.type === 'sparql'
           ? 'SPARQL endpoint'
           : result.type === 'data-dump'
-            ? 'Data dump'
-            : 'Network error';
+          ? 'Data dump'
+          : 'Network error';
       const url = resultUrl;
 
       const s = ora({ discardStdin: false });
@@ -171,8 +182,8 @@ export class ConsoleReporter implements ProgressReporter {
         const detail = result.error
           ? ` (${result.error})`
           : result.statusCode !== undefined
-            ? ` (HTTP ${result.statusCode})`
-            : '';
+          ? ` (HTTP ${result.statusCode})`
+          : '';
         s.start(`${typeLabel} ${url}${detail}`);
         s.fail();
       }
@@ -182,7 +193,9 @@ export class ConsoleReporter implements ProgressReporter {
 
   pipelineComplete(result: { duration: number }): void {
     console.info(
-      `\nPipeline completed in ${chalk.bold(prettyMilliseconds(result.duration))}`,
+      `\nPipeline completed in ${chalk.bold(
+        prettyMilliseconds(result.duration)
+      )}`
     );
   }
 }
