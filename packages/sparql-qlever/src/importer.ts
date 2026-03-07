@@ -110,16 +110,11 @@ export class Importer implements ImporterInterface {
   }
 
   private parseTripleCount(logs: string): number | undefined {
-    // The index command appends the metadata JSON to its logs.
-    // Extract num-triples.normal from it.
-    const metadataStart = logs.lastIndexOf('{');
-    if (metadataStart === -1) return undefined;
-    try {
-      const metadata = JSON.parse(logs.slice(metadataStart));
-      return metadata['num-triples']?.normal;
-    } catch {
-      return undefined;
-    }
+    // Extract num-triples.normal from the metadata JSON that the index
+    // command cats to stdout. Use a regex rather than JSON.parse because
+    // Docker log multiplexing prepends binary frame headers to each chunk.
+    const match = logs.match(/"num-triples":\{[^}]*"normal":(\d+)/);
+    return match ? Number(match[1]) : undefined;
   }
 
   private async index(file: string, format: fileFormat): Promise<string> {
