@@ -4,6 +4,7 @@ import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
 import {
   type DistributionResolver,
+  type ResolveCallbacks,
   NoDistributionAvailable,
   ResolvedDistribution,
 } from './resolver.js';
@@ -44,7 +45,7 @@ export class ImportResolver implements DistributionResolver {
   async resolve(
     ...args: Parameters<DistributionResolver['resolve']>
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
-    const [dataset] = args;
+    const [dataset, callbacks] = args;
     const result = await this.inner.resolve(...args);
 
     // 'sparql' strategy (default): use SPARQL endpoint if inner found one.
@@ -56,12 +57,13 @@ export class ImportResolver implements DistributionResolver {
     }
 
     // Either 'import' strategy or inner found nothing: import a data dump.
-    return this.importDataset(dataset, result.probeResults);
+    return this.importDataset(dataset, result.probeResults, callbacks);
   }
 
   private async importDataset(
     dataset: Dataset,
     probeResults: NoDistributionAvailable['probeResults'],
+    callbacks?: ResolveCallbacks,
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const importStart = Date.now();
     const importResult = await this.options.importer.import(dataset);
@@ -80,6 +82,13 @@ export class ImportResolver implements DistributionResolver {
         probeResults,
         importResult.distribution,
         Date.now() - importStart,
+      );
+    }
+
+    if (importResult instanceof ImportFailed) {
+      callbacks?.onImportFailed?.(
+        importResult.distribution,
+        importResult.error,
       );
     }
 

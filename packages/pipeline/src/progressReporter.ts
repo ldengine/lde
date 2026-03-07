@@ -12,10 +12,10 @@ export interface ProgressReporter {
   pipelineStart?(name: string): void;
   datasetsSelected?(count: number, duration: number): void;
   datasetStart?(dataset: Dataset): void;
-  distributionsAnalyzed?(
-    dataset: Dataset,
-    results: DistributionAnalysisResult[],
-  ): void;
+  /** Called each time a single distribution probe completes. */
+  distributionProbed?(result: DistributionAnalysisResult): void;
+  /** Called when importing a distribution fails. */
+  importFailed?(distribution: Distribution, error: string): void;
   distributionSelected?(
     dataset: Dataset,
     distribution: Distribution,

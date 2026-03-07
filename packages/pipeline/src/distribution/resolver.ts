@@ -20,9 +20,18 @@ export class NoDistributionAvailable {
   ) {}
 }
 
+/** Callbacks fired during distribution resolution. */
+export interface ResolveCallbacks {
+  /** Called each time a single distribution probe completes. */
+  onProbe?: (distribution: Distribution, result: ProbeResultType) => void;
+  /** Called when importing a distribution fails. */
+  onImportFailed?: (distribution: Distribution, error: string) => void;
+}
+
 export interface DistributionResolver {
   resolve(
     dataset: Dataset,
+    callbacks?: ResolveCallbacks,
   ): Promise<ResolvedDistribution | NoDistributionAvailable>;
   cleanup?(): Promise<void>;
 }
@@ -49,11 +58,14 @@ export class SparqlDistributionResolver implements DistributionResolver {
 
   async resolve(
     dataset: Dataset,
+    callbacks?: ResolveCallbacks,
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const results = await Promise.all(
-      dataset.distributions.map((distribution) =>
-        probe(distribution, this.timeout),
-      ),
+      dataset.distributions.map(async (distribution) => {
+        const result = await probe(distribution, this.timeout);
+        callbacks?.onProbe?.(distribution, result);
+        return result;
+      }),
     );
 
     // Find first valid SPARQL endpoint.

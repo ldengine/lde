@@ -18,6 +18,7 @@ export {
   NoDistributionAvailable,
   SparqlDistributionResolver,
   type DistributionResolver,
+  type ResolveCallbacks,
   type SparqlDistributionResolverOptions,
 } from './resolver.js';
 

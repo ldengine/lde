@@ -18,7 +18,6 @@ export class ConsoleReporter implements ProgressReporter {
   private datasetStartTime = 0;
   private datasetTotal = 0;
   private datasetIndex = 0;
-  private analysisResults: DistributionAnalysisResult[] = [];
 
   pipelineStart(_name: string): void {
     this.stageSpinner = ora({
@@ -49,20 +48,59 @@ export class ConsoleReporter implements ProgressReporter {
     console.info(`Dataset ${chalk.bold(dataset.iri.toString())}${counter}`);
   }
 
-  distributionsAnalyzed(
-    _dataset: Dataset,
-    results: DistributionAnalysisResult[]
-  ): void {
-    this.analysisResults = results;
+  distributionProbed(result: DistributionAnalysisResult): void {
+    const url = result.distribution.accessUrl.toString();
+    const typeLabel =
+      result.type === 'sparql'
+        ? 'SPARQL endpoint'
+        : result.type === 'data-dump'
+          ? 'Data dump'
+          : 'Network error';
+
+    const s = ora({ discardStdin: false });
+    if (result.available) {
+      const detail =
+        result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
+      s.start(`${typeLabel} ${url}${detail}`);
+      s.succeed();
+    } else {
+      const detail = result.error
+        ? ` (${result.error})`
+        : result.statusCode !== undefined
+          ? ` (HTTP ${result.statusCode})`
+          : '';
+      s.start(`${typeLabel} ${url}${detail}`);
+      s.fail();
+    }
+  }
+
+  importFailed(_distribution: Distribution, error: string): void {
+    const s = ora({ discardStdin: false });
+    s.start(`Import failed: ${error}`);
+    s.fail();
   }
 
   distributionSelected(
     _dataset: Dataset,
     distribution: Distribution,
     importedFrom?: Distribution,
-    importDuration?: number
+    importDuration?: number,
   ): void {
-    this.printAnalysisResults(distribution, importedFrom, importDuration);
+    const s = ora({ discardStdin: false });
+    if (importedFrom) {
+      const duration =
+        importDuration !== undefined
+          ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
+          : '';
+      s.start(
+        `Imported ${importedFrom.accessUrl.toString()} (to ${distribution.accessUrl.toString()})${duration}`,
+      );
+    } else {
+      s.start(
+        `${distribution.accessUrl.toString()} ${chalk.dim('(selected)')}`,
+      );
+    }
+    s.succeed();
   }
 
   stageStart(stage: string): void {
@@ -78,9 +116,9 @@ export class ConsoleReporter implements ProgressReporter {
     if (this.stageSpinner) {
       const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
       this.stageSpinner.suffixText = `${compactNumber.format(
-        update.itemsProcessed
+        update.itemsProcessed,
       )} items, ${compactNumber.format(
-        update.quadsGenerated
+        update.quadsGenerated,
       )} quads, ${elapsed}`;
     }
   }
@@ -91,11 +129,11 @@ export class ConsoleReporter implements ProgressReporter {
       itemsProcessed: number;
       quadsGenerated: number;
       duration: number;
-    }
+    },
   ): void {
     if (this.stageSpinner) {
       this.stageSpinner.suffixText = `took ${chalk.bold(
-        prettyMilliseconds(result.duration)
+        prettyMilliseconds(result.duration),
       )}`;
       this.stageSpinner.succeed();
       this.stageSpinner = undefined;
@@ -122,14 +160,13 @@ export class ConsoleReporter implements ProgressReporter {
     const s = ora({
       discardStdin: false,
       text: `Completed in ${chalk.bold(
-        prettyMilliseconds(Date.now() - this.datasetStartTime)
+        prettyMilliseconds(Date.now() - this.datasetStartTime),
       )}`,
     }).start();
     s.succeed();
   }
 
   datasetSkipped(_dataset: Dataset, reason: string): void {
-    this.printAnalysisResults();
     const s = ora({
       discardStdin: false,
       text: `Skipped: ${chalk.red(reason)}`,
@@ -137,65 +174,11 @@ export class ConsoleReporter implements ProgressReporter {
     s.fail();
   }
 
-  private printAnalysisResults(
-    selected?: Distribution,
-    importedFrom?: Distribution,
-    importDuration?: number
-  ): void {
-    // Match by selected distribution URL, or by importedFrom URL (when a data
-    // dump was imported to a local SPARQL endpoint, the selected distribution
-    // is the local endpoint which doesn't appear in probe results).
-    const selectedUrl = selected?.accessUrl.toString();
-    const importedFromUrl = importedFrom?.accessUrl.toString();
-
-    for (const result of this.analysisResults) {
-      const resultUrl = result.distribution.accessUrl.toString();
-      const isSelected =
-        selected &&
-        (resultUrl === selectedUrl || resultUrl === importedFromUrl);
-      const typeLabel =
-        result.type === 'sparql'
-          ? 'SPARQL endpoint'
-          : result.type === 'data-dump'
-          ? 'Data dump'
-          : 'Network error';
-      const url = resultUrl;
-
-      const s = ora({ discardStdin: false });
-      if (isSelected) {
-        if (importedFrom) {
-          const duration =
-            importDuration !== undefined
-              ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
-              : '';
-          s.start(`Imported ${url} (to ${selectedUrl!})${duration}`);
-        } else {
-          s.start(`${typeLabel} ${url} ${chalk.dim('(selected)')}`);
-        }
-        s.succeed();
-      } else if (result.available) {
-        const detail =
-          result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
-        s.start(`${typeLabel} ${url}${detail}`);
-        s.succeed();
-      } else {
-        const detail = result.error
-          ? ` (${result.error})`
-          : result.statusCode !== undefined
-          ? ` (HTTP ${result.statusCode})`
-          : '';
-        s.start(`${typeLabel} ${url}${detail}`);
-        s.fail();
-      }
-    }
-    this.analysisResults = [];
-  }
-
   pipelineComplete(result: { duration: number }): void {
     console.info(
       `\nPipeline completed in ${chalk.bold(
-        prettyMilliseconds(result.duration)
-      )}`
+        prettyMilliseconds(result.duration),
+      )}`,
     );
   }
 }
