@@ -14,6 +14,8 @@ export interface ProgressReporter {
   datasetStart?(dataset: Dataset): void;
   /** Called each time a single distribution probe completes. */
   distributionProbed?(result: DistributionAnalysisResult): void;
+  /** Called when a data-dump import begins. */
+  importStarted?(): void;
   /** Called when importing a distribution fails. */
   importFailed?(distribution: Distribution, error: string): void;
   distributionSelected?(

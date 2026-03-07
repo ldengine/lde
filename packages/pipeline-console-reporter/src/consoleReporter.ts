@@ -74,10 +74,18 @@ export class ConsoleReporter implements ProgressReporter {
     }
   }
 
+  importStarted(): void {
+    this.stageSpinner = ora({
+      discardStdin: false,
+      text: 'Importing\u2026',
+    }).start();
+  }
+
   importFailed(_distribution: Distribution, error: string): void {
-    const s = ora({ discardStdin: false });
-    s.start(`Import failed: ${error}`);
+    const s = this.stageSpinner ?? ora({ discardStdin: false }).start();
+    s.text = `Import failed: ${error}`;
     s.fail();
+    this.stageSpinner = undefined;
   }
 
   distributionSelected(
@@ -86,21 +94,22 @@ export class ConsoleReporter implements ProgressReporter {
     importedFrom?: Distribution,
     importDuration?: number,
   ): void {
-    const s = ora({ discardStdin: false });
     if (importedFrom) {
+      const s = this.stageSpinner ?? ora({ discardStdin: false }).start();
       const duration =
         importDuration !== undefined
           ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
           : '';
-      s.start(
-        `Imported ${importedFrom.accessUrl.toString()} (to ${distribution.accessUrl.toString()})${duration}`,
-      );
+      s.text = `Imported ${importedFrom.accessUrl.toString()} (to ${distribution.accessUrl.toString()})${duration}`;
+      s.succeed();
+      this.stageSpinner = undefined;
     } else {
+      const s = ora({ discardStdin: false });
       s.start(
         `${distribution.accessUrl.toString()} ${chalk.dim('(selected)')}`,
       );
+      s.succeed();
     }
-    s.succeed();
   }
 
   stageStart(stage: string): void {
