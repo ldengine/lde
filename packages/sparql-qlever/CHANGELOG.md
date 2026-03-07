@@ -1,3 +1,13 @@
+## 0.8.6 (2026-03-07)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** filter unsupported MIME types before downloading ([#214](https://github.com/ldelements/lde/pull/214))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.5 (2026-03-06)
 
 ### 🩹 Fixes
