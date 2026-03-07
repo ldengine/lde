@@ -7,11 +7,13 @@ import {
   ResolvedDistribution,
   NoDistributionAvailable,
   type DistributionResolver,
+  type ResolveCallbacks,
 } from '../src/distribution/resolver.js';
 import {
   SparqlProbeResult,
   DataDumpProbeResult,
   NetworkError,
+  type ProbeResultType,
 } from '../src/distribution/probe.js';
 import type { Writer } from '../src/writer/writer.js';
 import type { ProgressReporter } from '../src/progressReporter.js';
@@ -40,8 +42,17 @@ function makeDatasetSelector(...datasets: Dataset[]): DatasetSelector {
 
 function makeResolver(
   result: ResolvedDistribution | NoDistributionAvailable,
+  /** Distributions and probe results to fire via onProbe callback. */
+  probes?: Array<{ distribution: Distribution; result: ProbeResultType }>,
 ): DistributionResolver {
-  return { resolve: vi.fn().mockResolvedValue(result) };
+  return {
+    resolve: vi.fn(async (_dataset: Dataset, callbacks?: ResolveCallbacks) => {
+      for (const p of probes ?? []) {
+        callbacks?.onProbe?.(p.distribution, p.result);
+      }
+      return result;
+    }),
+  };
 }
 
 function makeResolvedDistribution(): ResolvedDistribution {
@@ -68,8 +79,9 @@ function makeReporter(): RequiredReporter {
     datasetsSelected:
       vi.fn<NonNullable<ProgressReporter['datasetsSelected']>>(),
     datasetStart: vi.fn<NonNullable<ProgressReporter['datasetStart']>>(),
-    distributionsAnalyzed:
-      vi.fn<NonNullable<ProgressReporter['distributionsAnalyzed']>>(),
+    distributionProbed:
+      vi.fn<NonNullable<ProgressReporter['distributionProbed']>>(),
+    importFailed: vi.fn<NonNullable<ProgressReporter['importFailed']>>(),
     distributionSelected:
       vi.fn<NonNullable<ProgressReporter['distributionSelected']>>(),
     stageStart: vi.fn<NonNullable<ProgressReporter['stageStart']>>(),
@@ -469,7 +481,6 @@ describe('Pipeline', () => {
       const callOrder = [
         reporter.pipelineStart,
         reporter.datasetStart,
-        reporter.distributionsAnalyzed,
         reporter.distributionSelected,
         reporter.stageStart,
         reporter.stageComplete,
@@ -537,7 +548,7 @@ describe('Pipeline', () => {
       await expect(pipeline.run()).resolves.toBeUndefined();
     });
 
-    it('distributionsAnalyzed reports probe results correctly', async () => {
+    it('distributionProbed called once per distribution with correct result', async () => {
       const reporter = makeReporter();
 
       const sparqlDist = Distribution.sparql(
@@ -583,35 +594,36 @@ describe('Pipeline', () => {
             dataDumpResult,
             networkError,
           ]),
+          [
+            { distribution: sparqlDist, result: sparqlResult },
+            { distribution: dataDumpDist, result: dataDumpResult },
+            { distribution: downDist, result: networkError },
+          ],
         ),
         reporter,
       });
 
       await pipeline.run();
 
-      expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
-        datasetWithDists,
-        [
-          {
-            distribution: sparqlDist,
-            type: 'sparql',
-            available: true,
-            statusCode: 200,
-          },
-          {
-            distribution: dataDumpDist,
-            type: 'data-dump',
-            available: false,
-            statusCode: 404,
-          },
-          {
-            distribution: downDist,
-            type: 'network-error',
-            available: false,
-            error: 'Connection refused',
-          },
-        ],
-      );
+      expect(reporter.distributionProbed).toHaveBeenCalledTimes(3);
+      expect(reporter.distributionProbed).toHaveBeenCalledWith({
+        distribution: sparqlDist,
+        type: 'sparql',
+        available: true,
+        statusCode: 200,
+      });
+      expect(reporter.distributionProbed).toHaveBeenCalledWith({
+        distribution: dataDumpDist,
+        type: 'data-dump',
+        available: false,
+        statusCode: 404,
+      });
+      expect(reporter.distributionProbed).toHaveBeenCalledWith({
+        distribution: downDist,
+        type: 'network-error',
+        available: false,
+        error: 'Connection refused',
+      });
     });
 
     it('distributionSelected reports importedFrom when import was used', async () => {
@@ -644,7 +656,7 @@ describe('Pipeline', () => {
       );
     });
 
-    it('distributionsAnalyzed called even when dataset is skipped', async () => {
+    it('distributionProbed called even when dataset is skipped', async () => {
       const reporter = makeReporter();
       const downDist = new Distribution(
         new URL('http://example.org/down'),
@@ -667,23 +679,20 @@ describe('Pipeline', () => {
           new NoDistributionAvailable(datasetWithDist, 'No SPARQL endpoint', [
             networkError,
           ]),
+          [{ distribution: downDist, result: networkError }],
         ),
         reporter,
       });
 
       await pipeline.run();
 
-      expect(reporter.distributionsAnalyzed).toHaveBeenCalledWith(
-        datasetWithDist,
-        [
-          {
-            distribution: downDist,
-            type: 'network-error',
-            available: false,
-            error: 'Connection refused',
-          },
-        ],
-      );
+      expect(reporter.distributionProbed).toHaveBeenCalledTimes(1);
+      expect(reporter.distributionProbed).toHaveBeenCalledWith({
+        distribution: downDist,
+        type: 'network-error',
+        available: false,
+        error: 'Connection refused',
+      });
       expect(reporter.distributionSelected).not.toHaveBeenCalled();
     });
 

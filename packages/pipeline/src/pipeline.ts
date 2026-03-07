@@ -140,12 +140,16 @@ export class Pipeline {
   private async processDataset(dataset: Dataset): Promise<void> {
     this.reporter?.datasetStart?.(dataset);
 
-    const resolved = await this.distributionResolver.resolve(dataset);
-
-    this.reporter?.distributionsAnalyzed?.(
-      dataset,
-      mapProbeResults(dataset, resolved.probeResults),
-    );
+    const resolved = await this.distributionResolver.resolve(dataset, {
+      onProbe: (distribution, result) => {
+        this.reporter?.distributionProbed?.(
+          mapProbeResult(distribution, result),
+        );
+      },
+      onImportFailed: (distribution, error) => {
+        this.reporter?.importFailed?.(distribution, error);
+      },
+    });
 
     if (resolved instanceof NoDistributionAvailable) {
       this.reporter?.datasetSkipped?.(dataset, resolved.message);
@@ -309,27 +313,25 @@ export class Pipeline {
   }
 }
 
-function mapProbeResults(
-  dataset: Dataset,
-  probeResults: ProbeResultType[],
-): DistributionAnalysisResult[] {
-  return probeResults.map((result, index) => {
-    if (result instanceof NetworkError) {
-      return {
-        distribution: dataset.distributions[index],
-        type: 'network-error' as const,
-        available: false,
-        error: result.message,
-      };
-    }
+function mapProbeResult(
+  distribution: Distribution,
+  result: ProbeResultType,
+): DistributionAnalysisResult {
+  if (result instanceof NetworkError) {
     return {
-      distribution: dataset.distributions[index],
-      type:
-        result instanceof SparqlProbeResult
-          ? ('sparql' as const)
-          : ('data-dump' as const),
-      available: result.isSuccess(),
-      statusCode: result.statusCode,
+      distribution,
+      type: 'network-error' as const,
+      available: false,
+      error: result.message,
     };
-  });
+  }
+  return {
+    distribution,
+    type:
+      result instanceof SparqlProbeResult
+        ? ('sparql' as const)
+        : ('data-dump' as const),
+    available: result.isSuccess(),
+    statusCode: result.statusCode,
+  };
 }
