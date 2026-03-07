@@ -6,7 +6,7 @@ import {
   type DistributionResolver,
 } from '../../src/distribution/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
-import { ImportSuccessful, ImportFailed } from '@lde/sparql-importer';
+import type { ImportSuccessful, ImportFailed } from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
 import { describe, it, expect, vi } from 'vitest';
 
@@ -78,14 +78,13 @@ describe('ImportResolver', () => {
     );
 
     const mockImporter = {
-      import: vi
-        .fn()
-        .mockResolvedValue(
-          new ImportSuccessful(
-            Distribution.sparql(new URL('http://localhost:7878/sparql')),
-            'test-graph',
-          ),
+      import: vi.fn().mockResolvedValue({
+        type: 'successful',
+        distribution: Distribution.sparql(
+          new URL('http://localhost:7878/sparql'),
         ),
+        identifier: 'test-graph',
+      } satisfies ImportSuccessful),
     };
 
     const server = makeServer();
@@ -118,11 +117,11 @@ describe('ImportResolver', () => {
       new URL('http://localhost:7878/sparql'),
     );
     const mockImporter = {
-      import: vi
-        .fn()
-        .mockResolvedValue(
-          new ImportSuccessful(importedDistribution, 'test-graph'),
-        ),
+      import: vi.fn().mockResolvedValue({
+        type: 'successful',
+        distribution: importedDistribution,
+        identifier: 'test-graph',
+      } satisfies ImportSuccessful),
     };
 
     const server = makeServer();
@@ -163,17 +162,14 @@ describe('ImportResolver', () => {
     );
 
     const mockImporter = {
-      import: vi
-        .fn()
-        .mockResolvedValue(
-          new ImportFailed(
-            new Distribution(
-              new URL('http://example.org/data.nt'),
-              'application/n-triples',
-            ),
-            'Parse error',
-          ),
+      import: vi.fn().mockResolvedValue({
+        type: 'failed',
+        distribution: new Distribution(
+          new URL('http://example.org/data.nt'),
+          'application/n-triples',
         ),
+        error: 'Parse error',
+      } satisfies ImportFailed),
     };
 
     const resolver = new ImportResolver(inner, {
@@ -184,7 +180,7 @@ describe('ImportResolver', () => {
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
     const noDistribution = result as NoDistributionAvailable;
-    expect(noDistribution.importFailed).toBeInstanceOf(ImportFailed);
+    expect(noDistribution.importFailed?.type).toBe('failed');
     expect(noDistribution.importFailed!.error).toBe('Parse error');
     expect(noDistribution.probeResults).toHaveLength(1);
   });
@@ -201,14 +197,13 @@ describe('ImportResolver', () => {
       const inner = makeInnerResolver(resolved);
 
       const mockImporter = {
-        import: vi
-          .fn()
-          .mockResolvedValue(
-            new ImportSuccessful(
-              Distribution.sparql(new URL('http://localhost:7878/sparql')),
-              'test-graph',
-            ),
+        import: vi.fn().mockResolvedValue({
+          type: 'successful',
+          distribution: Distribution.sparql(
+            new URL('http://localhost:7878/sparql'),
           ),
+          identifier: 'test-graph',
+        } satisfies ImportSuccessful),
       };
 
       const server = makeServer();
@@ -241,17 +236,14 @@ describe('ImportResolver', () => {
       const inner = makeInnerResolver(resolved);
 
       const mockImporter = {
-        import: vi
-          .fn()
-          .mockResolvedValue(
-            new ImportFailed(
-              new Distribution(
-                new URL('http://example.org/data.nt'),
-                'application/n-triples',
-              ),
-              'Parse error',
-            ),
+        import: vi.fn().mockResolvedValue({
+          type: 'failed',
+          distribution: new Distribution(
+            new URL('http://example.org/data.nt'),
+            'application/n-triples',
           ),
+          error: 'Parse error',
+        } satisfies ImportFailed),
       };
 
       const resolver = new ImportResolver(inner, {
@@ -264,7 +256,7 @@ describe('ImportResolver', () => {
       expect(result).toBeInstanceOf(NoDistributionAvailable);
       const noDistribution = result as NoDistributionAvailable;
       expect(noDistribution.probeResults).toHaveLength(1);
-      expect(noDistribution.importFailed).toBeInstanceOf(ImportFailed);
+      expect(noDistribution.importFailed?.type).toBe('failed');
     });
 
     it('default strategy preserves existing sparql-first behaviour', async () => {
@@ -296,14 +288,13 @@ describe('ImportResolver', () => {
       );
 
       const mockImporter = {
-        import: vi
-          .fn()
-          .mockResolvedValue(
-            new ImportSuccessful(
-              Distribution.sparql(new URL('http://localhost:7878/sparql')),
-              'test-graph',
-            ),
+        import: vi.fn().mockResolvedValue({
+          type: 'successful',
+          distribution: Distribution.sparql(
+            new URL('http://localhost:7878/sparql'),
           ),
+          identifier: 'test-graph',
+        } satisfies ImportSuccessful),
       };
 
       const server = makeServer();
@@ -355,11 +346,11 @@ describe('ImportResolver', () => {
       importedDistribution.subjectFilter = '?s a <http://example.org/Type> .';
 
       const mockImporter = {
-        import: vi
-          .fn()
-          .mockResolvedValue(
-            new ImportSuccessful(importedDistribution, 'test-graph'),
-          ),
+        import: vi.fn().mockResolvedValue({
+          type: 'successful',
+          distribution: importedDistribution,
+          identifier: 'test-graph',
+        } satisfies ImportSuccessful),
       };
 
       const server = makeServer();
