@@ -1,3 +1,13 @@
+## 0.18.0 (2026-03-07)
+
+### 🚀 Features
+
+- **pipeline:** report distribution probe results as they complete ([#215](https://github.com/ldelements/lde/pull/215))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.17.1 (2026-03-06)
 
 ### 🧱 Updated Dependencies
