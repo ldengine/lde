@@ -92,12 +92,13 @@ export class Importer implements ImporterInterface {
     distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
-    await this.index(
+    const logs = await this.index(
       localFile,
       this.fileFormatFromMimeType(distribution.mimeType),
     );
+    const tripleCount = this.parseTripleCount(logs);
 
-    return new ImportSuccessful(distribution);
+    return new ImportSuccessful(distribution, undefined, tripleCount);
   }
 
   private fileFormatFromMimeType(mimeType: string): fileFormat {
@@ -108,7 +109,20 @@ export class Importer implements ImporterInterface {
     return format;
   }
 
-  private async index(file: string, format: fileFormat): Promise<void> {
+  private parseTripleCount(logs: string): number | undefined {
+    // The index command appends the metadata JSON to its logs.
+    // Extract num-triples.normal from it.
+    const metadataStart = logs.lastIndexOf('{');
+    if (metadataStart === -1) return undefined;
+    try {
+      const metadata = JSON.parse(logs.slice(metadataStart));
+      return metadata['num-triples']?.normal;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async index(file: string, format: fileFormat): Promise<string> {
     const workingDir = dirname(file);
     const settingsFile = 'index.settings.json';
     // Turtle is not line-delimited, so QLever's parallel parser can't split
@@ -121,13 +135,14 @@ export class Importer implements ImporterInterface {
 
     // TODO: write index to named volume instead of bind mount for better performance.
 
+    const metadataFile = `${this.indexName}.meta-data.json`;
     const indexTask = await this.taskRunner.run(
       `(zcat '${basename(file)}' 2>/dev/null || cat '${basename(
         file,
       )}') | qlever-index -i ${
         this.indexName
-      } -s ${settingsFile} -F ${format} -f -`,
+      } -s ${settingsFile} -F ${format} -f - && cat ${metadataFile}`,
     );
-    await this.taskRunner.wait(indexTask);
+    return await this.taskRunner.wait(indexTask);
   }
 }
