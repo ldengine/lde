@@ -146,6 +146,9 @@ export class Pipeline {
           mapProbeResult(distribution, result),
         );
       },
+      onImportStart: () => {
+        this.reporter?.importStarted?.();
+      },
       onImportFailed: (distribution, error) => {
         this.reporter?.importFailed?.(distribution, error);
       },

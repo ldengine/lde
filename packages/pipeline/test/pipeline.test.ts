@@ -81,6 +81,7 @@ function makeReporter(): RequiredReporter {
     datasetStart: vi.fn<NonNullable<ProgressReporter['datasetStart']>>(),
     distributionProbed:
       vi.fn<NonNullable<ProgressReporter['distributionProbed']>>(),
+    importStarted: vi.fn<NonNullable<ProgressReporter['importStarted']>>(),
     importFailed: vi.fn<NonNullable<ProgressReporter['importFailed']>>(),
     distributionSelected:
       vi.fn<NonNullable<ProgressReporter['distributionSelected']>>(),
