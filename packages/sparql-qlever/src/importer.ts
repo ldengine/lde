@@ -13,6 +13,14 @@ import { basename, dirname } from 'path';
 import { writeFile } from 'node:fs/promises';
 import { TaskRunner } from '@lde/task-runner';
 
+type fileFormat = 'nt' | 'nq' | 'ttl';
+
+const supportedFormats = new Map<string, fileFormat>([
+  ['application/n-triples', 'nt'],
+  ['application/n-quads', 'nq'],
+  ['text/turtle', 'ttl'],
+]);
+
 export interface Options {
   taskRunner: TaskRunner<unknown>;
   indexName?: string;
@@ -52,7 +60,8 @@ export class Importer implements ImporterInterface {
       .getDownloadDistributions()
       .filter(
         (distribution): distribution is Distribution & { mimeType: string } =>
-          distribution.mimeType !== undefined,
+          distribution.mimeType !== undefined &&
+          supportedFormats.has(distribution.mimeType),
       );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
@@ -92,16 +101,11 @@ export class Importer implements ImporterInterface {
   }
 
   private fileFormatFromMimeType(mimeType: string): fileFormat {
-    switch (mimeType) {
-      case 'application/n-triples':
-        return 'nt';
-      case 'application/n-quads':
-        return 'nq';
-      case 'text/turtle':
-        return 'ttl';
-      default:
-        throw new Error(`Unsupported media type: ${mimeType}`);
+    const format = supportedFormats.get(mimeType);
+    if (format === undefined) {
+      throw new Error(`Unsupported media type: ${mimeType}`);
     }
+    return format;
   }
 
   private async index(file: string, format: fileFormat): Promise<void> {
@@ -127,5 +131,3 @@ export class Importer implements ImporterInterface {
     await this.taskRunner.wait(indexTask);
   }
 }
-
-type fileFormat = 'nt' | 'nq' | 'ttl';
