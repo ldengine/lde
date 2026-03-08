@@ -1,3 +1,17 @@
+## 0.8.0 (2026-03-08)
+
+### 🚀 Features
+
+- **pipeline:** include triple count in import result reporting ([#217](https://github.com/ldelements/lde/pull/217))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.19.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.0 (2026-03-07)
 
 ### 🚀 Features

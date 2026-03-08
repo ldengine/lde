@@ -1,3 +1,17 @@
+## 0.9.0 (2026-03-08)
+
+### 🚀 Features
+
+- **pipeline:** include triple count in import result reporting ([#217](https://github.com/ldelements/lde/pull/217))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/sparql-importer to 0.4.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.8.6 (2026-03-07)
 
 ### 🩹 Fixes
