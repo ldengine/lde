@@ -41,6 +41,7 @@ Uses TypeScript with ESNext modules and Vite for building/testing.
 ### Affected Commands
 
 - `npx nx affected -t lint test typecheck build` - Run tasks only on changed packages (used in CI)
+- **Always run this before pushing** to catch CI failures locally.
 
 ## Architecture
 
