@@ -525,35 +525,20 @@ describe('Stage', () => {
   });
 
   describe('validation', () => {
-    function conformingValidator(): Validator {
+    function mockValidator(
+      options: { conforms: boolean; violations?: number } = { conforms: true },
+    ): Validator {
+      const violations = options.violations ?? (options.conforms ? 0 : 1);
       return {
         validate: vi.fn(
           async (): Promise<ValidationResult> => ({
-            conforms: true,
-            violations: 0,
-          }),
-        ),
-        report: vi.fn(
-          async (): Promise<ValidationReport> => ({
-            conforms: true,
-            violations: 0,
-            quadsValidated: 0,
-          }),
-        ),
-      };
-    }
-
-    function failingValidator(violations = 1): Validator {
-      return {
-        validate: vi.fn(
-          async (): Promise<ValidationResult> => ({
-            conforms: false,
+            conforms: options.conforms,
             violations,
           }),
         ),
         report: vi.fn(
           async (): Promise<ValidationReport> => ({
-            conforms: false,
+            conforms: options.conforms,
             violations,
             quadsValidated: 0,
           }),
@@ -562,7 +547,7 @@ describe('Stage', () => {
     }
 
     it('writes quads when validation conforms (no selector)', async () => {
-      const validator = conformingValidator();
+      const validator = mockValidator({ conforms: true });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1, q2]),
@@ -576,7 +561,7 @@ describe('Stage', () => {
     });
 
     it('writes quads when validation conforms (with selector)', async () => {
-      const validator = conformingValidator();
+      const validator = mockValidator({ conforms: true });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1]),
@@ -593,7 +578,7 @@ describe('Stage', () => {
     });
 
     it('writes quads when validation fails with onInvalid "write" (default)', async () => {
-      const validator = failingValidator();
+      const validator = mockValidator({ conforms: false });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1, q2]),
@@ -606,7 +591,7 @@ describe('Stage', () => {
     });
 
     it('skips quads when validation fails with onInvalid "skip" (no selector)', async () => {
-      const validator = failingValidator();
+      const validator = mockValidator({ conforms: false });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1, q2]),
@@ -619,7 +604,7 @@ describe('Stage', () => {
     });
 
     it('skips quads when validation fails with onInvalid "skip" (with selector)', async () => {
-      const validator = failingValidator();
+      const validator = mockValidator({ conforms: false });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1]),
@@ -635,7 +620,7 @@ describe('Stage', () => {
     });
 
     it('throws when validation fails with onInvalid "halt" (no selector)', async () => {
-      const validator = failingValidator(3);
+      const validator = mockValidator({ conforms: false, violations: 3 });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1]),
@@ -649,7 +634,7 @@ describe('Stage', () => {
     });
 
     it('throws when validation fails with onInvalid "halt" (with selector)', async () => {
-      const validator = failingValidator(2);
+      const validator = mockValidator({ conforms: false, violations: 2 });
       const stage = new Stage({
         name: 'test',
         executors: mockExecutor([q1]),
@@ -666,7 +651,7 @@ describe('Stage', () => {
     });
 
     it('validates combined output of multiple executors', async () => {
-      const validator = conformingValidator();
+      const validator = mockValidator({ conforms: true });
       const stage = new Stage({
         name: 'test',
         executors: [mockExecutor([q1]), mockExecutor([q2])],
@@ -682,7 +667,7 @@ describe('Stage', () => {
     });
 
     it('validates combined output of multiple executors (with selector)', async () => {
-      const validator = conformingValidator();
+      const validator = mockValidator({ conforms: true });
       const stage = new Stage({
         name: 'test',
         executors: [mockExecutor([q1]), mockExecutor([q2])],

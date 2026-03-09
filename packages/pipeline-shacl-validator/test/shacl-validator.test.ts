@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
@@ -28,6 +28,10 @@ describe('ShaclValidator', () => {
     reportDir = await mkdtemp(join(tmpdir(), 'shacl-validator-test-'));
   });
 
+  afterEach(async () => {
+    await rm(reportDir, { recursive: true, force: true });
+  });
+
   it('returns conforms:true for valid data', async () => {
     const validator = new ShaclValidator({ shapesFile, reportDir });
     const quads = parseFixture('valid.ttl');
@@ -36,8 +40,6 @@ describe('ShaclValidator', () => {
 
     expect(result.conforms).toBe(true);
     expect(result.violations).toBe(0);
-
-    await rm(reportDir, { recursive: true });
   });
 
   it('returns violations for invalid data', async () => {
@@ -48,8 +50,6 @@ describe('ShaclValidator', () => {
 
     expect(result.conforms).toBe(false);
     expect(result.violations).toBeGreaterThan(0);
-
-    await rm(reportDir, { recursive: true });
   });
 
   it('writes a report file for invalid data', async () => {
@@ -65,8 +65,6 @@ describe('ShaclValidator', () => {
 
     const content = await readFile(join(reportDir, files[0]), 'utf-8');
     expect(content).toContain('shacl');
-
-    await rm(reportDir, { recursive: true });
   });
 
   it('does not write a report file for valid data', async () => {
@@ -77,8 +75,6 @@ describe('ShaclValidator', () => {
 
     const entries = await readdir(reportDir);
     expect(entries).toHaveLength(0);
-
-    await rm(reportDir, { recursive: true });
   });
 
   it('accumulates results across validate calls', async () => {
@@ -93,8 +89,6 @@ describe('ShaclValidator', () => {
     expect(report.conforms).toBe(false);
     expect(report.violations).toBeGreaterThan(0);
     expect(report.quadsValidated).toBe(validQuads.length + invalidQuads.length);
-
-    await rm(reportDir, { recursive: true });
   });
 
   it('returns empty report for unseen dataset', async () => {
@@ -129,7 +123,5 @@ describe('ShaclValidator', () => {
     const report = await validator.report(dataset);
     expect(report.conforms).toBe(true);
     expect(report.quadsValidated).toBe(quads.length * 2);
-
-    await rm(reportDir, { recursive: true });
   });
 });

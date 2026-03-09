@@ -230,6 +230,21 @@ export class Pipeline {
     return true;
   }
 
+  /** Run a stage in chained mode, throwing if the stage is not supported. */
+  private async runChainedStage(
+    dataset: Dataset,
+    distribution: Distribution,
+    stage: Stage,
+    writer: Writer,
+  ): Promise<void> {
+    const supported = await this.runStage(dataset, distribution, stage, writer);
+    if (!supported) {
+      throw new Error(
+        `Stage '${stage.name}' returned NotSupported in chained mode`,
+      );
+    }
+  }
+
   private async runChain(
     dataset: Dataset,
     distribution: Distribution,
@@ -245,17 +260,7 @@ export class Pipeline {
         format: 'n-triples',
       });
 
-      const supported = await this.runStage(
-        dataset,
-        distribution,
-        stage,
-        parentWriter,
-      );
-      if (!supported) {
-        throw new Error(
-          `Stage '${stage.name}' returned NotSupported in chained mode`,
-        );
-      }
+      await this.runChainedStage(dataset, distribution, stage, parentWriter);
       outputFiles.push(parentWriter.getOutputPath(dataset));
 
       // 2. Chain through children.
@@ -269,17 +274,12 @@ export class Pipeline {
           format: 'n-triples',
         });
 
-        const childSupported = await this.runStage(
+        await this.runChainedStage(
           dataset,
           currentDistribution,
           child,
           childWriter,
         );
-        if (!childSupported) {
-          throw new Error(
-            `Stage '${child.name}' returned NotSupported in chained mode`,
-          );
-        }
         outputFiles.push(childWriter.getOutputPath(dataset));
 
         if (i < stage.stages.length - 1) {
