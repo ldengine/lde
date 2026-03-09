@@ -214,6 +214,10 @@ export class Pipeline {
         quadsGenerated,
         duration: Date.now() - stageStart,
       });
+      if (stage.validator) {
+        const report = await stage.validator.report(dataset);
+        this.reporter?.stageValidated?.(stage.name, report);
+      }
     }
   }
 
@@ -300,6 +304,11 @@ export class Pipeline {
       quadsGenerated,
       duration: Date.now() - stageStart,
     });
+
+    if (stage.validator) {
+      const report = await stage.validator.report(dataset);
+      this.reporter?.stageValidated?.(stage.name, report);
+    }
   }
 
   private async *readFiles(paths: string[]): AsyncIterable<Quad> {

@@ -128,6 +128,34 @@ new Stage({
 
 This keeps SPARQL doing the heavy lifting while TypeScript handles the edge cases. See [@lde/pipeline-void](../pipeline-void)'s `VocabularyExecutor` for a real-world example of this pattern.
 
+### Validation
+
+Stages can optionally validate their output quads against a `Validator`. Validation is per executor batch — quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
+
+```typescript
+import { ShaclPipelineValidator } from '@lde/pipeline-shacl-validator';
+
+new Stage({
+  name: 'transform',
+  executors: await SparqlConstructExecutor.fromFile('transform.rq'),
+  validation: {
+    validator: new ShaclPipelineValidator({
+      shapesFile: './shapes.ttl',
+      reportDir: './validation',
+    }),
+    onInvalid: 'write', // 'write' (default) | 'skip' | 'halt'
+  },
+});
+```
+
+| `onInvalid` | Behaviour                                          |
+| ----------- | -------------------------------------------------- |
+| `'write'`   | Write quads even if validation fails **(default)** |
+| `'skip'`    | Discard the batch silently                         |
+| `'halt'`    | Throw an error, stopping the pipeline              |
+
+`Validator` is an interface, so you can implement your own validation strategy. See [@lde/pipeline-shacl-validator](../pipeline-shacl-validator) for the SHACL implementation.
+
 ### Writer
 
 Writes generated quads to a destination:

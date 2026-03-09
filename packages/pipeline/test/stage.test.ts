@@ -7,6 +7,11 @@ import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Writer } from '../src/writer/writer.js';
+import type {
+  Validator,
+  ValidationResult,
+  ValidationReport,
+} from '../src/validator.js';
 
 const { namedNode, quad } = DataFactory;
 
@@ -516,6 +521,196 @@ describe('Stage', () => {
       const result = await stage.run(dataset, distribution, writer);
       expect(result).toBeInstanceOf(NotSupported);
       expect(writer.quads).toEqual([]);
+    });
+  });
+
+  describe('validation', () => {
+    function conformingValidator(): Validator {
+      return {
+        validate: vi.fn(
+          async (): Promise<ValidationResult> => ({
+            conforms: true,
+            violations: 0,
+          }),
+        ),
+        report: vi.fn(
+          async (): Promise<ValidationReport> => ({
+            conforms: true,
+            violations: 0,
+            quadsValidated: 0,
+          }),
+        ),
+      };
+    }
+
+    function failingValidator(violations = 1): Validator {
+      return {
+        validate: vi.fn(
+          async (): Promise<ValidationResult> => ({
+            conforms: false,
+            violations,
+          }),
+        ),
+        report: vi.fn(
+          async (): Promise<ValidationReport> => ({
+            conforms: false,
+            violations,
+            quadsValidated: 0,
+          }),
+        ),
+      };
+    }
+
+    it('writes quads when validation conforms (no selector)', async () => {
+      const validator = conformingValidator();
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1, q2]);
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
+    it('writes quads when validation conforms (with selector)', async () => {
+      const validator = conformingValidator();
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1]);
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
+    it('writes quads when validation fails with onInvalid "write" (default)', async () => {
+      const validator = failingValidator();
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1, q2]);
+    });
+
+    it('skips quads when validation fails with onInvalid "skip" (no selector)', async () => {
+      const validator = failingValidator();
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator, onInvalid: 'skip' },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([]);
+    });
+
+    it('skips quads when validation fails with onInvalid "skip" (with selector)', async () => {
+      const validator = failingValidator();
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator, onInvalid: 'skip' },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([]);
+    });
+
+    it('throws when validation fails with onInvalid "halt" (no selector)', async () => {
+      const validator = failingValidator(3);
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        validation: { validator, onInvalid: 'halt' },
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'Validation failed: 3 violation(s)',
+      );
+    });
+
+    it('throws when validation fails with onInvalid "halt" (with selector)', async () => {
+      const validator = failingValidator(2);
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator, onInvalid: 'halt' },
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'Validation failed: 2 violation(s)',
+      );
+    });
+
+    it('passes executor name to validator', async () => {
+      const validator = conformingValidator();
+      const executor: Executor = {
+        name: 'my-query',
+        async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
+          return (async function* () {
+            yield q1;
+          })();
+        },
+      };
+
+      const stage = new Stage({
+        name: 'test',
+        executors: executor,
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(validator.validate).toHaveBeenCalledWith([q1], dataset, {
+        executor: 'my-query',
+      });
+    });
+
+    it('uses executor index as fallback name', async () => {
+      const validator = conformingValidator();
+
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(validator.validate).toHaveBeenCalledWith([q1], dataset, {
+        executor: 'executor-0',
+      });
     });
   });
 });

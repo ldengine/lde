@@ -3,6 +3,7 @@ import type { Quad } from '@rdfjs/types';
 import type { Executor, VariableBindings } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
 import { batch } from './batch.js';
+import type { Validator } from './validator.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
@@ -22,6 +23,12 @@ export interface StageOptions {
   maxConcurrency?: number;
   /** Child stages that chain off this stage's output. */
   stages?: Stage[];
+  /** Optional validation of quads produced by each executor batch. */
+  validation?: {
+    validator: Validator;
+    /** What to do when a batch fails validation. @default 'write' */
+    onInvalid?: 'write' | 'skip' | 'halt';
+  };
 }
 
 export interface RunOptions {
@@ -35,6 +42,7 @@ export class Stage {
   private readonly itemSelector?: ItemSelector;
   private readonly batchSize: number;
   private readonly maxConcurrency: number;
+  private readonly validation?: StageOptions['validation'];
 
   constructor(options: StageOptions) {
     this.name = options.name;
@@ -45,6 +53,12 @@ export class Stage {
     this.itemSelector = options.itemSelector;
     this.batchSize = options.batchSize ?? 10;
     this.maxConcurrency = options.maxConcurrency ?? 10;
+    this.validation = options.validation;
+  }
+
+  /** The validator for this stage, if configured. */
+  get validator(): Validator | undefined {
+    return this.validation?.validator;
   }
 
   async run(
@@ -68,7 +82,12 @@ export class Stage {
       return streams;
     }
 
-    await writer.write(dataset, mergeStreams(streams));
+    if (this.validation) {
+      const validated = this.validateStreams(streams, dataset);
+      await writer.write(dataset, validated);
+    } else {
+      await writer.write(dataset, mergeStreams(streams));
+    }
   }
 
   private async runWithSelector(
@@ -124,7 +143,8 @@ export class Stage {
         for await (const bindings of allBatches) {
           if (firstError) break;
 
-          for (const executor of this.executors) {
+          for (let i = 0; i < this.executors.length; i++) {
+            const executor = this.executors[i];
             if (firstError) break;
 
             // Respect maxConcurrency: wait for a slot to open.
@@ -140,9 +160,34 @@ export class Stage {
                 });
                 if (!(result instanceof NotSupported)) {
                   hasResults = true;
-                  for await (const quad of result) {
-                    await queue.push(quad);
-                    quadsGenerated++;
+                  if (this.validation) {
+                    const buffer: Quad[] = [];
+                    for await (const quad of result) {
+                      buffer.push(quad);
+                    }
+                    const v = await this.validation.validator.validate(
+                      buffer,
+                      dataset,
+                      { executor: executor.name ?? `executor-${i}` },
+                    );
+                    const onInvalid = this.validation.onInvalid ?? 'write';
+                    if (!v.conforms && onInvalid === 'halt') {
+                      throw new Error(
+                        `Validation failed: ${v.violations} violation(s)`,
+                      );
+                    }
+                    if (v.conforms || onInvalid === 'write') {
+                      for (const quad of buffer) {
+                        await queue.push(quad);
+                        quadsGenerated++;
+                      }
+                    }
+                    // 'skip': buffer is discarded
+                  } else {
+                    for await (const quad of result) {
+                      await queue.push(quad);
+                      quadsGenerated++;
+                    }
                   }
                 }
                 itemsProcessed += bindings.length;
@@ -179,6 +224,30 @@ export class Stage {
 
     if (!hasResults) {
       return new NotSupported('All executors returned NotSupported');
+    }
+  }
+
+  private async *validateStreams(
+    streams: AsyncIterable<Quad>[],
+    dataset: Dataset,
+  ): AsyncIterable<Quad> {
+    for (let i = 0; i < streams.length; i++) {
+      const buffer: Quad[] = [];
+      for await (const quad of streams[i]) {
+        buffer.push(quad);
+      }
+      const executor = this.executors[i];
+      const v = await this.validation!.validator.validate(buffer, dataset, {
+        executor: executor.name ?? `executor-${i}`,
+      });
+      const onInvalid = this.validation!.onInvalid ?? 'write';
+      if (!v.conforms && onInvalid === 'halt') {
+        throw new Error(`Validation failed: ${v.violations} violation(s)`);
+      }
+      if (v.conforms || onInvalid === 'write') {
+        yield* buffer;
+      }
+      // 'skip': buffer is discarded
     }
   }
 

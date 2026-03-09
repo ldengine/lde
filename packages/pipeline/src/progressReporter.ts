@@ -1,4 +1,5 @@
 import type { Dataset, Distribution } from '@lde/dataset';
+import type { ValidationReport } from './validator.js';
 
 export interface DistributionAnalysisResult {
   distribution: Distribution;
@@ -37,6 +38,8 @@ export interface ProgressReporter {
     },
   ): void;
   stageFailed?(stage: string, error: Error): void;
+  /** Called after a stage completes if it has a validator. */
+  stageValidated?(stage: string, report: ValidationReport): void;
   stageSkipped?(stage: string, reason: string): void;
   datasetComplete?(dataset: Dataset): void;
   datasetSkipped?(dataset: Dataset, reason: string): void;

@@ -24,14 +24,14 @@ Data transformations are expressed as plain SPARQL queries: portable, transparen
 
 ## Standards
 
-| Standard                                                              | Usage                                                         |
-| --------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) (EU) | Dataset discovery and registry queries                        |
-| [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)                   | Data transformations, dataset queries and endpoint management |
-| [SHACL](https://www.w3.org/TR/shacl/)                                 | Documentation generation from shapes (`@lde/docgen`)          |
-| [VoID](https://www.w3.org/TR/void/)                                   | Statistical analysis of RDF datasets (`@lde/pipeline-void`)   |
-| [RDF/JS](https://rdf.js.org/)                                         | Internal data model (N3)                                      |
-| [LDES](https://semiceu.github.io/LinkedDataEventStreams/) (EU)        | Event stream consumption and publication (planned)            |
+| Standard                                                              | Usage                                                                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [DCAT-AP 3.0](https://semiceu.github.io/DCAT-AP/releases/3.0.0/) (EU) | Dataset discovery and registry queries                                                    |
+| [SPARQL 1.1](https://www.w3.org/TR/sparql11-query/)                   | Data transformations, dataset queries and endpoint management                             |
+| [SHACL](https://www.w3.org/TR/shacl/)                                 | Validation (`@lde/pipeline-shacl-validator`) and documentation generation (`@lde/docgen`) |
+| [VoID](https://www.w3.org/TR/void/)                                   | Statistical analysis of RDF datasets (`@lde/pipeline-void`)                               |
+| [RDF/JS](https://rdf.js.org/)                                         | Internal data model (N3)                                                                  |
+| [LDES](https://semiceu.github.io/LinkedDataEventStreams/) (EU)        | Event stream consumption and publication (planned)                                        |
 
 ## Quick example
 
@@ -86,6 +86,11 @@ await pipeline.run();
   <td><a href="packages/pipeline">@lde/pipeline</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/pipeline"><img src="https://img.shields.io/npm/v/@lde/pipeline" alt="npm"></a></td>
   <td>Build pipelines that query, transform and enrich Linked Data</td>
+</tr>
+<tr>
+  <td><a href="packages/pipeline-shacl-validator">@lde/pipeline-shacl-validator</a></td>
+  <td><a href="https://www.npmjs.com/package/@lde/pipeline-shacl-validator"><img src="https://img.shields.io/npm/v/@lde/pipeline-shacl-validator" alt="npm"></a></td>
+  <td>SHACL validation for pipeline stages</td>
 </tr>
 <tr>
   <td><a href="packages/pipeline-void">@lde/pipeline-void</a></td>
@@ -175,6 +180,7 @@ graph TD
     pipeline --> dataset-registry-client
     pipeline --> sparql-server
     pipeline --> sparql-importer
+    pipeline-shacl-validator --> pipeline
     pipeline-void --> pipeline
     distribution-downloader --> dataset
     sparql-importer --> dataset
