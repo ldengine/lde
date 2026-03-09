@@ -1,7 +1,7 @@
-import { readFile, mkdir, appendFile, writeFile } from 'node:fs/promises';
+import { mkdir, appendFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Quad } from '@rdfjs/types';
-import { Parser, Writer } from 'n3';
+import { Writer } from 'n3';
 import type { Dataset } from '@lde/dataset';
 import type {
   Validator,
@@ -9,14 +9,15 @@ import type {
   ValidationReport,
 } from '@lde/pipeline';
 // @ts-expect-error -- shacl-engine has no type declarations.
-import ShaclValidator from 'shacl-engine/Validator.js';
+import ShaclEngine from 'shacl-engine/Validator.js';
 // @ts-expect-error -- rdf-ext has no type declarations.
 import rdf from 'rdf-ext';
+import { rdfDereferencer } from 'rdf-dereference';
 import filenamifyUrl from 'filenamify-url';
 
 /** Options for {@link ShaclValidator}. */
 export interface ShaclValidatorOptions {
-  /** Path to a Turtle file containing SHACL shapes. */
+  /** Path to an RDF file containing SHACL shapes (any format supported by rdf-dereference). */
   shapesFile: string;
   /** Directory for validation report files. */
   reportDir: string;
@@ -31,10 +32,11 @@ interface DatasetAccumulator {
 /**
  * SHACL-based {@link Validator} for `@lde/pipeline`.
  *
- * Validates quads against shapes loaded from a Turtle file and writes
- * per-executor report files in SHACL validation report format.
+ * Validates quads against shapes loaded from an RDF file (any format
+ * supported by rdf-dereference) and writes per-dataset report files
+ * in SHACL validation report format.
  */
-export class ShaclPipelineValidator implements Validator {
+export class ShaclValidator implements Validator {
   private readonly shapesFile: string;
   private readonly reportDir: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,11 +48,7 @@ export class ShaclPipelineValidator implements Validator {
     this.reportDir = options.reportDir;
   }
 
-  async validate(
-    quads: Quad[],
-    dataset: Dataset,
-    context: { executor: string },
-  ): Promise<ValidationResult> {
+  async validate(quads: Quad[], dataset: Dataset): Promise<ValidationResult> {
     if (quads.length === 0) {
       return { conforms: true, violations: 0 };
     }
@@ -58,7 +56,7 @@ export class ShaclPipelineValidator implements Validator {
     const shapes = await this.loadShapes();
     const dataDataset = rdf.dataset(quads);
 
-    const validator = new ShaclValidator(shapes, { factory: rdf });
+    const validator = new ShaclEngine(shapes, { factory: rdf });
     const report = await validator.validate({ dataset: dataDataset });
 
     const violations = report.results.length;
@@ -78,7 +76,8 @@ export class ShaclPipelineValidator implements Validator {
 
     // Write violations to report file.
     if (violations > 0) {
-      await this.writeReportFile(dataset, context.executor, report);
+      const reportFile = await this.writeReportFile(dataset, report);
+      return { conforms, violations, message: `See ${reportFile}` };
     }
 
     return { conforms, violations };
@@ -101,24 +100,26 @@ export class ShaclPipelineValidator implements Validator {
   private async loadShapes(): Promise<any> {
     if (this.shapesDataset) return this.shapesDataset;
 
-    const content = await readFile(this.shapesFile, 'utf-8');
-    const parser = new Parser();
-    const quads = parser.parse(content);
-    this.shapesDataset = rdf.dataset(quads);
+    const { data } = await rdfDereferencer.dereference(this.shapesFile, {
+      localFiles: true,
+    });
+    const dataset = rdf.dataset();
+    for await (const quad of data) {
+      dataset.add(quad);
+    }
+    this.shapesDataset = dataset;
     return this.shapesDataset;
   }
 
   private async writeReportFile(
     dataset: Dataset,
-    executor: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     report: any,
-  ): Promise<void> {
-    const datasetName = filenamifyUrl(dataset.iri.toString());
-    const dir = join(this.reportDir, datasetName);
-    await mkdir(dir, { recursive: true });
+  ): Promise<string> {
+    await mkdir(this.reportDir, { recursive: true });
 
-    const filePath = join(dir, `${executor}.validation.ttl`);
+    const datasetName = filenamifyUrl(dataset.iri.toString());
+    const filePath = join(this.reportDir, `${datasetName}.validation.ttl`);
 
     // Serialize the SHACL report dataset to Turtle.
     const reportQuads: Quad[] = [...report.dataset];
@@ -143,5 +144,7 @@ export class ShaclPipelineValidator implements Validator {
     } catch {
       await writeFile(filePath, turtle);
     }
+
+    return filePath;
   }
 }

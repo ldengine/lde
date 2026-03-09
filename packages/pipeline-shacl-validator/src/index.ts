@@ -4,6 +4,6 @@ export type {
   ValidationResult,
 } from '@lde/pipeline';
 export {
-  ShaclPipelineValidator,
+  ShaclValidator,
   type ShaclValidatorOptions,
 } from './shacl-validator.js';

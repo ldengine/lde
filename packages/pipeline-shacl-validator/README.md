@@ -3,15 +3,16 @@
 SHACL validation for [`@lde/pipeline`](../pipeline).
 
 Validates RDF quads produced by pipeline stages against [SHACL shapes](https://www.w3.org/TR/shacl/),
-writing per-executor report files in SHACL validation report format.
+writing per-dataset report files in SHACL validation report format.
+Shapes can be provided in any RDF serialization (Turtle, JSON-LD, N-Triples etc.).
 
 ## Usage
 
 ```typescript
 import { Pipeline, Stage, SparqlConstructExecutor } from '@lde/pipeline';
-import { ShaclPipelineValidator } from '@lde/pipeline-shacl-validator';
+import { ShaclValidator } from '@lde/pipeline-shacl-validator';
 
-const validator = new ShaclPipelineValidator({
+const validator = new ShaclValidator({
   shapesFile: './shapes.ttl',
   reportDir: './validation',
 });
@@ -38,13 +39,13 @@ await pipeline.run();
 | Value     | Behaviour                                                        |
 | --------- | ---------------------------------------------------------------- |
 | `'write'` | Write quads to the output even if validation fails **(default)** |
-| `'skip'`  | Discard the batch silently                                       |
+| `'skip'`  | Discard invalid quads silently                                   |
 | `'halt'`  | Throw an error, stopping the pipeline                            |
 
 ### Report files
 
-Validation violations are written to `<reportDir>/<dataset-name>/<executor-name>.validation.ttl`
-as SHACL validation report triples. This lets you trace violations back to specific CONSTRUCT queries.
+Validation violations are written to `<reportDir>/<dataset-iri>.validation.ttl`
+as SHACL validation report triples.
 
 ## Development
 

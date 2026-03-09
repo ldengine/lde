@@ -665,40 +665,27 @@ describe('Stage', () => {
       );
     });
 
-    it('passes executor name to validator', async () => {
+    it('validates combined output of multiple executors', async () => {
       const validator = conformingValidator();
-      const executor: Executor = {
-        name: 'my-query',
-        async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
-          return (async function* () {
-            yield q1;
-          })();
-        },
-      };
-
       const stage = new Stage({
         name: 'test',
-        executors: executor,
-        itemSelector: mockItemSelector([
-          { class: namedNode('http://example.org/A') },
-        ]),
+        executors: [mockExecutor([q1]), mockExecutor([q2])],
         validation: { validator },
       });
 
       const writer = collectingWriter();
       await stage.run(dataset, distribution, writer);
 
-      expect(validator.validate).toHaveBeenCalledWith([q1], dataset, {
-        executor: 'my-query',
-      });
+      expect(validator.validate).toHaveBeenCalledOnce();
+      expect(validator.validate).toHaveBeenCalledWith([q1, q2], dataset);
+      expect(writer.quads).toEqual([q1, q2]);
     });
 
-    it('uses executor index as fallback name', async () => {
+    it('validates combined output of multiple executors (with selector)', async () => {
       const validator = conformingValidator();
-
       const stage = new Stage({
         name: 'test',
-        executors: mockExecutor([q1]),
+        executors: [mockExecutor([q1]), mockExecutor([q2])],
         itemSelector: mockItemSelector([
           { class: namedNode('http://example.org/A') },
         ]),
@@ -708,9 +695,9 @@ describe('Stage', () => {
       const writer = collectingWriter();
       await stage.run(dataset, distribution, writer);
 
-      expect(validator.validate).toHaveBeenCalledWith([q1], dataset, {
-        executor: 'executor-0',
-      });
+      expect(validator.validate).toHaveBeenCalledOnce();
+      expect(validator.validate).toHaveBeenCalledWith([q1, q2], dataset);
+      expect(writer.quads).toEqual([q1, q2]);
     });
   });
 });

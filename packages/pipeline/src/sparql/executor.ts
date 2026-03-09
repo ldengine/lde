@@ -28,8 +28,6 @@ export interface ExecuteOptions {
 }
 
 export interface Executor {
-  /** Human-readable name, used for validation report file names. */
-  readonly name?: string;
   execute(
     dataset: Dataset,
     distribution: Distribution,

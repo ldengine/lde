@@ -133,13 +133,13 @@ This keeps SPARQL doing the heavy lifting while TypeScript handles the edge case
 Stages can optionally validate their output quads against a `Validator`. Validation is per executor batch — quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
 
 ```typescript
-import { ShaclPipelineValidator } from '@lde/pipeline-shacl-validator';
+import { ShaclValidator } from '@lde/pipeline-shacl-validator';
 
 new Stage({
   name: 'transform',
   executors: await SparqlConstructExecutor.fromFile('transform.rq'),
   validation: {
-    validator: new ShaclPipelineValidator({
+    validator: new ShaclValidator({
       shapesFile: './shapes.ttl',
       reportDir: './validation',
     }),
