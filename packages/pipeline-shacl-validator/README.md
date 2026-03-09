@@ -46,10 +46,3 @@ await pipeline.run();
 
 Validation violations are written to `<reportDir>/<dataset-iri>.validation.ttl`
 as SHACL validation report triples.
-
-## Development
-
-```sh
-npx nx test pipeline-shacl-validator
-npx nx build pipeline-shacl-validator
-```
