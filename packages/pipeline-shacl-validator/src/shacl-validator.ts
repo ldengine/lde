@@ -53,7 +53,7 @@ export class ShaclValidator implements Validator {
       return { conforms: true, violations: 0 };
     }
 
-    const shapes = await this.loadShapes();
+    const shapes = await this.getShapes();
     const dataDataset = rdf.dataset(quads);
 
     const validator = new ShaclEngine(shapes, { factory: rdf });
@@ -97,7 +97,7 @@ export class ShaclValidator implements Validator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async loadShapes(): Promise<any> {
+  private async getShapes(): Promise<any> {
     if (this.shapesDataset) return this.shapesDataset;
 
     const { data } = await rdfDereferencer.dereference(this.shapesFile, {
