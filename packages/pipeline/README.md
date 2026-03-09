@@ -130,7 +130,7 @@ This keeps SPARQL doing the heavy lifting while TypeScript handles the edge case
 
 ### Validation
 
-Stages can optionally validate their output quads against a `Validator`. Validation is per executor batch — quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
+Stages can optionally validate their output quads against a `Validator`. Validation operates on the combined output of all executors per batch, so shapes that span multiple executors' output are validated correctly. Quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
 
 ```typescript
 import { ShaclValidator } from '@lde/pipeline-shacl-validator';

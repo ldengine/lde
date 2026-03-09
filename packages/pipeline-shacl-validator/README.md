@@ -44,5 +44,14 @@ await pipeline.run();
 
 ### Report files
 
-Validation violations are written to `<reportDir>/<dataset-iri>.validation.ttl`
-as SHACL validation report triples.
+Validation violations are written to `<reportDir>/<dataset-iri>.validation.<ext>`
+as SHACL validation report triples. The output format defaults to Turtle (`.ttl`)
+and can be changed with the `reportFormat` option:
+
+```typescript
+const validator = new ShaclValidator({
+  shapesFile: './shapes.ttl',
+  reportDir: './validation',
+  reportFormat: 'N-Triples', // 'Turtle' (default) | 'N-Triples' | 'N-Quads'
+});
+```

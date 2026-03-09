@@ -1,13 +1,14 @@
 import { mkdir, appendFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Quad } from '@rdfjs/types';
-import { Writer } from 'n3';
 import type { Dataset } from '@lde/dataset';
+
 import type {
   Validator,
   ValidationResult,
   ValidationReport,
 } from '@lde/pipeline';
+import { serializeQuads, type SerializationFormat } from '@lde/pipeline';
 // @ts-expect-error -- shacl-engine has no type declarations.
 import ShaclEngine from 'shacl-engine/Validator.js';
 // @ts-expect-error -- rdf-ext has no type declarations.
@@ -15,12 +16,21 @@ import rdf from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
 import filenamifyUrl from 'filenamify-url';
 
+/** File extension per serialization format. */
+const formatExtensions: Record<SerializationFormat, string> = {
+  Turtle: '.ttl',
+  'N-Triples': '.nt',
+  'N-Quads': '.nq',
+};
+
 /** Options for {@link ShaclValidator}. */
 export interface ShaclValidatorOptions {
   /** Path to an RDF file containing SHACL shapes (any format supported by rdf-dereference). */
   shapesFile: string;
   /** Directory for validation report files. */
   reportDir: string;
+  /** Serialization format for report files. @default 'Turtle' */
+  reportFormat?: SerializationFormat;
 }
 
 interface DatasetAccumulator {
@@ -39,6 +49,7 @@ interface DatasetAccumulator {
 export class ShaclValidator implements Validator {
   private readonly shapesFile: string;
   private readonly reportDir: string;
+  private readonly reportFormat: SerializationFormat;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private shapesDataset: any | undefined;
   private readonly accumulators = new Map<string, DatasetAccumulator>();
@@ -46,6 +57,7 @@ export class ShaclValidator implements Validator {
   constructor(options: ShaclValidatorOptions) {
     this.shapesFile = options.shapesFile;
     this.reportDir = options.reportDir;
+    this.reportFormat = options.reportFormat ?? 'Turtle';
   }
 
   async validate(quads: Quad[], dataset: Dataset): Promise<ValidationResult> {
@@ -98,16 +110,12 @@ export class ShaclValidator implements Validator {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getShapes(): Promise<any> {
-    if (this.shapesDataset) return this.shapesDataset;
-
-    const { data } = await rdfDereferencer.dereference(this.shapesFile, {
-      localFiles: true,
-    });
-    const dataset = rdf.dataset();
-    for await (const quad of data) {
-      dataset.add(quad);
+    if (!this.shapesDataset) {
+      const { data } = await rdfDereferencer.dereference(this.shapesFile, {
+        localFiles: true,
+      });
+      this.shapesDataset = await rdf.dataset().import(data);
     }
-    this.shapesDataset = dataset;
     return this.shapesDataset;
   }
 
@@ -119,30 +127,20 @@ export class ShaclValidator implements Validator {
     await mkdir(this.reportDir, { recursive: true });
 
     const datasetName = filenamifyUrl(dataset.iri.toString());
-    const filePath = join(this.reportDir, `${datasetName}.validation.ttl`);
+    const extension = formatExtensions[this.reportFormat];
+    const filePath = join(
+      this.reportDir,
+      `${datasetName}.validation${extension}`,
+    );
 
-    // Serialize the SHACL report dataset to Turtle.
     const reportQuads: Quad[] = [...report.dataset];
-    const turtle = await new Promise<string>((resolve, reject) => {
-      const writer = new Writer({
-        prefixes: {
-          sh: 'http://www.w3.org/ns/shacl#',
-        },
-      });
-      for (const quad of reportQuads) {
-        writer.addQuad(quad);
-      }
-      writer.end((error: Error | null, result: string) => {
-        if (error) reject(error);
-        else resolve(result);
-      });
-    });
+    const serialized = await serializeQuads(reportQuads, this.reportFormat);
 
-    // Check if file exists; if so, append. Otherwise, create.
+    // Append to existing file or create a new one.
     try {
-      await appendFile(filePath, '\n' + turtle);
+      await appendFile(filePath, '\n' + serialized);
     } catch {
-      await writeFile(filePath, turtle);
+      await writeFile(filePath, serialized);
     }
 
     return filePath;
