@@ -1,10 +1,10 @@
 {
-  "name": "@lde/pipeline-console-reporter",
-  "version": "0.8.0",
-  "description": "Console progress reporter for @lde/pipeline",
+  "name": "@lde/pipeline-shacl-validator",
+  "version": "0.1.0",
+  "description": "SHACL validation for @lde/pipeline",
   "repository": {
     "url": "git+https://github.com/ldelements/lde.git",
-    "directory": "packages/pipeline-console-reporter"
+    "directory": "packages/pipeline-shacl-validator"
   },
   "type": "module",
   "exports": {
@@ -24,10 +24,15 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "chalk": "^5.4.1",
-    "ora": "^9.3.0",
-    "pretty-ms": "^9.3.0",
+    "@rdfjs/types": "^2.0.1",
+    "filenamify-url": "^4.0.0",
+    "rdf-dereference": "^5.0.0",
+    "rdf-ext": "^2.5.2",
+    "shacl-engine": "^1.1.0",
     "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "n3": "^2.0.1"
   },
   "peerDependencies": {
     "@lde/dataset": "0.7.1",

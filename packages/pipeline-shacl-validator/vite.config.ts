@@ -5,16 +5,15 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/pipeline',
+    cacheDir: '../../node_modules/.vite/packages/pipeline-shacl-validator',
     test: {
-      fileParallelism: false,
       coverage: {
         thresholds: {
           autoUpdate: true,
-          functions: 92.03,
-          lines: 94.55,
-          branches: 89.25,
-          statements: 93.84,
+          functions: 100,
+          lines: 97.61,
+          branches: 100,
+          statements: 97.67,
         },
       },
     },

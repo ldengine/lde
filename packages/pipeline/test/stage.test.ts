@@ -7,6 +7,11 @@ import type { Executor, ExecuteOptions } from '../src/sparql/executor.js';
 import { NotSupported } from '../src/sparql/executor.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import type { Writer } from '../src/writer/writer.js';
+import type {
+  Validator,
+  ValidationResult,
+  ValidationReport,
+} from '../src/validator.js';
 
 const { namedNode, quad } = DataFactory;
 
@@ -516,6 +521,168 @@ describe('Stage', () => {
       const result = await stage.run(dataset, distribution, writer);
       expect(result).toBeInstanceOf(NotSupported);
       expect(writer.quads).toEqual([]);
+    });
+  });
+
+  describe('validation', () => {
+    function mockValidator(
+      options: { conforms: boolean; violations?: number } = { conforms: true },
+    ): Validator {
+      const violations = options.violations ?? (options.conforms ? 0 : 1);
+      return {
+        validate: vi.fn(
+          async (): Promise<ValidationResult> => ({
+            conforms: options.conforms,
+            violations,
+          }),
+        ),
+        report: vi.fn(
+          async (): Promise<ValidationReport> => ({
+            conforms: options.conforms,
+            violations,
+            quadsValidated: 0,
+          }),
+        ),
+      };
+    }
+
+    it('writes quads when validation conforms (no selector)', async () => {
+      const validator = mockValidator({ conforms: true });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1, q2]);
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
+    it('writes quads when validation conforms (with selector)', async () => {
+      const validator = mockValidator({ conforms: true });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1]);
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
+    it('writes quads when validation fails with onInvalid "write" (default)', async () => {
+      const validator = mockValidator({ conforms: false });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([q1, q2]);
+    });
+
+    it('skips quads when validation fails with onInvalid "skip" (no selector)', async () => {
+      const validator = mockValidator({ conforms: false });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator, onInvalid: 'skip' },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([]);
+    });
+
+    it('skips quads when validation fails with onInvalid "skip" (with selector)', async () => {
+      const validator = mockValidator({ conforms: false });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator, onInvalid: 'skip' },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+      expect(writer.quads).toEqual([]);
+    });
+
+    it('throws when validation fails with onInvalid "halt" (no selector)', async () => {
+      const validator = mockValidator({ conforms: false, violations: 3 });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        validation: { validator, onInvalid: 'halt' },
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'Validation failed: 3 violation(s)',
+      );
+    });
+
+    it('throws when validation fails with onInvalid "halt" (with selector)', async () => {
+      const validator = mockValidator({ conforms: false, violations: 2 });
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator, onInvalid: 'halt' },
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'Validation failed: 2 violation(s)',
+      );
+    });
+
+    it('validates combined output of multiple executors', async () => {
+      const validator = mockValidator({ conforms: true });
+      const stage = new Stage({
+        name: 'test',
+        executors: [mockExecutor([q1]), mockExecutor([q2])],
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(validator.validate).toHaveBeenCalledOnce();
+      expect(validator.validate).toHaveBeenCalledWith([q1, q2], dataset);
+      expect(writer.quads).toEqual([q1, q2]);
+    });
+
+    it('validates combined output of multiple executors (with selector)', async () => {
+      const validator = mockValidator({ conforms: true });
+      const stage = new Stage({
+        name: 'test',
+        executors: [mockExecutor([q1]), mockExecutor([q2])],
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      expect(validator.validate).toHaveBeenCalledOnce();
+      expect(validator.validate).toHaveBeenCalledWith([q1, q2], dataset);
+      expect(writer.quads).toEqual([q1, q2]);
     });
   });
 });

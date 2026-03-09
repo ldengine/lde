@@ -52,6 +52,9 @@
     },
     {
       "path": "./packages/pipeline-void"
+    },
+    {
+      "path": "./packages/pipeline-shacl-validator"
     }
   ]
 }

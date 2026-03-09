@@ -187,18 +187,23 @@ export class Pipeline {
     this.reporter?.datasetComplete?.(dataset);
   }
 
+  /**
+   * Run a stage with reporting and return whether it was supported.
+   * Returns `true` if the stage produced results, `false` if NotSupported.
+   */
   private async runStage(
     dataset: Dataset,
     distribution: Distribution,
     stage: Stage,
-  ): Promise<void> {
+    writer: Writer = this.writer,
+  ): Promise<boolean> {
     this.reporter?.stageStart?.(stage.name);
     const stageStart = Date.now();
 
     let itemsProcessed = 0;
     let quadsGenerated = 0;
 
-    const result = await stage.run(dataset, distribution, this.writer, {
+    const result = await stage.run(dataset, distribution, writer, {
       onProgress: (items, quads) => {
         itemsProcessed = items;
         quadsGenerated = quads;
@@ -208,12 +213,35 @@ export class Pipeline {
 
     if (result instanceof NotSupported) {
       this.reporter?.stageSkipped?.(stage.name, result.message);
-    } else {
-      this.reporter?.stageComplete?.(stage.name, {
-        itemsProcessed,
-        quadsGenerated,
-        duration: Date.now() - stageStart,
-      });
+      return false;
+    }
+
+    this.reporter?.stageComplete?.(stage.name, {
+      itemsProcessed,
+      quadsGenerated,
+      duration: Date.now() - stageStart,
+    });
+
+    if (stage.validator) {
+      const report = await stage.validator.report(dataset);
+      this.reporter?.stageValidated?.(stage.name, report);
+    }
+
+    return true;
+  }
+
+  /** Run a stage in chained mode, throwing if the stage is not supported. */
+  private async runChainedStage(
+    dataset: Dataset,
+    distribution: Distribution,
+    stage: Stage,
+    writer: Writer,
+  ): Promise<void> {
+    const supported = await this.runStage(dataset, distribution, stage, writer);
+    if (!supported) {
+      throw new Error(
+        `Stage '${stage.name}' returned NotSupported in chained mode`,
+      );
     }
   }
 
@@ -266,40 +294,6 @@ export class Pipeline {
     } finally {
       await stageOutputResolver.cleanup();
     }
-  }
-
-  private async runChainedStage(
-    dataset: Dataset,
-    distribution: Distribution,
-    stage: Stage,
-    stageWriter: FileWriter,
-  ): Promise<void> {
-    this.reporter?.stageStart?.(stage.name);
-    const stageStart = Date.now();
-
-    let itemsProcessed = 0;
-    let quadsGenerated = 0;
-
-    const result = await stage.run(dataset, distribution, stageWriter, {
-      onProgress: (items, quads) => {
-        itemsProcessed = items;
-        quadsGenerated = quads;
-        this.reporter?.stageProgress?.({ itemsProcessed, quadsGenerated });
-      },
-    });
-
-    if (result instanceof NotSupported) {
-      this.reporter?.stageSkipped?.(stage.name, result.message);
-      throw new Error(
-        `Stage '${stage.name}' returned NotSupported in chained mode`,
-      );
-    }
-
-    this.reporter?.stageComplete?.(stage.name, {
-      itemsProcessed,
-      quadsGenerated,
-      duration: Date.now() - stageStart,
-    });
   }
 
   private async *readFiles(paths: string[]): AsyncIterable<Quad> {

@@ -3,6 +3,7 @@ import type { Quad } from '@rdfjs/types';
 import type { Executor, VariableBindings } from './sparql/executor.js';
 import { NotSupported } from './sparql/executor.js';
 import { batch } from './batch.js';
+import type { Validator } from './validator.js';
 import type { Writer } from './writer/writer.js';
 import { AsyncQueue } from './asyncQueue.js';
 
@@ -22,6 +23,12 @@ export interface StageOptions {
   maxConcurrency?: number;
   /** Child stages that chain off this stage's output. */
   stages?: Stage[];
+  /** Optional validation of the combined quads produced by all executors per batch. */
+  validation?: {
+    validator: Validator;
+    /** What to do when a batch fails validation. @default 'write' */
+    onInvalid?: 'write' | 'skip' | 'halt';
+  };
 }
 
 export interface RunOptions {
@@ -35,6 +42,7 @@ export class Stage {
   private readonly itemSelector?: ItemSelector;
   private readonly batchSize: number;
   private readonly maxConcurrency: number;
+  private readonly validation?: StageOptions['validation'];
 
   constructor(options: StageOptions) {
     this.name = options.name;
@@ -45,6 +53,12 @@ export class Stage {
     this.itemSelector = options.itemSelector;
     this.batchSize = options.batchSize ?? 10;
     this.maxConcurrency = options.maxConcurrency ?? 10;
+    this.validation = options.validation;
+  }
+
+  /** The validator for this stage, if configured. */
+  get validator(): Validator | undefined {
+    return this.validation?.validator;
   }
 
   async run(
@@ -68,7 +82,25 @@ export class Stage {
       return streams;
     }
 
-    await writer.write(dataset, mergeStreams(streams));
+    if (this.validation) {
+      const buffer: Quad[] = [];
+      for (const stream of streams) {
+        for await (const quad of stream) {
+          buffer.push(quad);
+        }
+      }
+      const accepted = await this.validateBuffer(buffer, dataset);
+      if (accepted.length > 0) {
+        await writer.write(
+          dataset,
+          (async function* () {
+            yield* accepted;
+          })(),
+        );
+      }
+    } else {
+      await writer.write(dataset, mergeStreams(streams));
+    }
   }
 
   private async runWithSelector(
@@ -124,32 +156,40 @@ export class Stage {
         for await (const bindings of allBatches) {
           if (firstError) break;
 
-          for (const executor of this.executors) {
+          // Respect maxConcurrency: wait for a slot to open.
+          if (inFlight.size >= this.maxConcurrency) {
+            await Promise.race(inFlight);
             if (firstError) break;
+          }
 
-            // Respect maxConcurrency: wait for a slot to open.
-            if (inFlight.size >= this.maxConcurrency) {
-              await Promise.race(inFlight);
-              if (firstError) break;
-            }
-
-            track(
-              (async () => {
+          track(
+            (async () => {
+              const batchQuads: Quad[] = [];
+              for (const executor of this.executors) {
                 const result = await executor.execute(dataset, distribution, {
                   bindings,
                 });
                 if (!(result instanceof NotSupported)) {
                   hasResults = true;
                   for await (const quad of result) {
-                    await queue.push(quad);
-                    quadsGenerated++;
+                    batchQuads.push(quad);
                   }
                 }
-                itemsProcessed += bindings.length;
-                options?.onProgress?.(itemsProcessed, quadsGenerated);
-              })(),
-            );
-          }
+              }
+
+              let accepted = batchQuads;
+              if (this.validation && batchQuads.length > 0) {
+                accepted = await this.validateBuffer(batchQuads, dataset);
+              }
+
+              for (const quad of accepted) {
+                await queue.push(quad);
+                quadsGenerated++;
+              }
+              itemsProcessed += bindings.length;
+              options?.onProgress?.(itemsProcessed, quadsGenerated);
+            })(),
+          );
         }
       } catch (err) {
         firstError ??= err;
@@ -180,6 +220,31 @@ export class Stage {
     if (!hasResults) {
       return new NotSupported('All executors returned NotSupported');
     }
+  }
+
+  /**
+   * Validate a buffer of quads. Throws on halt, returns the quads to write
+   * (empty array when skipping invalid batches).
+   */
+  private async validateBuffer(
+    buffer: Quad[],
+    dataset: Dataset,
+  ): Promise<Quad[]> {
+    const validationResult = await this.validation!.validator.validate(
+      buffer,
+      dataset,
+    );
+    const onInvalid = this.validation!.onInvalid ?? 'write';
+    if (!validationResult.conforms && onInvalid === 'halt') {
+      throw new Error(
+        `Validation failed: ${validationResult.violations} violation(s)${validationResult.message ? `. ${validationResult.message}` : ''}`,
+      );
+    }
+    if (validationResult.conforms || onInvalid === 'write') {
+      return buffer;
+    }
+    // 'skip': discard
+    return [];
   }
 
   private async executeAll(
