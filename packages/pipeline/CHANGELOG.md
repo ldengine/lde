@@ -1,3 +1,13 @@
+## 0.20.0 (2026-03-09)
+
+### 🚀 Features
+
+- **pipeline:** add SHACL validation as a stage option ([#218](https://github.com/ldelements/lde/pull/218))
+
+### ❤️ Thank You
+
+- David de Boer
+
 ## 0.19.0 (2026-03-08)
 
 ### 🚀 Features
