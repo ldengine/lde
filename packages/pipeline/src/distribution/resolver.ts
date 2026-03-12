@@ -25,6 +25,8 @@ export class NoDistributionAvailable {
 export interface ResolveCallbacks {
   /** Called each time a single distribution probe completes. */
   onProbe?: (distribution: Distribution, result: ProbeResultType) => void;
+  /** Called when a data-dump import begins. */
+  onImportStart?: () => void;
   /** Called when importing a distribution fails. */
   onImportFailed?: (distribution: Distribution, error: string) => void;
 }

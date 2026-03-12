@@ -66,6 +66,7 @@ export class ImportResolver implements DistributionResolver {
     callbacks?: ResolveCallbacks,
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const importStart = Date.now();
+    callbacks?.onImportStart?.();
     const importResult = await this.options.importer.import(dataset);
 
     if (importResult instanceof ImportSuccessful) {
