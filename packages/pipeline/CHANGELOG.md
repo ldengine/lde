@@ -1,3 +1,13 @@
+## 0.21.0 (2026-03-12)
+
+### 🚀 Features
+
+- **pipeline:** add "Importing…" spinner with elapsed time ([#220](https://github.com/ldelements/lde/pull/220))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.20.0 (2026-03-09)
 
 ### 🚀 Features
