@@ -81,6 +81,7 @@ function makeReporter(): RequiredReporter {
     datasetStart: vi.fn<NonNullable<ProgressReporter['datasetStart']>>(),
     distributionProbed:
       vi.fn<NonNullable<ProgressReporter['distributionProbed']>>(),
+    importStarted: vi.fn<NonNullable<ProgressReporter['importStarted']>>(),
     importFailed: vi.fn<NonNullable<ProgressReporter['importFailed']>>(),
     distributionSelected:
       vi.fn<NonNullable<ProgressReporter['distributionSelected']>>(),
@@ -657,6 +658,45 @@ describe('Pipeline', () => {
         importedFromDistribution,
         1000,
         42000,
+      );
+    });
+
+    it('calls importStarted before distributionSelected when a data dump is imported', async () => {
+      const reporter = makeReporter();
+      const importedFromDistribution = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples',
+      );
+      const resolved = new ResolvedDistribution(
+        sparqlDistribution,
+        [],
+        importedFromDistribution,
+        1000,
+        42000,
+      );
+
+      const resolver: DistributionResolver = {
+        resolve: vi.fn(
+          async (_dataset: Dataset, callbacks?: ResolveCallbacks) => {
+            callbacks?.onImportStart?.();
+            return resolved;
+          },
+        ),
+      };
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [makeStage('stage1')],
+        writers: writer,
+        distributionResolver: resolver,
+        reporter,
+      });
+
+      await pipeline.run();
+
+      expect(reporter.importStarted).toHaveBeenCalledTimes(1);
+      expect(reporter.importStarted.mock.invocationCallOrder[0]).toBeLessThan(
+        reporter.distributionSelected.mock.invocationCallOrder[0],
       );
     });
 

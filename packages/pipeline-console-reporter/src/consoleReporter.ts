@@ -18,6 +18,8 @@ export class ConsoleReporter implements ProgressReporter {
   private datasetStartTime = 0;
   private datasetTotal = 0;
   private datasetIndex = 0;
+  private importSpinner?: Ora;
+  private importTimer?: ReturnType<typeof setInterval>;
 
   pipelineStart(_name: string): void {
     this.stageSpinner = ora({
@@ -74,10 +76,25 @@ export class ConsoleReporter implements ProgressReporter {
     }
   }
 
+  importStarted(): void {
+    const importStart = Date.now();
+    this.importSpinner = ora({ discardStdin: false }).start('Importing\u2026');
+    this.importTimer = setInterval(() => {
+      if (this.importSpinner) {
+        this.importSpinner.suffixText = prettyMilliseconds(
+          Date.now() - importStart,
+        );
+      }
+    }, 1_000);
+  }
+
   importFailed(_distribution: Distribution, error: string): void {
-    const s = ora({ discardStdin: false });
-    s.start(`Import failed: ${error}`);
-    s.fail();
+    const spinner = this.importSpinner ?? ora({ discardStdin: false });
+    if (!this.importSpinner) spinner.start();
+    spinner.text = `Import failed: ${error}`;
+    spinner.suffixText = '';
+    spinner.fail();
+    this.clearImportSpinner();
   }
 
   distributionSelected(
@@ -87,8 +104,9 @@ export class ConsoleReporter implements ProgressReporter {
     importDuration?: number,
     tripleCount?: number,
   ): void {
-    const s = ora({ discardStdin: false });
     if (importedFrom) {
+      const spinner =
+        this.importSpinner ?? ora({ discardStdin: false }).start();
       const count =
         tripleCount !== undefined
           ? `${compactNumber.format(tripleCount)} triples, `
@@ -97,15 +115,25 @@ export class ConsoleReporter implements ProgressReporter {
         importDuration !== undefined
           ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
           : '';
-      s.start(
-        `Imported ${importedFrom.accessUrl.toString()} (${count}to ${distribution.accessUrl.toString()})${duration}`,
-      );
+      spinner.text = `Imported ${importedFrom.accessUrl.toString()} (${count}to ${distribution.accessUrl.toString()})${duration}`;
+      spinner.suffixText = '';
+      spinner.succeed();
+      this.clearImportSpinner();
     } else {
+      const s = ora({ discardStdin: false });
       s.start(
         `${distribution.accessUrl.toString()} ${chalk.dim('(selected)')}`,
       );
+      s.succeed();
     }
-    s.succeed();
+  }
+
+  private clearImportSpinner(): void {
+    if (this.importTimer) {
+      clearInterval(this.importTimer);
+      this.importTimer = undefined;
+    }
+    this.importSpinner = undefined;
   }
 
   stageStart(stage: string): void {
