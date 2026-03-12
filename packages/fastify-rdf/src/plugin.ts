@@ -162,7 +162,11 @@ async function fastifyRdfPlugin(
   options: FastifyRdfOptions,
 ): Promise<void> {
   const defaultContentType = options.defaultContentType ?? DEFAULT_CONTENT_TYPE;
-  const supportedContentTypes = await rdfSerializer.getContentTypes();
+  // Exclude SHACLC types: they require a base IRI that we can't provide generically,
+  // and they cause "Base expected" errors during serialization.
+  const supportedContentTypes = (await rdfSerializer.getContentTypes()).filter(
+    (type) => !type.startsWith('text/shaclc'),
+  );
 
   await server.register(fastifyAccepts);
 
