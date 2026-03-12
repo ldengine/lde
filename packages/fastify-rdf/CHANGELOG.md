@@ -1,3 +1,13 @@
+## 0.4.3 (2026-03-12)
+
+### 🩹 Fixes
+
+- **fastify-rdf:** exclude SHACLC types from content negotiation ([#219](https://github.com/ldelements/lde/pull/219))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.2 (2026-03-04)
 
 ### 🩹 Fixes
