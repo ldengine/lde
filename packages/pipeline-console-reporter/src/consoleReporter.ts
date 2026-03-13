@@ -2,6 +2,7 @@ import type { Dataset, Distribution } from '@lde/dataset';
 import type {
   DistributionAnalysisResult,
   ProgressReporter,
+  ValidationReport,
 } from '@lde/pipeline';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
@@ -178,6 +179,19 @@ export class ConsoleReporter implements ProgressReporter {
       this.stageSpinner.suffixText = chalk.red(error.message);
       this.stageSpinner.fail();
       this.stageSpinner = undefined;
+    }
+  }
+
+  stageValidated(_stage: string, report: ValidationReport): void {
+    const s = ora({ discardStdin: false });
+    if (report.conforms) {
+      s.start(`Validated ${compactNumber.format(report.quadsValidated)} quads`);
+      s.succeed();
+    } else {
+      s.start(
+        `Validated ${compactNumber.format(report.quadsValidated)} quads: ${chalk.red(`${compactNumber.format(report.violations)} violation(s)`)}`,
+      );
+      s.fail();
     }
   }
 
