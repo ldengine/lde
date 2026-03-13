@@ -1,3 +1,17 @@
+## 0.19.1 (2026-03-13)
+
+### 🩹 Fixes
+
+- **pipeline:** inject VALUES into innermost subquery for per-class queries ([#234](https://github.com/ldelements/lde/pull/234))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.22.1
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.19.0 (2026-03-13)
 
 ### 🧱 Updated Dependencies
