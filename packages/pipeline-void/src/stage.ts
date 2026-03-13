@@ -22,34 +22,51 @@ const queriesDir = resolve(
  * Options for configuring VoID stage execution.
  */
 export interface VoidStageOptions {
-  /** Maximum number of bindings per executor call. @default 10 */
+  /** SPARQL query timeout in milliseconds. @default 60000 */
+  timeout?: number;
+}
+
+/**
+ * Options for per-class VoID stages that iterate over classes.
+ *
+ * `batchSize` and `maxConcurrency` control how class bindings are batched
+ * and processed concurrently — they have no effect on global (non-per-class) stages.
+ */
+export interface PerClassVoidStageOptions extends VoidStageOptions {
+  /** Maximum number of class bindings per executor call. @default 10 */
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
   maxConcurrency?: number;
+  /** When true, iterate queries per class using a class selector. @default true */
+  perClass?: boolean;
 }
 
 /**
  * Options for the {@link voidStages} convenience function.
  */
-export interface VoidStagesOptions extends VoidStageOptions {
+export interface VoidStagesOptions extends PerClassVoidStageOptions {
   /** When provided, includes the object URI space stage using this map. */
   uriSpaces?: ReadonlyMap<string, readonly Quad[]>;
 }
 
 async function createVoidStage(
   filename: string,
-  options?: {
+  options?: VoidStageOptions & {
     executor?: (query: string) => Executor;
-    selection?: 'perClass';
+    perClass?: boolean;
     batchSize?: number;
     maxConcurrency?: number;
   },
 ): Promise<Stage> {
   const query = await readQueryFile(resolve(queriesDir, filename));
   const executor =
-    options?.executor?.(query) ?? new SparqlConstructExecutor({ query });
+    options?.executor?.(query) ??
+    new SparqlConstructExecutor({
+      query,
+      timeout: options?.timeout ?? 60_000,
+    });
 
-  if (options?.selection === 'perClass') {
+  if (options?.perClass) {
     return new Stage({
       name: filename,
       itemSelector: classSelector(),
@@ -61,8 +78,6 @@ async function createVoidStage(
   return new Stage({
     name: filename,
     executors: executor,
-    batchSize: options?.batchSize,
-    maxConcurrency: options?.maxConcurrency,
   });
 }
 
@@ -121,20 +136,20 @@ export function countTriples(options?: VoidStageOptions): Promise<Stage> {
 }
 
 export function classPropertySubjects(
-  options?: VoidStageOptions,
+  options?: PerClassVoidStageOptions,
 ): Promise<Stage> {
   return createVoidStage('class-properties-subjects.rq', {
     ...options,
-    selection: 'perClass',
+    perClass: options?.perClass ?? true,
   });
 }
 
 export function classPropertyObjects(
-  options?: VoidStageOptions,
+  options?: PerClassVoidStageOptions,
 ): Promise<Stage> {
   return createVoidStage('class-properties-objects.rq', {
     ...options,
-    selection: 'perClass',
+    perClass: options?.perClass ?? true,
   });
 }
 
@@ -149,25 +164,29 @@ export function detectLicenses(options?: VoidStageOptions): Promise<Stage> {
 // Per-class stages
 
 export function perClassObjectClasses(
-  options?: VoidStageOptions,
+  options?: PerClassVoidStageOptions,
 ): Promise<Stage> {
   return createVoidStage('class-property-object-classes.rq', {
     ...options,
-    selection: 'perClass',
+    perClass: options?.perClass ?? true,
   });
 }
 
-export function perClassDatatypes(options?: VoidStageOptions): Promise<Stage> {
+export function perClassDatatypes(
+  options?: PerClassVoidStageOptions,
+): Promise<Stage> {
   return createVoidStage('class-property-datatypes.rq', {
     ...options,
-    selection: 'perClass',
+    perClass: options?.perClass ?? true,
   });
 }
 
-export function perClassLanguages(options?: VoidStageOptions): Promise<Stage> {
+export function perClassLanguages(
+  options?: PerClassVoidStageOptions,
+): Promise<Stage> {
   return createVoidStage('class-property-languages.rq', {
     ...options,
-    selection: 'perClass',
+    perClass: options?.perClass ?? true,
   });
 }
 
@@ -180,7 +199,13 @@ export function uriSpaces(
   return createVoidStage('object-uri-space.rq', {
     ...options,
     executor: (query) =>
-      new UriSpaceExecutor(new SparqlConstructExecutor({ query }), uriSpaceMap),
+      new UriSpaceExecutor(
+        new SparqlConstructExecutor({
+          query,
+          timeout: options?.timeout ?? 60_000,
+        }),
+        uriSpaceMap,
+      ),
   });
 }
 
@@ -188,7 +213,12 @@ export function detectVocabularies(options?: VoidStageOptions): Promise<Stage> {
   return createVoidStage('entity-properties.rq', {
     ...options,
     executor: (query) =>
-      new VocabularyExecutor(new SparqlConstructExecutor({ query })),
+      new VocabularyExecutor(
+        new SparqlConstructExecutor({
+          query,
+          timeout: options?.timeout ?? 60_000,
+        }),
+      ),
   });
 }
 
