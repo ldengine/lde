@@ -130,7 +130,11 @@ This keeps SPARQL doing the heavy lifting while TypeScript handles the edge case
 
 ### Validation
 
-Stages can optionally validate their output quads against a `Validator`. Validation operates on the combined output of all executors per batch, so shapes that span multiple executors' output are validated correctly. Quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
+Stages can optionally validate their output quads against a `Validator`. Validation operates on the **combined output of all executors per batch**, not on individual quads or per-executor output. A batch produces a complete result set — a self-contained cluster of linked resources — that can be meaningfully matched against SHACL shapes. Even with a single executor, each batch is a complete unit; with multiple executors, shapes that reference triples from different executors are validated correctly.
+
+Validating individual quads would be meaningless, since a single quad carries no structural context for shape matching. Validating the full pipeline output would also be problematic: because the pipeline streams results in batches, it doesn’t know where resource cluster boundaries fall. Batching the output could split a valid cluster across two batches, causing partial resources to fail validation even though the complete cluster is valid.
+
+Quads are buffered, validated, and then written or discarded based on the `onInvalid` policy. When no validator is configured, quads stream directly with zero overhead.
 
 ```typescript
 import { ShaclValidator } from '@lde/pipeline-shacl-validator';
