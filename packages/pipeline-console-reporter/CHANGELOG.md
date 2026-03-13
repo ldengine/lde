@@ -1,3 +1,13 @@
+## 0.12.1 (2026-03-13)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** eliminate duplicate spinner lines in non-TTY environments ([#232](https://github.com/ldelements/lde/pull/232))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.12.0 (2026-03-13)
 
 ### 🚀 Features
