@@ -31,7 +31,7 @@
     "commander": "^14.0.3",
     "cron": "^4.1.0",
     "drizzle-kit": "1.0.0-beta.16-2ffd1a5",
-    "drizzle-orm": "1.0.0-beta.16-2ffd1a5",
+    "drizzle-orm": "1.0.0-beta.18-dc9676b",
     "fetch-sparql-endpoint": "^7.1.0",
     "postgres": "^3.4.5",
     "tslib": "^2.3.0"
