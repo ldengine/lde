@@ -1,3 +1,13 @@
+## 0.23.0 (2026-03-13)
+
+### 🚀 Features
+
+- **pipeline:** add retry logic, perClass conversion, and tuneable concurrency ([#235](https://github.com/ldelements/lde/pull/235))
+
+### ❤️ Thank You
+
+- David de Boer
+
 ## 0.22.1 (2026-03-13)
 
 ### 🩹 Fixes
