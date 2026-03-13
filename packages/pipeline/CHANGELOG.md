@@ -1,3 +1,13 @@
+## 0.24.0 (2026-03-13)
+
+### 🚀 Features
+
+- **pipeline:** retry on transient network errors, not just HTTP 502/503/504 ([#237](https://github.com/ldelements/lde/pull/237))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.23.0 (2026-03-13)
 
 ### 🚀 Features
