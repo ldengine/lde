@@ -64,16 +64,14 @@ export class ConsoleReporter implements ProgressReporter {
     if (result.available) {
       const detail =
         result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
-      s.start(`${typeLabel} ${url}${detail}`);
-      s.succeed();
+      s.succeed(`${typeLabel} ${url}${detail}`);
     } else {
       const detail = result.error
         ? ` (${result.error})`
         : result.statusCode !== undefined
           ? ` (HTTP ${result.statusCode})`
           : '';
-      s.start(`${typeLabel} ${url}${detail}`);
-      s.fail();
+      s.fail(`${typeLabel} ${url}${detail}`);
     }
   }
 
@@ -122,10 +120,9 @@ export class ConsoleReporter implements ProgressReporter {
       this.clearImportSpinner();
     } else {
       const s = ora({ discardStdin: false });
-      s.start(
+      s.succeed(
         `${distribution.accessUrl.toString()} ${chalk.dim('(selected)')}`,
       );
-      s.succeed();
     }
   }
 
@@ -185,13 +182,13 @@ export class ConsoleReporter implements ProgressReporter {
   stageValidated(_stage: string, report: ValidationReport): void {
     const s = ora({ discardStdin: false });
     if (report.conforms) {
-      s.start(`Validated ${compactNumber.format(report.quadsValidated)} quads`);
-      s.succeed();
+      s.succeed(
+        `Validated ${compactNumber.format(report.quadsValidated)} quads`,
+      );
     } else {
-      s.start(
+      s.fail(
         `Validated ${compactNumber.format(report.quadsValidated)} quads: ${chalk.red(`${compactNumber.format(report.violations)} violation(s)`)}`,
       );
-      s.fail();
     }
   }
 
@@ -209,7 +206,7 @@ export class ConsoleReporter implements ProgressReporter {
       text: `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
       )}`,
-    }).start();
+    });
     s.succeed();
   }
 
@@ -217,7 +214,7 @@ export class ConsoleReporter implements ProgressReporter {
     const s = ora({
       discardStdin: false,
       text: `Skipped: ${chalk.red(reason)}`,
-    }).start();
+    });
     s.fail();
   }
 
