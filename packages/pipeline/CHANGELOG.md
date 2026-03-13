@@ -1,3 +1,13 @@
+## 0.22.0 (2026-03-13)
+
+### 🚀 Features
+
+- **pipeline:** decouple SHACL validation from write path when onInvalid is 'write' ([#230](https://github.com/ldelements/lde/pull/230))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.21.0 (2026-03-12)
 
 ### 🚀 Features
