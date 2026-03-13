@@ -666,6 +666,89 @@ describe('Stage', () => {
       expect(writer.quads).toEqual([q1, q2]);
     });
 
+    it('writes quads without waiting for validation when onInvalid is "write" (no selector)', async () => {
+      const writeOrder: string[] = [];
+      const validator: Validator = {
+        validate: vi.fn(async (): Promise<ValidationResult> => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          writeOrder.push('validate');
+          return { conforms: true, violations: 0 };
+        }),
+        report: vi.fn(
+          async (): Promise<ValidationReport> => ({
+            conforms: true,
+            violations: 0,
+            quadsValidated: 2,
+          }),
+        ),
+      };
+
+      const writer: Writer = {
+        async write(_dataset, data) {
+          for await (const _quad of data) {
+            writeOrder.push('write');
+          }
+        },
+      };
+
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1, q2]),
+        validation: { validator },
+      });
+
+      await stage.run(dataset, distribution, writer);
+
+      // Writes happen before validation completes.
+      expect(writeOrder.indexOf('write')).toBeLessThan(
+        writeOrder.indexOf('validate'),
+      );
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
+    it('writes quads without waiting for validation when onInvalid is "write" (with selector)', async () => {
+      const writeOrder: string[] = [];
+      const validator: Validator = {
+        validate: vi.fn(async (): Promise<ValidationResult> => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          writeOrder.push('validate');
+          return { conforms: false, violations: 1 };
+        }),
+        report: vi.fn(
+          async (): Promise<ValidationReport> => ({
+            conforms: false,
+            violations: 1,
+            quadsValidated: 1,
+          }),
+        ),
+      };
+
+      const writer: Writer = {
+        async write(_dataset, data) {
+          for await (const _quad of data) {
+            writeOrder.push('write');
+          }
+        },
+      };
+
+      const stage = new Stage({
+        name: 'test',
+        executors: mockExecutor([q1]),
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        validation: { validator },
+      });
+
+      await stage.run(dataset, distribution, writer);
+
+      // Writes happen before validation completes.
+      expect(writeOrder.indexOf('write')).toBeLessThan(
+        writeOrder.indexOf('validate'),
+      );
+      expect(validator.validate).toHaveBeenCalledOnce();
+    });
+
     it('validates combined output of multiple executors (with selector)', async () => {
       const validator = mockValidator({ conforms: true });
       const stage = new Stage({
