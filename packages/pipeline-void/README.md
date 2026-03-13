@@ -10,11 +10,13 @@ Returns all VoID stages in their recommended execution order. The ordering is op
 
 Accepts an optional `VoidStagesOptions` object:
 
-| Option           | Default | Description                                        |
-| ---------------- | ------- | -------------------------------------------------- |
-| `batchSize`      | 10      | Maximum number of bindings per executor call       |
-| `maxConcurrency` | 10      | Maximum concurrent in-flight executor batches      |
-| `uriSpaces`      | —       | When provided, includes the object URI space stage |
+| Option           | Default | Description                                                           |
+| ---------------- | ------- | --------------------------------------------------------------------- |
+| `timeout`        | 60 000  | SPARQL query timeout in milliseconds                                  |
+| `batchSize`      | 10      | Maximum class bindings per executor call (per-class stages only)      |
+| `maxConcurrency` | 10      | Maximum concurrent in-flight executor batches (per-class stages only) |
+| `perClass`       | —       | Override per-class iteration for all five per-class stages            |
+| `uriSpaces`      | —       | When provided, includes the object URI space stage                    |
 
 ```typescript
 import { voidStages } from '@lde/pipeline-void';
@@ -34,7 +36,7 @@ await new Pipeline({
 
 ### Individual stage factories
 
-All factories accept an optional `VoidStageOptions` (`batchSize`, `maxConcurrency`) and return `Promise<Stage>`.
+Global and domain-specific factories accept `VoidStageOptions` (`timeout`) and return `Promise<Stage>`. Per-class factories accept `PerClassVoidStageOptions` (`timeout`, `batchSize`, `maxConcurrency`, `perClass`) — they default `perClass` to `true`; set it to `false` to run them as monolithic queries instead.
 
 #### Global stages (one CONSTRUCT query per dataset):
 
