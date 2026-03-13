@@ -33,6 +33,7 @@
     "@traqula/rules-sparql-1-1": "^1.0.3",
     "fetch-sparql-endpoint": "^7.1.0",
     "filenamify-url": "^4.0.0",
+    "is-network-error": "^1.1.0",
     "n3": "^2.0.3",
     "p-retry": "^7.1.1",
     "tslib": "^2.3.0"
