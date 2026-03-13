@@ -1,3 +1,13 @@
+## 0.12.0 (2026-03-13)
+
+### 🚀 Features
+
+- **pipeline-console-reporter:** display validation status after stage completion ([#231](https://github.com/ldelements/lde/pull/231))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.11.0 (2026-03-13)
 
 ### 🧱 Updated Dependencies
