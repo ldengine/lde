@@ -18,11 +18,31 @@ const queriesDir = resolve(
   'queries',
 );
 
+/**
+ * Options for configuring VoID stage execution.
+ */
+export interface VoidStageOptions {
+  /** Maximum number of bindings per executor call. @default 10 */
+  batchSize?: number;
+  /** Maximum concurrent in-flight executor batches. @default 10 */
+  maxConcurrency?: number;
+}
+
+/**
+ * Options for the {@link voidStages} convenience function.
+ */
+export interface VoidStagesOptions extends VoidStageOptions {
+  /** When provided, includes the object URI space stage using this map. */
+  uriSpaces?: ReadonlyMap<string, readonly Quad[]>;
+}
+
 async function createVoidStage(
   filename: string,
   options?: {
     executor?: (query: string) => Executor;
     selection?: 'perClass';
+    batchSize?: number;
+    maxConcurrency?: number;
   },
 ): Promise<Stage> {
   const query = await readQueryFile(resolve(queriesDir, filename));
@@ -34,9 +54,16 @@ async function createVoidStage(
       name: filename,
       itemSelector: classSelector(),
       executors: executor,
+      batchSize: options?.batchSize,
+      maxConcurrency: options?.maxConcurrency,
     });
   }
-  return new Stage({ name: filename, executors: executor });
+  return new Stage({
+    name: filename,
+    executors: executor,
+    batchSize: options?.batchSize,
+    maxConcurrency: options?.maxConcurrency,
+  });
 }
 
 function classSelector(): ItemSelector {
@@ -63,66 +90,83 @@ function classSelector(): ItemSelector {
 
 // Global stages
 
-export function subjectUriSpaces(): Promise<Stage> {
-  return createVoidStage('subject-uri-space.rq');
+export function subjectUriSpaces(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('subject-uri-space.rq', options);
 }
 
-export function classPartitions(): Promise<Stage> {
-  return createVoidStage('class-partition.rq');
+export function classPartitions(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('class-partition.rq', options);
 }
 
-export function countObjectLiterals(): Promise<Stage> {
-  return createVoidStage('object-literals.rq');
+export function countObjectLiterals(
+  options?: VoidStageOptions,
+): Promise<Stage> {
+  return createVoidStage('object-literals.rq', options);
 }
 
-export function countObjectUris(): Promise<Stage> {
-  return createVoidStage('object-uris.rq');
+export function countObjectUris(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('object-uris.rq', options);
 }
 
-export function countProperties(): Promise<Stage> {
-  return createVoidStage('properties.rq');
+export function countProperties(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('properties.rq', options);
 }
 
-export function countSubjects(): Promise<Stage> {
-  return createVoidStage('subjects.rq');
+export function countSubjects(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('subjects.rq', options);
 }
 
-export function countTriples(): Promise<Stage> {
-  return createVoidStage('triples.rq');
+export function countTriples(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('triples.rq', options);
 }
 
-export function classPropertySubjects(): Promise<Stage> {
-  return createVoidStage('class-properties-subjects.rq');
+export function classPropertySubjects(
+  options?: VoidStageOptions,
+): Promise<Stage> {
+  return createVoidStage('class-properties-subjects.rq', {
+    ...options,
+    selection: 'perClass',
+  });
 }
 
-export function classPropertyObjects(): Promise<Stage> {
-  return createVoidStage('class-properties-objects.rq');
+export function classPropertyObjects(
+  options?: VoidStageOptions,
+): Promise<Stage> {
+  return createVoidStage('class-properties-objects.rq', {
+    ...options,
+    selection: 'perClass',
+  });
 }
 
-export function countDatatypes(): Promise<Stage> {
-  return createVoidStage('datatypes.rq');
+export function countDatatypes(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('datatypes.rq', options);
 }
 
-export function detectLicenses(): Promise<Stage> {
-  return createVoidStage('licenses.rq');
+export function detectLicenses(options?: VoidStageOptions): Promise<Stage> {
+  return createVoidStage('licenses.rq', options);
 }
 
 // Per-class stages
 
-export function perClassObjectClasses(): Promise<Stage> {
+export function perClassObjectClasses(
+  options?: VoidStageOptions,
+): Promise<Stage> {
   return createVoidStage('class-property-object-classes.rq', {
+    ...options,
     selection: 'perClass',
   });
 }
 
-export function perClassDatatypes(): Promise<Stage> {
+export function perClassDatatypes(options?: VoidStageOptions): Promise<Stage> {
   return createVoidStage('class-property-datatypes.rq', {
+    ...options,
     selection: 'perClass',
   });
 }
 
-export function perClassLanguages(): Promise<Stage> {
+export function perClassLanguages(options?: VoidStageOptions): Promise<Stage> {
   return createVoidStage('class-property-languages.rq', {
+    ...options,
     selection: 'perClass',
   });
 }
@@ -130,17 +174,60 @@ export function perClassLanguages(): Promise<Stage> {
 // Domain-specific executor stages
 
 export function uriSpaces(
-  uriSpaces: ReadonlyMap<string, readonly Quad[]>,
+  uriSpaceMap: ReadonlyMap<string, readonly Quad[]>,
+  options?: VoidStageOptions,
 ): Promise<Stage> {
   return createVoidStage('object-uri-space.rq', {
+    ...options,
     executor: (query) =>
-      new UriSpaceExecutor(new SparqlConstructExecutor({ query }), uriSpaces),
+      new UriSpaceExecutor(new SparqlConstructExecutor({ query }), uriSpaceMap),
   });
 }
 
-export function detectVocabularies(): Promise<Stage> {
+export function detectVocabularies(options?: VoidStageOptions): Promise<Stage> {
   return createVoidStage('entity-properties.rq', {
+    ...options,
     executor: (query) =>
       new VocabularyExecutor(new SparqlConstructExecutor({ query })),
   });
+}
+
+/**
+ * Create all VoID analysis stages in their recommended execution order.
+ *
+ * The stages are ordered so that {@link classPartitions} runs before the
+ * per-class stages. This warms up the `?s a ?class` pattern cache on the
+ * SPARQL endpoint, preventing 504 timeouts on the heavier per-class queries
+ * when the cache is cold.
+ */
+export async function voidStages(
+  options?: VoidStagesOptions,
+): Promise<Stage[]> {
+  const { uriSpaces: uriSpaceMap, ...stageOptions } = options ?? {};
+
+  return Promise.all([
+    // Global counting stages.
+    countSubjects(stageOptions),
+    countProperties(stageOptions),
+    countObjectLiterals(stageOptions),
+    countObjectUris(stageOptions),
+    countDatatypes(stageOptions),
+    countTriples(stageOptions),
+
+    // Cache warming — must precede per-class stages.
+    classPartitions(stageOptions),
+
+    // Per-class stages.
+    classPropertySubjects(stageOptions),
+    classPropertyObjects(stageOptions),
+    perClassDatatypes(stageOptions),
+    perClassObjectClasses(stageOptions),
+    perClassLanguages(stageOptions),
+
+    // Other stages.
+    detectLicenses(stageOptions),
+    detectVocabularies(stageOptions),
+    subjectUriSpaces(stageOptions),
+    ...(uriSpaceMap ? [uriSpaces(uriSpaceMap, stageOptions)] : []),
+  ]);
 }

@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { Parser } from '@traqula/parser-sparql-1-1';
 import { Generator } from '@traqula/generator-sparql-1-1';
 import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
+import pRetry from 'p-retry';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
 
@@ -51,6 +52,12 @@ export interface SparqlConstructExecutorOptions {
   timeout?: number;
 
   /**
+   * Number of retries for transient HTTP errors (502, 503, 504).
+   * @default 3
+   */
+  retries?: number;
+
+  /**
    * Optional custom SparqlEndpointFetcher instance.
    */
   fetcher?: SparqlEndpointFetcher;
@@ -87,10 +94,12 @@ export class SparqlConstructExecutor implements Executor {
   private readonly rawQuery: string;
   private readonly preParsed?: QueryConstruct;
   private readonly fetcher: SparqlEndpointFetcher;
+  private readonly retries: number;
   private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
     this.rawQuery = options.query;
+    this.retries = options.retries ?? 3;
 
     if (!options.query.includes('#subjectFilter#')) {
       const parsed = new Parser().parse(options.query);
@@ -149,7 +158,13 @@ export class SparqlConstructExecutor implements Executor {
     let query = this.generator.generate(ast);
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
-    return await this.fetcher.fetchTriples(endpoint.toString(), query);
+    return await pRetry(
+      () => this.fetcher.fetchTriples(endpoint.toString(), query),
+      {
+        retries: this.retries,
+        shouldRetry: ({ error }) => isTransientHttpError(error),
+      },
+    );
   }
 
   /**
@@ -172,4 +187,14 @@ export class SparqlConstructExecutor implements Executor {
  */
 export async function readQueryFile(filename: string): Promise<string> {
   return (await readFile(resolve(filename))).toString();
+}
+
+const transientStatusPattern = /HTTP status (\d+)/;
+
+function isTransientHttpError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const match = error.message.match(transientStatusPattern);
+  if (!match) return false;
+  const status = Number(match[1]);
+  return status === 502 || status === 503 || status === 504;
 }
