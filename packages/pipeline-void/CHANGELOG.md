@@ -1,3 +1,13 @@
+## 0.21.0 (2026-03-13)
+
+### 🚀 Features
+
+- **pipeline-void:** add timeout and perClass toggle to VoID stage options ([#236](https://github.com/ldelements/lde/pull/236))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.20.0 (2026-03-13)
 
 ### 🚀 Features
