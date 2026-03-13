@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { Parser } from '@traqula/parser-sparql-1-1';
 import { Generator } from '@traqula/generator-sparql-1-1';
 import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
+import isNetworkError from 'is-network-error';
 import pRetry from 'p-retry';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
@@ -52,7 +53,7 @@ export interface SparqlConstructExecutorOptions {
   timeout?: number;
 
   /**
-   * Number of retries for transient HTTP errors (502, 503, 504).
+   * Number of retries for transient errors (network failures and HTTP 502/503/504).
    * @default 3
    */
   retries?: number;
@@ -162,7 +163,7 @@ export class SparqlConstructExecutor implements Executor {
       () => this.fetcher.fetchTriples(endpoint.toString(), query),
       {
         retries: this.retries,
-        shouldRetry: ({ error }) => isTransientHttpError(error),
+        shouldRetry: ({ error }) => isTransientError(error),
       },
     );
   }
@@ -191,7 +192,8 @@ export async function readQueryFile(filename: string): Promise<string> {
 
 const transientStatusPattern = /HTTP status (\d+)/;
 
-function isTransientHttpError(error: unknown): boolean {
+function isTransientError(error: unknown): boolean {
+  if (isNetworkError(error)) return true;
   if (!(error instanceof Error)) return false;
   const match = error.message.match(transientStatusPattern);
   if (!match) return false;

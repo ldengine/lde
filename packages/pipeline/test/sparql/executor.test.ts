@@ -368,6 +368,60 @@ describe('SparqlConstructExecutor', () => {
       expect(fetcher.fetchTriples).toHaveBeenCalledTimes(1);
     });
 
+    it('retries on network error (fetch failed) and succeeds on second attempt', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const spy = vi
+        .spyOn(fetcher, 'fetchTriples')
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce([] as never);
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries on ECONNRESET', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const connectionError = new TypeError('fetch failed');
+      connectionError.cause = Object.assign(new Error('read ECONNRESET'), {
+        code: 'ECONNRESET',
+      });
+      const spy = vi
+        .spyOn(fetcher, 'fetchTriples')
+        .mockRejectedValueOnce(connectionError)
+        .mockResolvedValueOnce([] as never);
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
     it('propagates error when retries are exhausted', async () => {
       const fetcher = new SparqlEndpointFetcher();
       vi.spyOn(fetcher, 'fetchTriples').mockRejectedValue(
