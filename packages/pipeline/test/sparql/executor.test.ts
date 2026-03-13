@@ -30,7 +30,7 @@ describe('SparqlConstructExecutor', () => {
         () =>
           new SparqlConstructExecutor({
             query: 'SELECT ?s WHERE { ?s ?p ?o }',
-          })
+          }),
       ).toThrow('Query must be a CONSTRUCT query');
     });
 
@@ -39,7 +39,7 @@ describe('SparqlConstructExecutor', () => {
         () =>
           new SparqlConstructExecutor({
             query: `CONSTRUCT { ?s ?p ?o } WHERE { #subjectFilter# ?s ?p ?o }`,
-          })
+          }),
       ).not.toThrow();
     });
   });
@@ -59,7 +59,7 @@ describe('SparqlConstructExecutor', () => {
 
       const distribution = Distribution.sparql(
         new URL(`http://localhost:${port}/sparql`),
-        'http://foo.org/id/graph/foo'
+        'http://foo.org/id/graph/foo',
       );
 
       const dataset = new Dataset({
@@ -92,7 +92,7 @@ describe('SparqlConstructExecutor', () => {
 
       const distribution = Distribution.sparql(
         new URL(`http://localhost:${port}/sparql`),
-        'http://foo.org/id/graph/foo'
+        'http://foo.org/id/graph/foo',
       );
 
       const datasetIri = 'http://foo.org/id/dataset/foo';
@@ -105,7 +105,7 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
-        expect.stringContaining('FROM <http://foo.org/id/graph/foo>')
+        expect.stringContaining('FROM <http://foo.org/id/graph/foo>'),
       );
     });
 
@@ -119,7 +119,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const datasetIri = 'http://foo.org/id/dataset/foo';
@@ -132,11 +132,11 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining(`<${datasetIri}>`)
+        expect.stringContaining(`<${datasetIri}>`),
       );
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.not.stringContaining('?dataset')
+        expect.not.stringContaining('?dataset'),
       );
     });
 
@@ -150,7 +150,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const dataset = new Dataset({
@@ -162,7 +162,7 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         `http://localhost:${port}/sparql`,
-        expect.any(String)
+        expect.any(String),
       );
     });
   });
@@ -178,7 +178,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
       distribution.subjectFilter = 'FILTER(?s = <http://example.org/s>)';
 
@@ -191,7 +191,7 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('FILTER')
+        expect.stringContaining('FILTER'),
       );
     });
 
@@ -205,7 +205,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const dataset = new Dataset({
@@ -217,7 +217,7 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.not.stringContaining('#subjectFilter#')
+        expect.not.stringContaining('#subjectFilter#'),
       );
     });
   });
@@ -233,7 +233,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const dataset = new Dataset({
@@ -247,11 +247,11 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('VALUES')
+        expect.stringContaining('VALUES'),
       );
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('<http://example.org/subject>')
+        expect.stringContaining('<http://example.org/subject>'),
       );
     });
 
@@ -265,7 +265,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const dataset = new Dataset({
@@ -277,7 +277,7 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.not.stringContaining('VALUES')
+        expect.not.stringContaining('VALUES'),
       );
     });
 
@@ -291,7 +291,7 @@ describe('SparqlConstructExecutor', () => {
       });
 
       const distribution = Distribution.sparql(
-        new URL(`http://localhost:${port}/sparql`)
+        new URL(`http://localhost:${port}/sparql`),
       );
 
       const dataset = new Dataset({
@@ -303,15 +303,105 @@ describe('SparqlConstructExecutor', () => {
 
       expect(querySpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.not.stringContaining('VALUES')
+        expect.not.stringContaining('VALUES'),
       );
+    });
+  });
+
+  describe('retry', () => {
+    it('retries on 504 and succeeds on second attempt', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const spy = vi
+        .spyOn(fetcher, 'fetchTriples')
+        .mockRejectedValueOnce(
+          new Error(
+            'Invalid SPARQL endpoint response from http://example.org/sparql (HTTP status 504):\nGateway Timeout',
+          ),
+        )
+        .mockResolvedValueOnce(
+          // Resolved value is consumed as AsyncIterable<Quad>.
+          [] as never,
+        );
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry on 400 error', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      vi.spyOn(fetcher, 'fetchTriples').mockRejectedValue(
+        new Error(
+          'Invalid SPARQL endpoint response from http://example.org/sparql (HTTP status 400):\nBad Request',
+        ),
+      );
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await expect(executor.execute(dataset, distribution)).rejects.toThrow(
+        'HTTP status 400',
+      );
+      expect(fetcher.fetchTriples).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates error when retries are exhausted', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      vi.spyOn(fetcher, 'fetchTriples').mockRejectedValue(
+        new Error(
+          'Invalid SPARQL endpoint response from http://example.org/sparql (HTTP status 502):\nBad Gateway',
+        ),
+      );
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        retries: 2,
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await expect(executor.execute(dataset, distribution)).rejects.toThrow(
+        'HTTP status 502',
+      );
+      // 1 initial attempt + 2 retries = 3 calls.
+      expect(fetcher.fetchTriples).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('fromFile', () => {
     it('creates executor from a file', async () => {
       const executor = await SparqlConstructExecutor.fromFile(
-        'test/fixtures/query.rq'
+        'test/fixtures/query.rq',
       );
 
       expect(executor).toBeInstanceOf(SparqlConstructExecutor);
