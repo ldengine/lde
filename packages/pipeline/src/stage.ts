@@ -89,14 +89,27 @@ export class Stage {
           buffer.push(quad);
         }
       }
-      const accepted = await this.validateBuffer(buffer, dataset);
-      if (accepted.length > 0) {
-        await writer.write(
-          dataset,
-          (async function* () {
-            yield* accepted;
-          })(),
-        );
+      const onInvalid = this.validation.onInvalid ?? 'write';
+      if (onInvalid === 'write') {
+        await Promise.all([
+          writer.write(
+            dataset,
+            (async function* () {
+              yield* buffer;
+            })(),
+          ),
+          this.validation.validator.validate(buffer, dataset),
+        ]);
+      } else {
+        const accepted = await this.validateBuffer(buffer, dataset);
+        if (accepted.length > 0) {
+          await writer.write(
+            dataset,
+            (async function* () {
+              yield* accepted;
+            })(),
+          );
+        }
       }
     } else {
       await writer.write(dataset, mergeStreams(streams));
@@ -134,6 +147,9 @@ export class Stage {
     let itemsProcessed = 0;
     let quadsGenerated = 0;
     let hasResults = false;
+
+    const onInvalid = this.validation?.onInvalid ?? 'write';
+    const pendingValidations: Promise<unknown>[] = [];
 
     const dispatch = async () => {
       const inFlight = new Set<Promise<void>>();
@@ -177,15 +193,30 @@ export class Stage {
                 }
               }
 
-              let accepted = batchQuads;
-              if (this.validation && batchQuads.length > 0) {
-                accepted = await this.validateBuffer(batchQuads, dataset);
+              if (
+                this.validation &&
+                batchQuads.length > 0 &&
+                onInvalid !== 'write'
+              ) {
+                // 'skip' or 'halt': must await validation before deciding to write.
+                const accepted = await this.validateBuffer(batchQuads, dataset);
+                for (const quad of accepted) {
+                  await queue.push(quad);
+                  quadsGenerated++;
+                }
+              } else {
+                for (const quad of batchQuads) {
+                  await queue.push(quad);
+                  quadsGenerated++;
+                }
+                if (this.validation && batchQuads.length > 0) {
+                  // 'write' mode: validate concurrently without blocking the write path.
+                  pendingValidations.push(
+                    this.validation.validator.validate(batchQuads, dataset),
+                  );
+                }
               }
 
-              for (const quad of accepted) {
-                await queue.push(quad);
-                quadsGenerated++;
-              }
               itemsProcessed += bindings.length;
               options?.onProgress?.(itemsProcessed, quadsGenerated);
             })(),
@@ -197,6 +228,8 @@ export class Stage {
 
       // Wait for all remaining in-flight tasks to settle.
       await Promise.all(inFlight);
+      // Ensure all background validations complete before report() is called.
+      await Promise.all(pendingValidations);
 
       if (firstError) {
         queue.abort(firstError);
