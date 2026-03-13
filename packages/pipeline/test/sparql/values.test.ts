@@ -1,14 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { DataFactory } from 'n3';
 import { Parser } from '@traqula/parser-sparql-1-1';
-import type { QueryConstruct, PatternValues } from '@traqula/rules-sparql-1-1';
-import { injectValues } from '../../src/sparql/values.js';
+import type {
+  Pattern,
+  QueryConstruct,
+  PatternValues,
+} from '@traqula/rules-sparql-1-1';
+import { findSubSelect, injectValues } from '../../src/sparql/values.js';
 
 const { namedNode } = DataFactory;
 const parser = new Parser();
 
 function parseConstruct(sparql: string): QueryConstruct {
   return parser.parse(sparql) as QueryConstruct;
+}
+
+/** Check if any pattern at this level (not nested) is a VALUES clause. */
+function hasValues(patterns: Pattern[]): boolean {
+  return patterns.some((p) => p.subType === 'values');
 }
 
 describe('injectValues', () => {
@@ -116,5 +125,73 @@ describe('injectValues', () => {
     injectValues(original, [{ class: namedNode('http://example.com/Person') }]);
 
     expect(original.where.patterns.length).toBe(originalWhereLength);
+  });
+
+  it('injects VALUES into the innermost WHERE of a singly-nested subquery', () => {
+    const nestedQuery = parseConstruct(
+      'CONSTRUCT { ?s a ?class } WHERE { { SELECT ?class ?p WHERE { ?s a ?class ; ?p ?o } } }',
+    );
+
+    const result = injectValues(nestedQuery, [
+      { class: namedNode('http://example.com/Person') },
+    ]);
+
+    // The outermost WHERE should NOT have a VALUES pattern directly.
+    expect(hasValues(result.where.patterns)).toBe(false);
+
+    // The SubSelect's WHERE should have the VALUES pattern.
+    const subSelect = findSubSelect(result.where.patterns);
+    expect(subSelect).toBeDefined();
+    const innerValues = subSelect!.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
+    );
+    expect(innerValues).toBeDefined();
+    expect(innerValues!.values[0]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
+      value: 'http://example.com/Person',
+    });
+  });
+
+  it('injects VALUES into the innermost WHERE of a doubly-nested subquery', () => {
+    const doublyNestedQuery = parseConstruct(
+      'CONSTRUCT { ?s a ?class } WHERE { { SELECT ?class ?p WHERE { { SELECT ?class ?p ?o WHERE { ?s a ?class ; ?p ?o } } } } }',
+    );
+
+    const result = injectValues(doublyNestedQuery, [
+      { class: namedNode('http://example.com/Person') },
+    ]);
+
+    // Outermost WHERE: no VALUES.
+    expect(hasValues(result.where.patterns)).toBe(false);
+
+    // Middle SubSelect's WHERE: no VALUES.
+    const middleSubSelect = findSubSelect(result.where.patterns)!;
+    expect(hasValues(middleSubSelect.where.patterns)).toBe(false);
+
+    // Innermost SubSelect's WHERE: has VALUES.
+    const innermostSubSelect = findSubSelect(middleSubSelect.where.patterns)!;
+    const innermostValues = innermostSubSelect.where.patterns.find(
+      (p): p is PatternValues => p.subType === 'values',
+    );
+    expect(innermostValues).toBeDefined();
+    expect(innermostValues!.values[0]['class']).toMatchObject({
+      type: 'term',
+      subType: 'namedNode',
+      value: 'http://example.com/Person',
+    });
+  });
+
+  it('does not mutate the input query with nested subqueries', () => {
+    const original = parseConstruct(
+      'CONSTRUCT { ?s a ?class } WHERE { { SELECT ?class ?p WHERE { ?s a ?class ; ?p ?o } } }',
+    );
+    const subSelect = findSubSelect(original.where.patterns)!;
+    const originalInnerLength = subSelect.where.patterns.length;
+
+    injectValues(original, [{ class: namedNode('http://example.com/Person') }]);
+
+    const subSelectAfter = findSubSelect(original.where.patterns)!;
+    expect(subSelectAfter.where.patterns.length).toBe(originalInnerLength);
   });
 });
