@@ -1,4 +1,4 @@
-import { TaskRunner, type TaskRunOptions } from '@lde/task-runner';
+import { TaskRunner } from '@lde/task-runner';
 import { ChildProcess, spawn } from 'node:child_process';
 import process from 'node:process';
 
@@ -28,11 +28,11 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
     this.gracefulShutdownTimeout = options?.gracefulShutdownTimeout ?? 5000;
   }
 
-  async run(command: string, options?: TaskRunOptions): Promise<ChildProcess> {
+  async run(command: string): Promise<ChildProcess> {
     const task = spawn(command, {
       detached: true,
       shell: this.shell,
-      cwd: options?.cwd ?? this.cwd,
+      cwd: this.cwd,
     });
 
     task.on('close', (code: number) => {

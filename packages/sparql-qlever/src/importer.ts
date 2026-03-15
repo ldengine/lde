@@ -118,10 +118,9 @@ export class Importer implements ImporterInterface {
   }
 
   private async index(file: string, format: fileFormat): Promise<string> {
-    const workingDir = dirname(file);
     const settingsFile = 'index.settings.json';
     await writeFile(
-      `${workingDir}/${settingsFile}`,
+      `${dirname(file)}/${settingsFile}`,
       JSON.stringify(this.qleverOptions),
     );
 
@@ -134,7 +133,6 @@ export class Importer implements ImporterInterface {
       )}') | qlever-index -i ${
         this.indexName
       } -s ${settingsFile} -F ${format} -p true -f - && cat ${metadataFile}`,
-      { cwd: workingDir },
     );
     return await this.taskRunner.wait(indexTask);
   }

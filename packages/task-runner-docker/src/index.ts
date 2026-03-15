@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { TaskRunner, type TaskRunOptions } from '@lde/task-runner';
+import { TaskRunner } from '@lde/task-runner';
 import Docker, { Container, ContainerCreateOptions } from 'dockerode';
 
 export interface DockerTaskRunnerOptions {
@@ -39,7 +39,7 @@ export class DockerTaskRunner implements TaskRunner<Container> {
     return logs;
   }
 
-  async run(command: string, _options?: TaskRunOptions): Promise<Container> {
+  async run(command: string): Promise<Container> {
     if (this.options.containerName) {
       try {
         await this.options.docker

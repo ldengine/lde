@@ -9,12 +9,12 @@ Interfaces for running shell commands as tasks. Implementations run commands:
 
 ```typescript
 interface TaskRunner<Task> {
-  run(command: string, options?: TaskRunOptions): Promise<Task>;
+  run(command: string): Promise<Task>;
   wait(task: Task): Promise<string>;
   stop(task: Task): Promise<string | null>;
 }
 ```
 
-- `run(command, options?)` — Start a shell command, returns a task handle. Pass `{ cwd }` to override the working directory for this command.
+- `run(command)` — Start a shell command, returns a task handle
 - `wait(task)` — Wait for completion, returns stdout/stderr output
 - `stop(task)` — Stop the task, returns output collected so far
