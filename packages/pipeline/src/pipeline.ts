@@ -304,8 +304,12 @@ export class Pipeline {
       const stream = createReadStream(path);
       const parser = new StreamParser();
       stream.pipe(parser);
-      for await (const quad of parser) {
-        yield quad as Quad;
+      try {
+        for await (const quad of parser) {
+          yield quad as Quad;
+        }
+      } finally {
+        stream.destroy();
       }
     }
   }
