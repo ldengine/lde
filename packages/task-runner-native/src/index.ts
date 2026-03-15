@@ -39,26 +39,25 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
       /** code is null when the process was killed, which is expected when
        * {@link stop} is called. */
       if (code !== null && code !== 0) {
-        // Throw to detect errors in the command arguments.
-        throw new Error(this.taskOutput(task));
+        task.emit('error', new Error(this.taskOutput(task)));
       }
     });
-    task.on('error', (code: number) => {
-      throw new Error(`Task errored with code ${code}`);
+    task.on('error', () => {
+      // Handled by wait(); listener prevents 'unhandled error' crashes.
     });
 
     if (task.pid !== undefined) {
       task.stdout.on('data', (data) => {
         this.stdout.set(
           task.pid!,
-          this.stdout.get(task.pid!) ?? '' + data.toString()
+          (this.stdout.get(task.pid!) ?? '') + data.toString(),
         );
       });
 
       task.stderr.on('data', (data) => {
         this.stderr.set(
           task.pid!,
-          this.stderr.get(task.pid!) ?? '' + data.toString()
+          (this.stderr.get(task.pid!) ?? '') + data.toString(),
         );
       });
     }
@@ -124,7 +123,7 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
 
   private taskOutput(task: ChildProcess) {
     const output =
-      (this.stdout.get(task.pid!) ?? '') + this.stderr.get(task.pid!);
+      (this.stdout.get(task.pid!) ?? '') + (this.stderr.get(task.pid!) ?? '');
     this.stdout.delete(task.pid!);
     this.stderr.delete(task.pid!);
 
