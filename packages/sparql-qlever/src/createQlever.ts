@@ -1,7 +1,10 @@
 import { DockerTaskRunner } from '@lde/task-runner-docker';
 import { NativeTaskRunner } from '@lde/task-runner-native';
 import { TaskRunner } from '@lde/task-runner';
-import { Downloader } from '@lde/distribution-downloader';
+import {
+  Downloader,
+  LastModifiedDownloader,
+} from '@lde/distribution-downloader';
 import { Importer } from './importer.js';
 import { Server } from './server.js';
 
@@ -37,7 +40,8 @@ export function createQlever(options: QleverOptions) {
     importer: new Importer({
       taskRunner,
       indexName: options.indexName,
-      downloader: options.downloader,
+      downloader:
+        options.downloader ?? new LastModifiedDownloader(options.dataDir),
     }),
     server: new Server({
       taskRunner,
