@@ -1,12 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ConsoleReporter } from '../src/consoleReporter.js';
 import { Dataset, Distribution } from '@lde/dataset';
+import type { DistributionAnalysisResult } from '@lde/pipeline';
 
 function makeDataset(): Dataset {
   return new Dataset({
     iri: new URL('http://example.org/dataset'),
     distributions: [],
   });
+}
+
+function makeProbeResult(
+  url: string,
+  overrides: Partial<DistributionAnalysisResult> = {},
+): DistributionAnalysisResult {
+  return {
+    distribution: Distribution.sparql(new URL(url)),
+    type: 'sparql',
+    available: true,
+    statusCode: 200,
+    ...overrides,
+  };
 }
 
 describe('ConsoleReporter', () => {
@@ -69,6 +83,28 @@ describe('ConsoleReporter', () => {
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('4.8M triples');
       expect(output).toContain('to http://localhost:7001/sparql');
+      spy.mockRestore();
+    });
+
+    it('appends "(selected)" to matching probe line instead of printing a separate line', () => {
+      const reporter = new ConsoleReporter();
+      const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+      reporter.datasetStart(makeDataset());
+
+      const sparqlUrl = 'http://sparql.example.com/';
+      reporter.distributionProbed(makeProbeResult(sparqlUrl));
+      reporter.distributionSelected(
+        makeDataset(),
+        Distribution.sparql(new URL(sparqlUrl)),
+      );
+
+      const output = spy.mock.calls.map((call) => String(call[0])).join('');
+      // The rewritten probe line should contain both the probe text and "(selected)".
+      expect(output).toContain('SPARQL endpoint');
+      expect(output).toContain('(selected)');
+      // There should be a cursor-up escape sequence, indicating in-place rewrite.
+      expect(output).toContain('\x1B[1A');
       spy.mockRestore();
     });
 
