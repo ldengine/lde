@@ -1,3 +1,17 @@
+## 0.9.1 (2026-03-15)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** unify mountDir/cwd into dataDir and fix NativeTaskRunner bugs ([#239](https://github.com/ldelements/lde/pull/239))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner-native to 0.2.12
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.9.0 (2026-03-08)
 
 ### 🚀 Features
