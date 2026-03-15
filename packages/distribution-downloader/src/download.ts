@@ -3,7 +3,7 @@ import filenamifyUrl from 'filenamify-url';
 import { join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
-import { access, stat } from 'node:fs/promises';
+import { access, rm, stat } from 'node:fs/promises';
 export interface Logger {
   fatal(msg: string, ...args: unknown[]): void;
   error(msg: string, ...args: unknown[]): void;
@@ -53,7 +53,9 @@ export class LastModifiedDownloader implements Downloader {
       return filePath;
     }
 
-    const downloadResponse = await fetch(downloadUrl);
+    const downloadResponse = await fetch(downloadUrl, {
+      signal: AbortSignal.timeout(300_000),
+    });
     if (!downloadResponse.ok || !downloadResponse.body) {
       throw new Error(
         `Failed to download ${downloadUrl}: ${downloadResponse.statusText}`
@@ -63,6 +65,7 @@ export class LastModifiedDownloader implements Downloader {
     try {
       await pipeline(downloadResponse.body, createWriteStream(filePath));
     } catch (error) {
+      await rm(filePath, { force: true });
       throw new Error(`Failed to save ${downloadUrl} to ${filePath}: ${error}`);
     }
 
