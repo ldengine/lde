@@ -21,6 +21,7 @@ export class ConsoleReporter implements ProgressReporter {
   private datasetIndex = 0;
   private importSpinner?: Ora;
   private importTimer?: ReturnType<typeof setInterval>;
+  private probeLines: { url: string; text: string }[] = [];
 
   pipelineStart(_name: string): void {
     this.stageSpinner = ora({
@@ -42,6 +43,7 @@ export class ConsoleReporter implements ProgressReporter {
     this.stageSpinner?.succeed();
     this.stageSpinner = undefined;
     this.datasetStartTime = Date.now();
+    this.probeLines = [];
     this.datasetIndex++;
     const counter =
       this.datasetTotal > 1
@@ -64,7 +66,9 @@ export class ConsoleReporter implements ProgressReporter {
     if (result.available) {
       const detail =
         result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
-      s.succeed(`${typeLabel} ${url}${detail}`);
+      const text = `${typeLabel} ${url}${detail}`;
+      s.succeed(text);
+      this.probeLines.push({ url, text });
     } else {
       const detail = result.error
         ? ` (${result.error})`
@@ -72,6 +76,7 @@ export class ConsoleReporter implements ProgressReporter {
           ? ` (HTTP ${result.statusCode})`
           : '';
       s.fail(`${typeLabel} ${url}${detail}`);
+      this.probeLines.push({ url, text: '' });
     }
   }
 
@@ -119,10 +124,26 @@ export class ConsoleReporter implements ProgressReporter {
       spinner.succeed();
       this.clearImportSpinner();
     } else {
-      const s = ora({ discardStdin: false });
-      s.succeed(
-        `${distribution.accessUrl.toString()} ${chalk.dim('(selected)')}`,
-      );
+      const url = distribution.accessUrl.toString();
+      const index = this.probeLines.findIndex((line) => line.url === url);
+      if (index !== -1 && this.probeLines[index].text) {
+        const linesUp = this.probeLines.length - index;
+        const probe = this.probeLines[index];
+        // Move cursor up to the probe line and clear it.
+        process.stderr.write(`\x1B[${linesUp}A\x1B[2K\r`);
+        // Rewrite the probe line with "(selected)" appended.
+        ora({ discardStdin: false }).succeed(
+          `${probe.text} ${chalk.green('(selected)')}`,
+        );
+        // Move cursor back down to original position.
+        if (linesUp > 1) {
+          process.stderr.write(`\x1B[${linesUp - 1}B`);
+        }
+      } else {
+        ora({ discardStdin: false }).succeed(
+          `${url} ${chalk.green('(selected)')}`,
+        );
+      }
     }
   }
 
