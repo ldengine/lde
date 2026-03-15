@@ -1,21 +1,27 @@
 import { DockerTaskRunner } from '@lde/task-runner-docker';
 import { NativeTaskRunner } from '@lde/task-runner-native';
 import { TaskRunner } from '@lde/task-runner';
+import {
+  Downloader,
+  LastModifiedDownloader,
+} from '@lde/distribution-downloader';
 import { Importer } from './importer.js';
 import { Server } from './server.js';
 
 export type QleverOptions = {
+  /** Directory where downloaded data files are stored. */
+  dataDir?: string;
   indexName?: string;
   /** @default 7001 */
   port?: number;
+  downloader?: Downloader;
 } & (
   | {
       mode: 'docker';
       image: string;
       containerName?: string;
-      mountDir?: string;
     }
-  | { mode: 'native'; cwd?: string }
+  | { mode: 'native' }
 );
 
 export function createQlever(options: QleverOptions) {
@@ -25,13 +31,18 @@ export function createQlever(options: QleverOptions) {
       ? new DockerTaskRunner({
           image: options.image,
           containerName: options.containerName,
-          mountDir: options.mountDir,
+          mountDir: options.dataDir,
           port,
         })
-      : new NativeTaskRunner({ cwd: options.cwd });
+      : new NativeTaskRunner({ cwd: options.dataDir });
 
   return {
-    importer: new Importer({ taskRunner, indexName: options.indexName }),
+    importer: new Importer({
+      taskRunner,
+      indexName: options.indexName,
+      downloader:
+        options.downloader ?? new LastModifiedDownloader(options.dataDir),
+    }),
     server: new Server({
       taskRunner,
       indexName: options.indexName ?? 'data',

@@ -118,10 +118,9 @@ export class Importer implements ImporterInterface {
   }
 
   private async index(file: string, format: fileFormat): Promise<string> {
-    const workingDir = dirname(file);
     const settingsFile = 'index.settings.json';
     await writeFile(
-      `${workingDir}/${settingsFile}`,
+      `${dirname(file)}/${settingsFile}`,
       JSON.stringify(this.qleverOptions),
     );
 
