@@ -1,3 +1,13 @@
+## 0.15.0 (2026-03-15)
+
+### 🚀 Features
+
+- **pipeline-console-reporter:** merge \u201c(selected)\u201d into probe output line ([#240](https://github.com/ldelements/lde/pull/240))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.14.0 (2026-03-13)
 
 ### 🧱 Updated Dependencies
