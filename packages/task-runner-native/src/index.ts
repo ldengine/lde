@@ -1,4 +1,4 @@
-import { TaskRunner, type RunOptions } from '@lde/task-runner';
+import { TaskRunner, type TaskRunOptions } from '@lde/task-runner';
 import { ChildProcess, spawn } from 'node:child_process';
 import process from 'node:process';
 
@@ -28,7 +28,7 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
     this.gracefulShutdownTimeout = options?.gracefulShutdownTimeout ?? 5000;
   }
 
-  async run(command: string, options?: RunOptions): Promise<ChildProcess> {
+  async run(command: string, options?: TaskRunOptions): Promise<ChildProcess> {
     const task = spawn(command, {
       detached: true,
       shell: this.shell,
@@ -51,14 +51,14 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
       task.stdout.on('data', (data) => {
         this.stdout.set(
           task.pid!,
-          this.stdout.get(task.pid!) ?? '' + data.toString(),
+          (this.stdout.get(task.pid!) ?? '') + data.toString(),
         );
       });
 
       task.stderr.on('data', (data) => {
         this.stderr.set(
           task.pid!,
-          this.stderr.get(task.pid!) ?? '' + data.toString(),
+          (this.stderr.get(task.pid!) ?? '') + data.toString(),
         );
       });
     }
@@ -124,7 +124,7 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
 
   private taskOutput(task: ChildProcess) {
     const output =
-      (this.stdout.get(task.pid!) ?? '') + this.stderr.get(task.pid!);
+      (this.stdout.get(task.pid!) ?? '') + (this.stderr.get(task.pid!) ?? '');
     this.stdout.delete(task.pid!);
     this.stderr.delete(task.pid!);
 

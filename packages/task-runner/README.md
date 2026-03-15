@@ -9,7 +9,7 @@ Interfaces for running shell commands as tasks. Implementations run commands:
 
 ```typescript
 interface TaskRunner<Task> {
-  run(command: string, options?: RunOptions): Promise<Task>;
+  run(command: string, options?: TaskRunOptions): Promise<Task>;
   wait(task: Task): Promise<string>;
   stop(task: Task): Promise<string | null>;
 }
