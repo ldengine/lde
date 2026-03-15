@@ -134,6 +134,7 @@ export class Importer implements ImporterInterface {
       )}') | qlever-index -i ${
         this.indexName
       } -s ${settingsFile} -F ${format} -p true -f - && cat ${metadataFile}`,
+      { cwd: workingDir },
     );
     return await this.taskRunner.wait(indexTask);
   }
