@@ -82,6 +82,10 @@ export class FileWriter implements Writer {
 
     this.activeWriters.delete(key);
     await new Promise<void>((resolve, reject) => {
+      if (entry.stream.errored) {
+        reject(entry.stream.errored);
+        return;
+      }
       entry.n3Writer.end((error) => {
         if (error) reject(error);
         else resolve();
@@ -115,6 +119,10 @@ export class FileWriter implements Writer {
     await mkdir(dirname(key), { recursive: true });
 
     const stream = createWriteStream(key, { flags: 'w' });
+    stream.on('error', (error) => {
+      // Surface stream errors when flushing; prevents 'unhandled error' crashes.
+      stream.destroy(error);
+    });
     const n3Writer = new N3Writer(stream, {
       format: formatMap[this.format],
       prefixes: this.prefixes,
