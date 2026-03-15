@@ -39,12 +39,11 @@ export class NativeTaskRunner implements TaskRunner<ChildProcess> {
       /** code is null when the process was killed, which is expected when
        * {@link stop} is called. */
       if (code !== null && code !== 0) {
-        // Throw to detect errors in the command arguments.
-        throw new Error(this.taskOutput(task));
+        task.emit('error', new Error(this.taskOutput(task)));
       }
     });
-    task.on('error', (code: number) => {
-      throw new Error(`Task errored with code ${code}`);
+    task.on('error', () => {
+      // Handled by wait(); listener prevents 'unhandled error' crashes.
     });
 
     if (task.pid !== undefined) {
