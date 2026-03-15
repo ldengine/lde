@@ -84,6 +84,7 @@ export class SparqlUpdateWriter implements Writer {
       method: 'POST',
       headers,
       body: query,
+      signal: AbortSignal.timeout(300_000),
     });
 
     if (!response.ok) {
