@@ -5,16 +5,15 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/pipeline',
+    cacheDir: '../../node_modules/.vite/packages/dataset',
     test: {
-      fileParallelism: false,
       coverage: {
         thresholds: {
           autoUpdate: true,
-          functions: 91.05,
-          lines: 93.23,
-          branches: 87.74,
-          statements: 92.53,
+          functions: 100,
+          lines: 100,
+          branches: 100,
+          statements: 100,
         },
       },
     },

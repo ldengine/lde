@@ -6,6 +6,7 @@ import {
   type Executor,
   type ItemSelector,
 } from '@lde/pipeline';
+import { assertSafeIri } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,9 +86,11 @@ function classSelector(): ItemSelector {
   return {
     select: (distribution) => {
       const subjectFilter = distribution.subjectFilter ?? '';
-      const fromClause = distribution.namedGraph
-        ? `FROM <${distribution.namedGraph}>`
-        : '';
+      let fromClause = '';
+      if (distribution.namedGraph) {
+        assertSafeIri(distribution.namedGraph);
+        fromClause = `FROM <${distribution.namedGraph}>`;
+      }
       const selectorQuery = [
         'SELECT DISTINCT ?class',
         fromClause,

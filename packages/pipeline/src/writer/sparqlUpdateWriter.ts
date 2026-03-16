@@ -1,4 +1,4 @@
-import { Dataset } from '@lde/dataset';
+import { Dataset, assertSafeIri } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
 import { batch } from '../batch.js';
 import { Writer } from './writer.js';
@@ -50,6 +50,7 @@ export class SparqlUpdateWriter implements Writer {
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
     const graphUri = dataset.iri.toString();
+    assertSafeIri(graphUri);
 
     if (!this.clearedGraphs.has(graphUri)) {
       await this.clearGraph(graphUri);
