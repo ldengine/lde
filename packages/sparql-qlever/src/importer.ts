@@ -36,7 +36,6 @@ export interface Options {
 
 interface CacheInfo {
   sourceFile: string;
-  tripleCount: number;
 }
 
 /**
@@ -108,9 +107,9 @@ export class Importer implements ImporterInterface {
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
 
-    const cachedTripleCount = await this.isIndexUpToDate(localFile);
-    if (cachedTripleCount !== undefined) {
-      return new ImportSuccessful(distribution, undefined, cachedTripleCount);
+    if (await this.isIndexUpToDate(localFile)) {
+      const tripleCount = await this.readTripleCount(localFile);
+      return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
     const logs = await this.index(
@@ -119,7 +118,7 @@ export class Importer implements ImporterInterface {
     );
     const tripleCount = this.parseTripleCount(logs);
 
-    await this.writeCacheInfo(localFile, tripleCount);
+    await this.writeCacheInfo(localFile);
 
     return new ImportSuccessful(distribution, undefined, tripleCount);
   }
@@ -146,23 +145,20 @@ export class Importer implements ImporterInterface {
 
   /**
    * Check whether the cached index is still up to date.
-   *
-   * Returns the cached triple count when the index can be reused,
-   * or `undefined` when re-indexing is needed.
    */
-  private async isIndexUpToDate(dataFile: string): Promise<number | undefined> {
-    if (!this.cacheIndex) return undefined;
+  private async isIndexUpToDate(dataFile: string): Promise<boolean> {
+    if (!this.cacheIndex) return false;
 
     let cacheInfo: CacheInfo;
     try {
       const raw = await readFile(this.cacheInfoPath(dataFile), 'utf-8');
       cacheInfo = JSON.parse(raw) as CacheInfo;
     } catch {
-      return undefined; // No cache marker — first run.
+      return false; // No cache marker — first run.
     }
 
     if (cacheInfo.sourceFile !== basename(dataFile)) {
-      return undefined; // Different dataset was last indexed.
+      return false; // Different dataset was last indexed.
     }
 
     const [cacheInfoStat, dataFileStat] = await Promise.all([
@@ -170,20 +166,28 @@ export class Importer implements ImporterInterface {
       stat(dataFile),
     ]);
     if (dataFileStat.mtimeMs > cacheInfoStat.mtimeMs) {
-      return undefined; // Data was re-downloaded.
+      return false; // Data was re-downloaded.
     }
 
-    return cacheInfo.tripleCount;
+    return true;
   }
 
-  private async writeCacheInfo(
-    dataFile: string,
-    tripleCount: number | undefined,
-  ): Promise<void> {
-    const info: CacheInfo = {
-      sourceFile: basename(dataFile),
-      tripleCount: tripleCount ?? 0,
-    };
+  /** Read the triple count from QLever's metadata file. */
+  private async readTripleCount(dataFile: string): Promise<number | undefined> {
+    try {
+      const metadataPath = join(
+        dirname(dataFile),
+        `${this.indexName}.meta-data.json`,
+      );
+      const raw = await readFile(metadataPath, 'utf-8');
+      return this.parseTripleCount(raw);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async writeCacheInfo(dataFile: string): Promise<void> {
+    const info: CacheInfo = { sourceFile: basename(dataFile) };
     await writeFile(this.cacheInfoPath(dataFile), JSON.stringify(info));
   }
 

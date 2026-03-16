@@ -4,7 +4,14 @@ import { DockerTaskRunner } from '@lde/task-runner-docker';
 import { ImportSuccessful } from '@lde/sparql-importer';
 import { Dataset, Distribution } from '@lde/dataset';
 import { join, resolve } from 'node:path';
-import { mkdtemp, writeFile, rm, copyFile, utimes } from 'node:fs/promises';
+import {
+  mkdtemp,
+  readFile,
+  writeFile,
+  rm,
+  copyFile,
+  utimes,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { TaskRunner } from '@lde/task-runner';
 
@@ -81,6 +88,14 @@ describe('Importer', () => {
     let dataFile: string;
     const indexName = 'test-index';
 
+    /** Write the QLever metadata file that `readTripleCount` reads on cache hits. */
+    async function writeMetadata(tripleCount: number) {
+      await writeFile(
+        join(tempDir, `${indexName}.meta-data.json`),
+        JSON.stringify({ 'num-triples': { normal: tripleCount } }),
+      );
+    }
+
     beforeEach(async () => {
       tempDir = await mkdtemp(join(tmpdir(), 'qlever-cache-'));
       dataFile = join(tempDir, 'data.ttl');
@@ -117,13 +132,12 @@ describe('Importer', () => {
       expect((result as ImportSuccessful).tripleCount).toBe(42);
       expect(runner.commands.length).toBe(1);
 
-      // Cache marker should exist.
-      const { readFile } = await import('node:fs/promises');
+      // Cache marker should exist with only the source file name.
       const cacheInfo = JSON.parse(
         await readFile(join(tempDir, `${indexName}.cache-info.json`), 'utf-8'),
       );
       expect(cacheInfo.sourceFile).toBe('data.ttl');
-      expect(cacheInfo.tripleCount).toBe(42);
+      expect(cacheInfo).not.toHaveProperty('tripleCount');
     });
 
     it('skips indexing when cache is up to date', async () => {
@@ -133,6 +147,9 @@ describe('Importer', () => {
       // First run: indexes and writes cache marker.
       await importer.import(makeDataset());
       expect(runner.commands.length).toBe(1);
+
+      // Write metadata file (normally created by qlever-index inside the task runner).
+      await writeMetadata(42);
 
       // Second run: cache hit, no indexing.
       const result = await importer.import(makeDataset());
@@ -179,7 +196,7 @@ describe('Importer', () => {
       // Manually write a cache marker with a different source file.
       await writeFile(
         join(tempDir, `${indexName}.cache-info.json`),
-        JSON.stringify({ sourceFile: 'other-dataset.nt', tripleCount: 99 }),
+        JSON.stringify({ sourceFile: 'other-dataset.nt' }),
       );
 
       // Should re-index because source doesn't match.
