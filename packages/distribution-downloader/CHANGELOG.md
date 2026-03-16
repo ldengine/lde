@@ -1,3 +1,13 @@
+## 0.5.2 (2026-03-16)
+
+### 🩹 Fixes
+
+- **distribution-downloader:** add fetch timeout, clean up partial downloads on failure ([959de34](https://github.com/ldelements/lde/commit/959de34))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.1 (2026-03-06)
 
 ### 🧱 Updated Dependencies

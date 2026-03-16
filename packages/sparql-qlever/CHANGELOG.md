@@ -1,3 +1,10 @@
+## 0.9.2 (2026-03-16)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.5.2
+- Updated @lde/task-runner-native to 0.2.13
+
 ## 0.9.1 (2026-03-15)
 
 ### 🩹 Fixes

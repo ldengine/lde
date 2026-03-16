@@ -1,3 +1,13 @@
+## 0.2.13 (2026-03-16)
+
+### 🩹 Fixes
+
+- **task-runner-native:** prevent process crashes from event listener throws ([2951b8c](https://github.com/ldelements/lde/commit/2951b8c))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.12 (2026-03-15)
 
 ### 🩹 Fixes

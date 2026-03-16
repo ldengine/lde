@@ -1,3 +1,15 @@
+## 0.24.2 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline:** handle WriteStream errors in FileWriter to prevent silent failures ([997401c](https://github.com/ldelements/lde/commit/997401c))
+- **pipeline:** add 5-minute timeout to SPARQL UPDATE requests ([d9fb604](https://github.com/ldelements/lde/commit/d9fb604))
+- **pipeline:** destroy read streams in readFiles to prevent file descriptor leaks ([7a2bf47](https://github.com/ldelements/lde/commit/7a2bf47))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.24.1 (2026-03-16)
 
 ### 🩹 Fixes
