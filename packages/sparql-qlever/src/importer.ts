@@ -9,8 +9,8 @@ import {
   Downloader,
   LastModifiedDownloader,
 } from '@lde/distribution-downloader';
-import { basename, dirname } from 'path';
-import { writeFile } from 'node:fs/promises';
+import { basename, dirname, join } from 'path';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import { TaskRunner } from '@lde/task-runner';
 
 type fileFormat = 'nt' | 'nq' | 'ttl';
@@ -30,6 +30,13 @@ export interface Options {
     'num-triples-per-batch': number;
   };
   port?: number;
+  /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
+  cacheIndex?: boolean;
+}
+
+interface CacheInfo {
+  sourceFile: string;
+  tripleCount: number;
 }
 
 /**
@@ -42,8 +49,15 @@ export class Importer implements ImporterInterface {
   private taskRunner: TaskRunner<unknown>;
   private downloader;
   private qleverOptions;
+  private cacheIndex;
 
-  constructor({ taskRunner, downloader, indexName, qleverOptions }: Options) {
+  constructor({
+    taskRunner,
+    downloader,
+    indexName,
+    qleverOptions,
+    cacheIndex,
+  }: Options) {
     this.taskRunner = taskRunner;
     this.downloader = downloader ?? new LastModifiedDownloader();
     this.indexName = indexName ?? 'data';
@@ -51,6 +65,7 @@ export class Importer implements ImporterInterface {
       'ascii-prefixes-only': true,
       'num-triples-per-batch': 100000,
     };
+    this.cacheIndex = cacheIndex ?? true;
   }
 
   public async import(
@@ -92,11 +107,19 @@ export class Importer implements ImporterInterface {
     distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
+
+    const cachedTripleCount = await this.isIndexUpToDate(localFile);
+    if (cachedTripleCount !== undefined) {
+      return new ImportSuccessful(distribution, undefined, cachedTripleCount);
+    }
+
     const logs = await this.index(
       localFile,
       this.fileFormatFromMimeType(distribution.mimeType),
     );
     const tripleCount = this.parseTripleCount(logs);
+
+    await this.writeCacheInfo(localFile, tripleCount);
 
     return new ImportSuccessful(distribution, undefined, tripleCount);
   }
@@ -115,6 +138,53 @@ export class Importer implements ImporterInterface {
     // Docker log multiplexing prepends binary frame headers to each chunk.
     const match = logs.match(/"num-triples":\{[^}]*"normal":(\d+)/);
     return match ? Number(match[1]) : undefined;
+  }
+
+  private cacheInfoPath(dataFile: string): string {
+    return join(dirname(dataFile), `${this.indexName}.cache-info.json`);
+  }
+
+  /**
+   * Check whether the cached index is still up to date.
+   *
+   * Returns the cached triple count when the index can be reused,
+   * or `undefined` when re-indexing is needed.
+   */
+  private async isIndexUpToDate(dataFile: string): Promise<number | undefined> {
+    if (!this.cacheIndex) return undefined;
+
+    let cacheInfo: CacheInfo;
+    try {
+      const raw = await readFile(this.cacheInfoPath(dataFile), 'utf-8');
+      cacheInfo = JSON.parse(raw) as CacheInfo;
+    } catch {
+      return undefined; // No cache marker — first run.
+    }
+
+    if (cacheInfo.sourceFile !== basename(dataFile)) {
+      return undefined; // Different dataset was last indexed.
+    }
+
+    const [cacheInfoStat, dataFileStat] = await Promise.all([
+      stat(this.cacheInfoPath(dataFile)),
+      stat(dataFile),
+    ]);
+    if (dataFileStat.mtimeMs > cacheInfoStat.mtimeMs) {
+      return undefined; // Data was re-downloaded.
+    }
+
+    return cacheInfo.tripleCount;
+  }
+
+  private async writeCacheInfo(
+    dataFile: string,
+    tripleCount: number | undefined,
+  ): Promise<void> {
+    const info: CacheInfo = {
+      sourceFile: basename(dataFile),
+      tripleCount: tripleCount ?? 0,
+    };
+    await writeFile(this.cacheInfoPath(dataFile), JSON.stringify(info));
   }
 
   private async index(file: string, format: fileFormat): Promise<string> {

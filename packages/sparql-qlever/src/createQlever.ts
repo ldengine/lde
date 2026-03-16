@@ -15,6 +15,8 @@ export type QleverOptions = {
   /** @default 7001 */
   port?: number;
   downloader?: Downloader;
+  /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
+  cacheIndex?: boolean;
 } & (
   | {
       mode: 'docker';
@@ -42,6 +44,7 @@ export function createQlever(options: QleverOptions) {
       indexName: options.indexName,
       downloader:
         options.downloader ?? new LastModifiedDownloader(options.dataDir),
+      cacheIndex: options.cacheIndex,
     }),
     server: new Server({
       taskRunner,
