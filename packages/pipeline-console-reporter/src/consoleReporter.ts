@@ -49,8 +49,9 @@ export class ConsoleReporter implements ProgressReporter {
       this.datasetTotal > 1
         ? ` ${chalk.dim(`[${this.datasetIndex}/${this.datasetTotal}]`)}`
         : '';
-    console.info();
-    console.info(`Dataset ${chalk.bold(dataset.iri.toString())}${counter}`);
+    process.stderr.write(
+      `\nDataset ${chalk.bold(dataset.iri.toString())}${counter}\n`,
+    );
   }
 
   distributionProbed(result: DistributionAnalysisResult): void {
@@ -240,10 +241,10 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   pipelineComplete(result: { duration: number }): void {
-    console.info(
+    process.stderr.write(
       `\nPipeline completed in ${chalk.bold(
         prettyMilliseconds(result.duration),
-      )}`,
+      )}\n`,
     );
   }
 }
