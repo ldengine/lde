@@ -1,3 +1,13 @@
+## 0.24.1 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline:** replace all #subjectFilter# occurrences in query templates ([#244](https://github.com/ldelements/lde/pull/244))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.24.0 (2026-03-13)
 
 ### 🚀 Features
