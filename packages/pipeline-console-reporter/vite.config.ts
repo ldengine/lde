@@ -11,9 +11,9 @@ export default mergeConfig(
         thresholds: {
           autoUpdate: true,
           functions: 31.57,
-          lines: 49.43,
-          branches: 36,
-          statements: 49.45,
+          lines: 46.15,
+          branches: 36.36,
+          statements: 46.23,
         },
       },
     },

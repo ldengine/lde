@@ -126,7 +126,7 @@ export class ConsoleReporter implements ProgressReporter {
     } else {
       const url = distribution.accessUrl.toString();
       const index = this.probeLines.findIndex((line) => line.url === url);
-      if (index !== -1 && this.probeLines[index].text) {
+      if (index !== -1 && this.probeLines[index].text && process.stderr.isTTY) {
         const linesUp = this.probeLines.length - index;
         const probe = this.probeLines[index];
         // Move cursor up to the probe line and clear it.
@@ -140,8 +140,10 @@ export class ConsoleReporter implements ProgressReporter {
           process.stderr.write(`\x1B[${linesUp - 1}B`);
         }
       } else {
+        const probe = index !== -1 ? this.probeLines[index] : undefined;
+        const text = probe?.text ?? url;
         ora({ discardStdin: false }).succeed(
-          `${url} ${chalk.green('(selected)')}`,
+          `${text} ${chalk.green('(selected)')}`,
         );
       }
     }

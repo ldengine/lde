@@ -86,7 +86,8 @@ describe('ConsoleReporter', () => {
       spy.mockRestore();
     });
 
-    it('appends "(selected)" to matching probe line instead of printing a separate line', () => {
+    it('prints "(selected)" without cursor escapes on non-TTY', () => {
+      // Tests run in non-TTY mode, so this exercises the non-TTY path.
       const reporter = new ConsoleReporter();
       const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
 
@@ -100,11 +101,10 @@ describe('ConsoleReporter', () => {
       );
 
       const output = spy.mock.calls.map((call) => String(call[0])).join('');
-      // The rewritten probe line should contain both the probe text and "(selected)".
       expect(output).toContain('SPARQL endpoint');
       expect(output).toContain('(selected)');
-      // There should be a cursor-up escape sequence, indicating in-place rewrite.
-      expect(output).toContain('\x1B[1A');
+      // No cursor-movement escapes in non-TTY mode.
+      expect(output).not.toContain('\x1B[1A');
       spy.mockRestore();
     });
 
