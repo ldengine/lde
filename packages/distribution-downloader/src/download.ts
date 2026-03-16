@@ -1,6 +1,6 @@
 import { Distribution } from '@lde/dataset';
 import filenamifyUrl from 'filenamify-url';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
 import { access, rm, stat } from 'node:fs/promises';
@@ -32,7 +32,7 @@ export interface Downloader {
   download(
     distribution: Distribution,
     target?: string,
-    options?: DownloadOptions
+    options?: DownloadOptions,
   ): Promise<string>;
 }
 
@@ -42,11 +42,17 @@ export class LastModifiedDownloader implements Downloader {
   public async download(
     distribution: Distribution,
     target = join(this.path, filenamifyUrl(distribution.accessUrl)),
-    options?: DownloadOptions
+    options?: DownloadOptions,
   ): Promise<string> {
     const logger = options?.logger ?? noopLogger;
     const downloadUrl = distribution.accessUrl;
     const filePath = resolve(target);
+    const baseDir = resolve(this.path);
+    if (!filePath.startsWith(baseDir + sep)) {
+      throw new Error(
+        `Download target escapes the base directory: ${filePath}`,
+      );
+    }
 
     if (await this.localFileIsUpToDate(filePath, distribution)) {
       logger.debug(`File ${filePath} is up to date, skipping download.`);
@@ -58,7 +64,7 @@ export class LastModifiedDownloader implements Downloader {
     });
     if (!downloadResponse.ok || !downloadResponse.body) {
       throw new Error(
-        `Failed to download ${downloadUrl}: ${downloadResponse.statusText}`
+        `Failed to download ${downloadUrl}: ${downloadResponse.statusText}`,
       );
     }
 
@@ -80,7 +86,7 @@ export class LastModifiedDownloader implements Downloader {
 
   private async localFileIsUpToDate(
     filePath: string,
-    distribution: Distribution
+    distribution: Distribution,
   ): Promise<boolean> {
     if (undefined === distribution.lastModified) {
       return false;
