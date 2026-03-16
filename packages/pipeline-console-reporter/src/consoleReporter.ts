@@ -14,12 +14,11 @@ const compactNumber = new Intl.NumberFormat('en', {
 });
 
 export class ConsoleReporter implements ProgressReporter {
-  private stageSpinner?: Ora;
+  private activeSpinner?: Ora;
   private stageStartTime = 0;
   private datasetStartTime = 0;
   private datasetTotal = 0;
   private datasetIndex = 0;
-  private importSpinner?: Ora;
   private importTimer?: ReturnType<typeof setInterval>;
   private probeLines: { url: string; text: string }[] = [];
 
@@ -28,25 +27,31 @@ export class ConsoleReporter implements ProgressReporter {
     ora({ discardStdin: false })[method](text);
   }
 
+  /** Stop any active spinner and start a new one. */
+  private startSpinner(text: string): Ora {
+    this.activeSpinner?.stop();
+    this.clearImportTimer();
+    this.activeSpinner = ora({ discardStdin: false }).start(text);
+    return this.activeSpinner;
+  }
+
   pipelineStart(_name: string): void {
-    this.stageSpinner = ora({
-      discardStdin: false,
-      text: 'Selecting datasets',
-    }).start();
+    this.startSpinner('Selecting datasets');
   }
 
   datasetsSelected(count: number, duration: number): void {
     this.datasetTotal = count;
-    if (this.stageSpinner) {
-      this.stageSpinner.text = `Selected datasets: found ${chalk.bold(count)} ${
+    if (this.activeSpinner) {
+      this.activeSpinner.text = `Selected datasets: found ${chalk.bold(count)} ${
         count === 1 ? 'dataset' : 'datasets'
       } in ${chalk.bold(prettyMilliseconds(duration))}`;
     }
   }
 
   datasetStart(dataset: Dataset): void {
-    this.stageSpinner?.succeed();
-    this.stageSpinner = undefined;
+    this.activeSpinner?.succeed();
+    this.activeSpinner = undefined;
+    this.clearImportTimer();
     this.datasetStartTime = Date.now();
     this.probeLines = [];
     this.datasetIndex++;
@@ -87,10 +92,10 @@ export class ConsoleReporter implements ProgressReporter {
 
   importStarted(): void {
     const importStart = Date.now();
-    this.importSpinner = ora({ discardStdin: false }).start('Importing\u2026');
+    this.startSpinner('Importing\u2026');
     this.importTimer = setInterval(() => {
-      if (this.importSpinner) {
-        this.importSpinner.suffixText = prettyMilliseconds(
+      if (this.activeSpinner) {
+        this.activeSpinner.suffixText = prettyMilliseconds(
           Date.now() - importStart,
         );
       }
@@ -98,12 +103,15 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   importFailed(_distribution: Distribution, error: string): void {
-    const spinner = this.importSpinner ?? ora({ discardStdin: false });
-    if (!this.importSpinner) spinner.start();
-    spinner.text = `Import failed: ${error}`;
-    spinner.suffixText = '';
-    spinner.fail();
-    this.clearImportSpinner();
+    if (this.activeSpinner) {
+      this.activeSpinner.text = `Import failed: ${error}`;
+      this.activeSpinner.suffixText = '';
+      this.activeSpinner.fail();
+    } else {
+      this.printLine('fail', `Import failed: ${error}`);
+    }
+    this.clearImportTimer();
+    this.activeSpinner = undefined;
   }
 
   distributionSelected(
@@ -114,8 +122,6 @@ export class ConsoleReporter implements ProgressReporter {
     tripleCount?: number,
   ): void {
     if (importedFrom) {
-      const spinner =
-        this.importSpinner ?? ora({ discardStdin: false }).start();
       const count =
         tripleCount !== undefined
           ? `${compactNumber.format(tripleCount)} triples, `
@@ -124,10 +130,16 @@ export class ConsoleReporter implements ProgressReporter {
         importDuration !== undefined
           ? ` in ${chalk.bold(prettyMilliseconds(importDuration))}`
           : '';
-      spinner.text = `Imported ${importedFrom.accessUrl.toString()} (${count}to ${distribution.accessUrl.toString()})${duration}`;
-      spinner.suffixText = '';
-      spinner.succeed();
-      this.clearImportSpinner();
+      const text = `Imported ${importedFrom.accessUrl.toString()} (${count}to ${distribution.accessUrl.toString()})${duration}`;
+      if (this.activeSpinner) {
+        this.activeSpinner.text = text;
+        this.activeSpinner.suffixText = '';
+        this.activeSpinner.succeed();
+      } else {
+        this.printLine('succeed', text);
+      }
+      this.clearImportTimer();
+      this.activeSpinner = undefined;
     } else {
       const url = distribution.accessUrl.toString();
       const probe = this.probeLines.find((line) => line.url === url);
@@ -149,27 +161,25 @@ export class ConsoleReporter implements ProgressReporter {
     }
   }
 
-  private clearImportSpinner(): void {
+  private clearImportTimer(): void {
     if (this.importTimer) {
       clearInterval(this.importTimer);
       this.importTimer = undefined;
     }
-    this.importSpinner = undefined;
   }
 
   stageStart(stage: string): void {
     this.stageStartTime = Date.now();
-    this.stageSpinner = ora({ discardStdin: false }).start();
-    this.stageSpinner.text = `Stage ${chalk.bold(stage)}`;
+    this.startSpinner(`Stage ${chalk.bold(stage)}`);
   }
 
   stageProgress(update: {
     itemsProcessed: number;
     quadsGenerated: number;
   }): void {
-    if (this.stageSpinner) {
+    if (this.activeSpinner) {
       const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
-      this.stageSpinner.suffixText = `${compactNumber.format(
+      this.activeSpinner.suffixText = `${compactNumber.format(
         update.itemsProcessed,
       )} items, ${compactNumber.format(
         update.quadsGenerated,
@@ -185,20 +195,20 @@ export class ConsoleReporter implements ProgressReporter {
       duration: number;
     },
   ): void {
-    if (this.stageSpinner) {
-      this.stageSpinner.suffixText = `took ${chalk.bold(
+    if (this.activeSpinner) {
+      this.activeSpinner.suffixText = `took ${chalk.bold(
         prettyMilliseconds(result.duration),
       )}`;
-      this.stageSpinner.succeed();
-      this.stageSpinner = undefined;
+      this.activeSpinner.succeed();
+      this.activeSpinner = undefined;
     }
   }
 
   stageFailed(_stage: string, error: Error): void {
-    if (this.stageSpinner) {
-      this.stageSpinner.suffixText = chalk.red(error.message);
-      this.stageSpinner.fail();
-      this.stageSpinner = undefined;
+    if (this.activeSpinner) {
+      this.activeSpinner.suffixText = chalk.red(error.message);
+      this.activeSpinner.fail();
+      this.activeSpinner = undefined;
     }
   }
 
@@ -217,10 +227,10 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   stageSkipped(_stage: string, reason: string): void {
-    if (this.stageSpinner) {
-      this.stageSpinner.suffixText = `skipped: ${chalk.red(reason)}`;
-      this.stageSpinner.fail();
-      this.stageSpinner = undefined;
+    if (this.activeSpinner) {
+      this.activeSpinner.suffixText = `skipped: ${chalk.red(reason)}`;
+      this.activeSpinner.fail();
+      this.activeSpinner = undefined;
     }
   }
 
