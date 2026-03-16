@@ -1,3 +1,13 @@
+## 0.6.5 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline-shacl-validator:** truncate report file at start of each run ([#251](https://github.com/ldelements/lde/pull/251))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.6.4 (2026-03-16)
 
 ### 🧱 Updated Dependencies
