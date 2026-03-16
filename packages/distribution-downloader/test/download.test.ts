@@ -9,7 +9,7 @@ const localFile = join(os.tmpdir(), 'example.com!file.nt');
 const downloader = new LastModifiedDownloader(os.tmpdir());
 const distribution = new Distribution(
   new URL('https://example.com/file.nt'),
-  'application/n-triples'
+  'application/n-triples',
 );
 
 describe('LastModifiedDownloader', () => {
@@ -56,14 +56,14 @@ describe('LastModifiedDownloader', () => {
     it('throws an error if file is unavailable', async () => {
       nock('https://example.com').get('/file.nt').reply(500);
       await expect(downloader.download(distribution)).rejects.toThrow(
-        'Failed to download https://example.com/file.nt: Internal Server Error'
+        'Failed to download https://example.com/file.nt: Internal Server Error',
       );
     });
 
     it('throws an error if file is empty', async () => {
       nock('https://example.com').get('/file.nt').reply(200, '');
       await expect(downloader.download(distribution)).rejects.toThrow(
-        'Distribution download is empty'
+        'Distribution download is empty',
       );
     });
 
@@ -82,6 +82,12 @@ describe('LastModifiedDownloader', () => {
 
       const fileContent = await fs.readFile(localFile, 'utf8');
       expect(fileContent).toBe('complete file');
+    });
+
+    it('rejects a target that escapes the base directory', async () => {
+      await expect(
+        downloader.download(distribution, '../../etc/passwd'),
+      ).rejects.toThrow(/escapes the base directory/);
     });
 
     it('logs debug messages when logger is provided', async () => {
@@ -103,7 +109,7 @@ describe('LastModifiedDownloader', () => {
 
       await downloader.download(distribution, undefined, { logger });
       expect(debugMessages.some((msg) => msg.includes('is up to date'))).toBe(
-        true
+        true,
       );
     });
   });
