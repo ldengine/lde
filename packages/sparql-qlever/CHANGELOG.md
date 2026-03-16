@@ -1,3 +1,13 @@
+## 0.10.0 (2026-03-16)
+
+### 🚀 Features
+
+- **sparql-qlever:** cache QLever indices across pipeline runs ([#249](https://github.com/ldelements/lde/pull/249))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.9.3 (2026-03-16)
 
 ### 🧱 Updated Dependencies
