@@ -1,3 +1,13 @@
+## 0.15.1 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** suppress ANSI cursor escapes in non-TTY output ([#241](https://github.com/ldelements/lde/pull/241))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.15.0 (2026-03-15)
 
 ### 🚀 Features
