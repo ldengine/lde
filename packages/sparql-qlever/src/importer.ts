@@ -9,8 +9,8 @@ import {
   Downloader,
   LastModifiedDownloader,
 } from '@lde/distribution-downloader';
-import { basename, dirname } from 'path';
-import { writeFile } from 'node:fs/promises';
+import { basename, dirname, join } from 'path';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import { TaskRunner } from '@lde/task-runner';
 
 type fileFormat = 'nt' | 'nq' | 'ttl';
@@ -30,6 +30,12 @@ export interface Options {
     'num-triples-per-batch': number;
   };
   port?: number;
+  /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
+  cacheIndex?: boolean;
+}
+
+interface CacheInfo {
+  sourceFile: string;
 }
 
 /**
@@ -42,8 +48,15 @@ export class Importer implements ImporterInterface {
   private taskRunner: TaskRunner<unknown>;
   private downloader;
   private qleverOptions;
+  private cacheIndex;
 
-  constructor({ taskRunner, downloader, indexName, qleverOptions }: Options) {
+  constructor({
+    taskRunner,
+    downloader,
+    indexName,
+    qleverOptions,
+    cacheIndex,
+  }: Options) {
     this.taskRunner = taskRunner;
     this.downloader = downloader ?? new LastModifiedDownloader();
     this.indexName = indexName ?? 'data';
@@ -51,6 +64,7 @@ export class Importer implements ImporterInterface {
       'ascii-prefixes-only': true,
       'num-triples-per-batch': 100000,
     };
+    this.cacheIndex = cacheIndex ?? true;
   }
 
   public async import(
@@ -92,11 +106,19 @@ export class Importer implements ImporterInterface {
     distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
     const localFile = await this.downloader.download(distribution);
+
+    if (await this.isIndexUpToDate(localFile)) {
+      const tripleCount = await this.readTripleCount(localFile);
+      return new ImportSuccessful(distribution, undefined, tripleCount);
+    }
+
     const logs = await this.index(
       localFile,
       this.fileFormatFromMimeType(distribution.mimeType),
     );
     const tripleCount = this.parseTripleCount(logs);
+
+    await this.writeCacheInfo(localFile);
 
     return new ImportSuccessful(distribution, undefined, tripleCount);
   }
@@ -115,6 +137,58 @@ export class Importer implements ImporterInterface {
     // Docker log multiplexing prepends binary frame headers to each chunk.
     const match = logs.match(/"num-triples":\{[^}]*"normal":(\d+)/);
     return match ? Number(match[1]) : undefined;
+  }
+
+  private cacheInfoPath(dataFile: string): string {
+    return join(dirname(dataFile), `${this.indexName}.cache-info.json`);
+  }
+
+  /**
+   * Check whether the cached index is still up to date.
+   */
+  private async isIndexUpToDate(dataFile: string): Promise<boolean> {
+    if (!this.cacheIndex) return false;
+
+    let cacheInfo: CacheInfo;
+    try {
+      const raw = await readFile(this.cacheInfoPath(dataFile), 'utf-8');
+      cacheInfo = JSON.parse(raw) as CacheInfo;
+    } catch {
+      return false; // No cache marker — first run.
+    }
+
+    if (cacheInfo.sourceFile !== basename(dataFile)) {
+      return false; // Different dataset was last indexed.
+    }
+
+    const [cacheInfoStat, dataFileStat] = await Promise.all([
+      stat(this.cacheInfoPath(dataFile)),
+      stat(dataFile),
+    ]);
+    if (dataFileStat.mtimeMs > cacheInfoStat.mtimeMs) {
+      return false; // Data was re-downloaded.
+    }
+
+    return true;
+  }
+
+  /** Read the triple count from QLever's metadata file. */
+  private async readTripleCount(dataFile: string): Promise<number | undefined> {
+    try {
+      const metadataPath = join(
+        dirname(dataFile),
+        `${this.indexName}.meta-data.json`,
+      );
+      const raw = await readFile(metadataPath, 'utf-8');
+      return this.parseTripleCount(raw);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async writeCacheInfo(dataFile: string): Promise<void> {
+    const info: CacheInfo = { sourceFile: basename(dataFile) };
+    await writeFile(this.cacheInfoPath(dataFile), JSON.stringify(info));
   }
 
   private async index(file: string, format: fileFormat): Promise<string> {
