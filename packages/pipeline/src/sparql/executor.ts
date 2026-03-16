@@ -1,4 +1,4 @@
-import { Dataset, Distribution } from '@lde/dataset';
+import { Dataset, Distribution, assertSafeIri } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import type { NamedNode, Quad } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
@@ -157,6 +157,7 @@ export class SparqlConstructExecutor implements Executor {
     }
 
     let query = this.generator.generate(ast);
+    assertSafeIri(dataset.iri.toString());
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
     return await pRetry(
