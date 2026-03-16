@@ -1,3 +1,13 @@
+## 0.10.1 (2026-03-16)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** use gunzip -c instead of zcat for macOS compatibility ([#250](https://github.com/ldelements/lde/pull/250))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.10.0 (2026-03-16)
 
 ### 🚀 Features
