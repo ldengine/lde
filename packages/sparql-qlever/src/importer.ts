@@ -202,7 +202,7 @@ export class Importer implements ImporterInterface {
 
     const metadataFile = `${this.indexName}.meta-data.json`;
     const indexTask = await this.taskRunner.run(
-      `(zcat '${basename(file)}' 2>/dev/null || cat '${basename(
+      `(gunzip -c '${basename(file)}' 2>/dev/null || cat '${basename(
         file,
       )}') | qlever-index -i ${
         this.indexName
