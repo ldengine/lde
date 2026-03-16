@@ -23,6 +23,11 @@ export class ConsoleReporter implements ProgressReporter {
   private importTimer?: ReturnType<typeof setInterval>;
   private probeLines: { url: string; text: string }[] = [];
 
+  /** Print a static succeed/fail line without starting a spinner animation. */
+  private printLine(method: 'succeed' | 'fail', text: string): void {
+    ora({ discardStdin: false })[method](text);
+  }
+
   pipelineStart(_name: string): void {
     this.stageSpinner = ora({
       discardStdin: false,
@@ -63,12 +68,11 @@ export class ConsoleReporter implements ProgressReporter {
           ? 'Data dump'
           : 'Network error';
 
-    const s = ora({ discardStdin: false });
     if (result.available) {
       const detail =
         result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
       const text = `${typeLabel} ${url}${detail}`;
-      s.succeed(text);
+      this.printLine('succeed', text);
       this.probeLines.push({ url, text });
     } else {
       const detail = result.error
@@ -76,7 +80,7 @@ export class ConsoleReporter implements ProgressReporter {
         : result.statusCode !== undefined
           ? ` (HTTP ${result.statusCode})`
           : '';
-      s.fail(`${typeLabel} ${url}${detail}`);
+      this.printLine('fail', `${typeLabel} ${url}${detail}`);
       this.probeLines.push({ url, text: '' });
     }
   }
@@ -128,22 +132,19 @@ export class ConsoleReporter implements ProgressReporter {
       const url = distribution.accessUrl.toString();
       const probe = this.probeLines.find((line) => line.url === url);
       const text = probe?.text || url;
+      const selectedText = `${text} ${chalk.green('(selected)')}`;
 
       if (probe?.text && process.stderr.isTTY) {
         const linesUp = this.probeLines.length - this.probeLines.indexOf(probe);
         // Move cursor up to the probe line and clear it.
         process.stderr.write(`\x1B[${linesUp}A\x1B[2K\r`);
-        ora({ discardStdin: false }).succeed(
-          `${text} ${chalk.green('(selected)')}`,
-        );
+        this.printLine('succeed', selectedText);
         // Move cursor back down to original position.
         if (linesUp > 1) {
           process.stderr.write(`\x1B[${linesUp - 1}B`);
         }
       } else {
-        ora({ discardStdin: false }).succeed(
-          `${text} ${chalk.green('(selected)')}`,
-        );
+        this.printLine('succeed', selectedText);
       }
     }
   }
@@ -202,13 +203,14 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   stageValidated(_stage: string, report: ValidationReport): void {
-    const s = ora({ discardStdin: false });
     if (report.conforms) {
-      s.succeed(
+      this.printLine(
+        'succeed',
         `Validated ${compactNumber.format(report.quadsValidated)} quads`,
       );
     } else {
-      s.fail(
+      this.printLine(
+        'fail',
         `Validated ${compactNumber.format(report.quadsValidated)} quads: ${chalk.red(`${compactNumber.format(report.violations)} violation(s)`)}`,
       );
     }
@@ -223,21 +225,16 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   datasetComplete(_dataset: Dataset): void {
-    const s = ora({
-      discardStdin: false,
-      text: `Completed in ${chalk.bold(
+    this.printLine(
+      'succeed',
+      `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
       )}`,
-    });
-    s.succeed();
+    );
   }
 
   datasetSkipped(_dataset: Dataset, reason: string): void {
-    const s = ora({
-      discardStdin: false,
-      text: `Skipped: ${chalk.red(reason)}`,
-    });
-    s.fail();
+    this.printLine('fail', `Skipped: ${chalk.red(reason)}`);
   }
 
   pipelineComplete(result: { duration: number }): void {

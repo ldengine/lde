@@ -129,7 +129,7 @@ export class Stage {
     const iter = batches[Symbol.asyncIterator]();
     const first = await iter.next();
     if (first.done) {
-      return new NotSupported('All executors returned NotSupported');
+      return new NotSupported('No items selected');
     }
 
     // Reconstruct a full iterable including the peeked first batch.
