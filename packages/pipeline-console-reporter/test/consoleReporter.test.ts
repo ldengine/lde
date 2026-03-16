@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { ConsoleReporter } from '../src/consoleReporter.js';
 import { Dataset, Distribution } from '@lde/dataset';
 import type { DistributionAnalysisResult } from '@lde/pipeline';
@@ -24,6 +24,8 @@ function makeProbeResult(
 }
 
 describe('ConsoleReporter', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('can be instantiated', () => {
     const reporter = new ConsoleReporter();
     expect(reporter).toBeInstanceOf(ConsoleReporter);
@@ -43,7 +45,6 @@ describe('ConsoleReporter', () => {
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Validated');
       expect(output).toContain('5K');
-      spy.mockRestore();
     });
 
     it('shows failure with violation count when validation does not conform', () => {
@@ -60,7 +61,19 @@ describe('ConsoleReporter', () => {
       expect(output).toContain('Validated');
       expect(output).toContain('10K');
       expect(output).toContain('violation');
-      spy.mockRestore();
+    });
+  });
+
+  describe('concurrent spinners', () => {
+    it('stageStart after importStarted does not crash and produces output for both', () => {
+      const reporter = new ConsoleReporter();
+      const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+      reporter.importStarted();
+      reporter.stageStart('transform');
+
+      const output = spy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Stage');
     });
   });
 
@@ -83,7 +96,6 @@ describe('ConsoleReporter', () => {
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('4.8M triples');
       expect(output).toContain('to http://localhost:7001/sparql');
-      spy.mockRestore();
     });
 
     it('prints "(selected)" without cursor escapes on non-TTY', () => {
@@ -105,7 +117,6 @@ describe('ConsoleReporter', () => {
       expect(output).toContain('(selected)');
       // No cursor-movement escapes in non-TTY mode.
       expect(output).not.toContain('\x1B[1A');
-      spy.mockRestore();
     });
 
     it('omits triple count when absent', () => {
@@ -125,7 +136,6 @@ describe('ConsoleReporter', () => {
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).not.toContain('triples');
       expect(output).toContain('to http://localhost:7001/sparql');
-      spy.mockRestore();
     });
   });
 });
