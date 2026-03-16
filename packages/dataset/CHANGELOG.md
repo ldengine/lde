@@ -1,3 +1,13 @@
+## 0.7.2 (2026-03-16)
+
+### 🩹 Fixes
+
+- **dataset:** guard SPARQL IRI interpolation against injection ([99933a7](https://github.com/ldelements/lde/commit/99933a7))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.7.1 (2026-03-06)
 
 ### 🩹 Fixes

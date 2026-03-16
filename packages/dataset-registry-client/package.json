@@ -1,6 +1,6 @@
 {
   "name": "@lde/dataset-registry-client",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "repository": {
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/dataset-registry-client"
@@ -23,7 +23,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@lde/dataset": "0.7.1",
+    "@lde/dataset": "0.7.2",
     "@traqula/generator-sparql-1-1": "^1.0.3",
     "@traqula/parser-sparql-1-1": "^1.0.3",
     "@traqula/rules-sparql-1-1": "^1.0.3",

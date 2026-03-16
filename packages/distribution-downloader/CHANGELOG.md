@@ -1,3 +1,17 @@
+## 0.5.3 (2026-03-16)
+
+### 🩹 Fixes
+
+- **distribution-downloader:** add path containment check for download target ([e98931f](https://github.com/ldelements/lde/commit/e98931f))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset to 0.7.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.2 (2026-03-16)
 
 ### 🩹 Fixes

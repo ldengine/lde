@@ -1,3 +1,19 @@
+## 0.24.4 (2026-03-16)
+
+### 🩹 Fixes
+
+- **dataset:** guard SPARQL IRI interpolation against injection ([99933a7](https://github.com/ldelements/lde/commit/99933a7))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.7.4
+- Updated @lde/sparql-importer to 0.4.1
+- Updated @lde/dataset to 0.7.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.24.3 (2026-03-16)
 
 ### 🩹 Fixes
