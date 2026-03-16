@@ -1,3 +1,17 @@
+## 0.15.5 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline:** avoid concurrent ora spinners and fix misleading skip message ([#246](https://github.com/ldelements/lde/pull/246))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.24.3
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.15.4 (2026-03-16)
 
 ### 🧱 Updated Dependencies
