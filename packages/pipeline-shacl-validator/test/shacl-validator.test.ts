@@ -113,6 +113,26 @@ describe('ShaclValidator', () => {
     expect(result.violations).toBe(0);
   });
 
+  it('truncates report file on first write per dataset', async () => {
+    const invalidQuads = parseFixture('invalid.ttl');
+
+    // First run: validate with one validator instance.
+    const validator1 = new ShaclValidator({ shapesFile, reportDir });
+    await validator1.validate(invalidQuads, dataset);
+    const files = await readdir(reportDir);
+    const firstContent = await readFile(join(reportDir, files[0]), 'utf-8');
+
+    // Second run: a fresh validator instance writes to the same reportDir.
+    const validator2 = new ShaclValidator({ shapesFile, reportDir });
+    await validator2.validate(invalidQuads, dataset);
+    const secondContent = await readFile(join(reportDir, files[0]), 'utf-8');
+
+    // The second run should have truncated the file, not appended to it.
+    // Blank node IDs differ between runs (global counter), so exact string
+    // equality isn't possible. A non-truncated (appended) file would be ~2×.
+    expect(secondContent.length).toBeLessThan(firstContent.length * 1.1);
+  });
+
   it('caches shapes across validate calls', async () => {
     const validator = new ShaclValidator({ shapesFile, reportDir });
     const quads = parseFixture('valid.ttl');

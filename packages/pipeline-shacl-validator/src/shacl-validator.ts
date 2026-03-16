@@ -53,6 +53,7 @@ export class ShaclValidator implements Validator {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private shapesDataset: any | undefined;
   private readonly accumulators = new Map<string, DatasetAccumulator>();
+  private readonly initializedFiles = new Set<string>();
 
   constructor(options: ShaclValidatorOptions) {
     this.shapesFile = options.shapesFile;
@@ -136,11 +137,11 @@ export class ShaclValidator implements Validator {
     const reportQuads: Quad[] = [...report.dataset];
     const serialized = await serializeQuads(reportQuads, this.reportFormat);
 
-    // Append to existing file or create a new one.
-    try {
+    if (this.initializedFiles.has(filePath)) {
       await appendFile(filePath, '\n' + serialized);
-    } catch {
+    } else {
       await writeFile(filePath, serialized);
+      this.initializedFiles.add(filePath);
     }
 
     return filePath;
