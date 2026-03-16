@@ -125,23 +125,21 @@ export class ConsoleReporter implements ProgressReporter {
       this.clearImportSpinner();
     } else {
       const url = distribution.accessUrl.toString();
-      const index = this.probeLines.findIndex((line) => line.url === url);
-      if (index !== -1 && this.probeLines[index].text && process.stderr.isTTY) {
-        const linesUp = this.probeLines.length - index;
-        const probe = this.probeLines[index];
+      const probe = this.probeLines.find((line) => line.url === url);
+      const text = probe?.text || url;
+
+      if (probe?.text && process.stderr.isTTY) {
+        const linesUp = this.probeLines.length - this.probeLines.indexOf(probe);
         // Move cursor up to the probe line and clear it.
         process.stderr.write(`\x1B[${linesUp}A\x1B[2K\r`);
-        // Rewrite the probe line with "(selected)" appended.
         ora({ discardStdin: false }).succeed(
-          `${probe.text} ${chalk.green('(selected)')}`,
+          `${text} ${chalk.green('(selected)')}`,
         );
         // Move cursor back down to original position.
         if (linesUp > 1) {
           process.stderr.write(`\x1B[${linesUp - 1}B`);
         }
       } else {
-        const probe = index !== -1 ? this.probeLines[index] : undefined;
-        const text = probe?.text ?? url;
         ora({ discardStdin: false }).succeed(
           `${text} ${chalk.green('(selected)')}`,
         );
