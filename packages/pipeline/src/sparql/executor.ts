@@ -136,7 +136,7 @@ export class SparqlConstructExecutor implements Executor {
     if (this.preParsed) {
       ast = structuredClone(this.preParsed);
     } else {
-      const substituted = this.rawQuery.replace(
+      const substituted = this.rawQuery.replaceAll(
         '#subjectFilter#',
         distribution.subjectFilter ?? '',
       );
