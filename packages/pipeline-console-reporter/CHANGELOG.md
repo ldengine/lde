@@ -1,3 +1,13 @@
+## 0.15.3 (2026-03-16)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** write plain-text lines to stderr instead of stdout ([#243](https://github.com/ldelements/lde/pull/243))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.15.2 (2026-03-16)
 
 ### 🧱 Updated Dependencies
