@@ -5,6 +5,7 @@ import type {
   ValidationReport,
 } from '@lde/pipeline';
 import chalk from 'chalk';
+import logSymbols from 'log-symbols';
 import ora, { type Ora } from 'ora';
 import prettyMilliseconds from 'pretty-ms';
 
@@ -24,7 +25,8 @@ export class ConsoleReporter implements ProgressReporter {
 
   /** Print a static succeed/fail line without starting a spinner animation. */
   private printLine(method: 'succeed' | 'fail', text: string): void {
-    ora({ discardStdin: false })[method](text);
+    const symbol = method === 'succeed' ? logSymbols.success : logSymbols.error;
+    process.stderr.write(`${symbol} ${text}\n`);
   }
 
   /** Stop any active spinner and start a new one. */
@@ -92,12 +94,10 @@ export class ConsoleReporter implements ProgressReporter {
 
   importStarted(): void {
     const importStart = Date.now();
-    this.startSpinner('Importing\u2026');
+    const spinner = this.startSpinner('Importing\u2026');
     this.importTimer = setInterval(() => {
-      if (this.activeSpinner) {
-        this.activeSpinner.suffixText = prettyMilliseconds(
-          Date.now() - importStart,
-        );
+      if (spinner.isSpinning) {
+        spinner.suffixText = prettyMilliseconds(Date.now() - importStart);
       }
     }, 1_000);
   }
@@ -141,6 +141,7 @@ export class ConsoleReporter implements ProgressReporter {
       this.clearImportTimer();
       this.activeSpinner = undefined;
     } else {
+      this.clearImportTimer(); // defensive — prevents leaks from a previous dataset
       const url = distribution.accessUrl.toString();
       const probe = this.probeLines.find((line) => line.url === url);
       const text = probe?.text || url;
