@@ -1,3 +1,13 @@
+## 0.15.7 (2026-03-17)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** eliminate concurrent ora spinner warnings and timer leaks ([#253](https://github.com/ldelements/lde/pull/253))
+
+### ❤️ Thank You
+
+- David de Boer
+
 ## 0.15.6 (2026-03-16)
 
 ### 🧱 Updated Dependencies
