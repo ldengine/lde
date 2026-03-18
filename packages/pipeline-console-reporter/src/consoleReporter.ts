@@ -14,6 +14,11 @@ const compactNumber = new Intl.NumberFormat('en', {
   maximumFractionDigits: 1,
 });
 
+function formatBytes(bytes: number): string {
+  const megabytes = bytes / 1024 / 1024;
+  return `${megabytes.toFixed(0)} MB`;
+}
+
 export class ConsoleReporter implements ProgressReporter {
   private activeSpinner?: Ora;
   private stageStartTime = 0;
@@ -177,6 +182,7 @@ export class ConsoleReporter implements ProgressReporter {
   stageProgress(update: {
     itemsProcessed: number;
     quadsGenerated: number;
+    memoryUsageBytes: number;
   }): void {
     if (this.activeSpinner) {
       const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
@@ -184,7 +190,7 @@ export class ConsoleReporter implements ProgressReporter {
         update.itemsProcessed,
       )} items, ${compactNumber.format(
         update.quadsGenerated,
-      )} quads, ${elapsed}`;
+      )} quads, ${elapsed}, memory: ${formatBytes(update.memoryUsageBytes)}`;
     }
   }
 
@@ -235,12 +241,15 @@ export class ConsoleReporter implements ProgressReporter {
     }
   }
 
-  datasetComplete(_dataset: Dataset): void {
+  datasetComplete(
+    _dataset: Dataset,
+    result: { memoryUsageBytes: number },
+  ): void {
     this.printLine(
       'succeed',
       `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
-      )}`,
+      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)})`)}`,
     );
   }
 
@@ -248,11 +257,14 @@ export class ConsoleReporter implements ProgressReporter {
     this.printLine('fail', `Skipped: ${chalk.red(reason)}`);
   }
 
-  pipelineComplete(result: { duration: number }): void {
+  pipelineComplete(result: {
+    duration: number;
+    memoryUsageBytes: number;
+  }): void {
     process.stderr.write(
       `\nPipeline completed in ${chalk.bold(
         prettyMilliseconds(result.duration),
-      )}\n`,
+      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)})`)}\n`,
     );
   }
 }

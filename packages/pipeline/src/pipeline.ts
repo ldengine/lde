@@ -134,7 +134,10 @@ export class Pipeline {
       await this.processDataset(dataset);
     }
 
-    this.reporter?.pipelineComplete?.({ duration: Date.now() - start });
+    this.reporter?.pipelineComplete?.({
+      duration: Date.now() - start,
+      memoryUsageBytes: process.memoryUsage().rss,
+    });
   }
 
   private async processDataset(dataset: Dataset): Promise<void> {
@@ -187,7 +190,9 @@ export class Pipeline {
     }
 
     await this.writer.flush?.(dataset);
-    this.reporter?.datasetComplete?.(dataset);
+    this.reporter?.datasetComplete?.(dataset, {
+      memoryUsageBytes: process.memoryUsage().rss,
+    });
   }
 
   /**
@@ -210,7 +215,11 @@ export class Pipeline {
       onProgress: (items, quads) => {
         itemsProcessed = items;
         quadsGenerated = quads;
-        this.reporter?.stageProgress?.({ itemsProcessed, quadsGenerated });
+        this.reporter?.stageProgress?.({
+          itemsProcessed,
+          quadsGenerated,
+          memoryUsageBytes: process.memoryUsage().rss,
+        });
       },
     });
 
