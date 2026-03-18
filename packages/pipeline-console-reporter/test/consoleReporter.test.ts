@@ -77,6 +77,36 @@ describe('ConsoleReporter', () => {
     });
   });
 
+  describe('datasetComplete', () => {
+    it('includes heap usage', () => {
+      const reporter = new ConsoleReporter();
+      const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+      reporter.datasetStart(makeDataset());
+      reporter.datasetComplete(makeDataset(), {
+        memoryUsageBytes: 150 * 1024 * 1024,
+      });
+
+      const output = spy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('memory: 150 MB');
+    });
+  });
+
+  describe('pipelineComplete', () => {
+    it('includes heap usage', () => {
+      const reporter = new ConsoleReporter();
+      const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+      reporter.pipelineComplete({
+        duration: 60_000,
+        memoryUsageBytes: 200 * 1024 * 1024,
+      });
+
+      const output = spy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('memory: 200 MB');
+    });
+  });
+
   describe('distributionSelected', () => {
     it('includes triple count when present', () => {
       const reporter = new ConsoleReporter();

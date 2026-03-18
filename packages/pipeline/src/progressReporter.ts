@@ -30,6 +30,7 @@ export interface ProgressReporter {
   stageProgress?(update: {
     itemsProcessed: number;
     quadsGenerated: number;
+    memoryUsageBytes: number;
   }): void;
   stageComplete?(
     stage: string,
@@ -43,7 +44,13 @@ export interface ProgressReporter {
   /** Called after a stage completes if it has a validator. */
   stageValidated?(stage: string, report: ValidationReport): void;
   stageSkipped?(stage: string, reason: string): void;
-  datasetComplete?(dataset: Dataset): void;
+  datasetComplete?(
+    dataset: Dataset,
+    result: { memoryUsageBytes: number },
+  ): void;
   datasetSkipped?(dataset: Dataset, reason: string): void;
-  pipelineComplete?(result: { duration: number }): void;
+  pipelineComplete?(result: {
+    duration: number;
+    memoryUsageBytes: number;
+  }): void;
 }
