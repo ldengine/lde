@@ -1,3 +1,17 @@
+## 0.16.0 (2026-03-18)
+
+### 🚀 Features
+
+- **pipeline:** report memory usage (RSS) during pipeline execution ([#255](https://github.com/ldelements/lde/pull/255))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.25.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.15.7 (2026-03-17)
 
 ### 🩹 Fixes
