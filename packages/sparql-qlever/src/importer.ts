@@ -4,7 +4,7 @@ import {
   ImportSuccessful,
   NotSupported,
 } from '@lde/sparql-importer';
-import { Dataset, Distribution } from '@lde/dataset';
+import { Distribution } from '@lde/dataset';
 import {
   Downloader,
   LastModifiedDownloader,
@@ -68,15 +68,13 @@ export class Importer implements ImporterInterface {
   }
 
   public async import(
-    dataset: Dataset,
+    distributions: Distribution[],
   ): Promise<NotSupported | ImportSuccessful | ImportFailed> {
-    const downloadDistributions = dataset
-      .getDownloadDistributions()
-      .filter(
-        (distribution): distribution is Distribution & { mimeType: string } =>
-          distribution.mimeType !== undefined &&
-          supportedFormats.has(distribution.mimeType),
-      );
+    const downloadDistributions = distributions.filter(
+      (distribution): distribution is Distribution & { mimeType: string } =>
+        distribution.mimeType !== undefined &&
+        supportedFormats.has(distribution.mimeType),
+    );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
     }
@@ -109,6 +107,12 @@ export class Importer implements ImporterInterface {
 
     if (await this.isIndexUpToDate(localFile)) {
       const tripleCount = await this.readTripleCount(localFile);
+      if (tripleCount === 0) {
+        return new ImportFailed(
+          distribution,
+          'Index is cached but contains 0 triples',
+        );
+      }
       return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
@@ -117,6 +121,13 @@ export class Importer implements ImporterInterface {
       this.fileFormatFromMimeType(distribution.mimeType),
     );
     const tripleCount = this.parseTripleCount(logs);
+
+    if (tripleCount === 0) {
+      return new ImportFailed(
+        distribution,
+        'Indexed 0 triples from distribution',
+      );
+    }
 
     await this.writeCacheInfo(localFile);
 

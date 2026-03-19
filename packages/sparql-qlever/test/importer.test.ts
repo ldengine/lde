@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Importer } from '../src/importer.js';
 import { DockerTaskRunner } from '@lde/task-runner-docker';
-import { ImportSuccessful } from '@lde/sparql-importer';
-import { Dataset, Distribution } from '@lde/dataset';
+import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
+import { Distribution } from '@lde/dataset';
 import { join, resolve } from 'node:path';
 import {
   mkdtemp,
@@ -15,15 +15,13 @@ import {
 import { tmpdir } from 'node:os';
 import { TaskRunner } from '@lde/task-runner';
 
-function makeDataset() {
-  const distribution = new Distribution(
-    new URL('https://example.com/dataset/distribution'),
-    'text/turtle',
-  );
-  return new Dataset({
-    iri: new URL('https://example.com'),
-    distributions: [distribution],
-  });
+function makeDistributions(): Distribution[] {
+  return [
+    new Distribution(
+      new URL('https://example.com/dataset/distribution'),
+      'text/turtle',
+    ),
+  ];
 }
 
 /**
@@ -67,17 +65,14 @@ describe('Importer', () => {
         },
       });
 
-      const distribution = new Distribution(
-        new URL('https://example.com/dataset/distribution'),
-        'text/turtle',
-      );
+      const distributions = [
+        new Distribution(
+          new URL('https://example.com/dataset/distribution'),
+          'text/turtle',
+        ),
+      ];
 
-      const dataset = new Dataset({
-        iri: new URL('https://example.com'),
-        distributions: [distribution],
-      });
-
-      const result = await importer.import(dataset);
+      const result = await importer.import(distributions);
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect((result as ImportSuccessful).tripleCount).toBe(1);
     }, 30_000);
@@ -126,7 +121,7 @@ describe('Importer', () => {
       const runner = stubTaskRunner(42);
       const importer = createImporter(runner);
 
-      const result = await importer.import(makeDataset());
+      const result = await importer.import(makeDistributions());
 
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect((result as ImportSuccessful).tripleCount).toBe(42);
@@ -145,14 +140,14 @@ describe('Importer', () => {
       const importer = createImporter(runner);
 
       // First run: indexes and writes cache marker.
-      await importer.import(makeDataset());
+      await importer.import(makeDistributions());
       expect(runner.commands.length).toBe(1);
 
       // Write metadata file (normally created by qlever-index inside the task runner).
       await writeMetadata(42);
 
       // Second run: cache hit, no indexing.
-      const result = await importer.import(makeDataset());
+      const result = await importer.import(makeDistributions());
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect((result as ImportSuccessful).tripleCount).toBe(42);
       expect(runner.commands.length).toBe(1); // Still only one index call.
@@ -163,7 +158,7 @@ describe('Importer', () => {
       const importer = createImporter(runner);
 
       // First run: creates cache.
-      await importer.import(makeDataset());
+      await importer.import(makeDistributions());
       expect(runner.commands.length).toBe(1);
 
       // Simulate re-download: touch data file to be newer than cache marker.
@@ -171,7 +166,7 @@ describe('Importer', () => {
       await utimes(dataFile, futureTime, futureTime);
 
       // Second run: should re-index because data is newer.
-      await importer.import(makeDataset());
+      await importer.import(makeDistributions());
       expect(runner.commands.length).toBe(2);
     });
 
@@ -179,7 +174,7 @@ describe('Importer', () => {
       const runner = stubTaskRunner(10);
       const importer = createImporter(runner);
 
-      const result = await importer.import(makeDataset());
+      const result = await importer.import(makeDistributions());
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect((result as ImportSuccessful).tripleCount).toBe(10);
       expect(runner.commands.length).toBe(1);
@@ -190,7 +185,7 @@ describe('Importer', () => {
       const importer = createImporter(runner);
 
       // First run with current data file.
-      await importer.import(makeDataset());
+      await importer.import(makeDistributions());
       expect(runner.commands.length).toBe(1);
 
       // Manually write a cache marker with a different source file.
@@ -200,20 +195,50 @@ describe('Importer', () => {
       );
 
       // Should re-index because source doesn't match.
-      await importer.import(makeDataset());
+      await importer.import(makeDistributions());
       expect(runner.commands.length).toBe(2);
+    });
+
+    it('returns ImportFailed when indexing produces 0 triples', async () => {
+      const runner = stubTaskRunner(0);
+      const importer = createImporter(runner);
+
+      const result = await importer.import(makeDistributions());
+
+      expect(result).toBeInstanceOf(ImportFailed);
+      expect((result as ImportFailed).error).toBe(
+        'Indexed 0 triples from distribution',
+      );
+    });
+
+    it('returns ImportFailed when cached index has 0 triples', async () => {
+      const runner = stubTaskRunner(42);
+      const importer = createImporter(runner);
+
+      // First run: indexes and writes cache marker.
+      await importer.import(makeDistributions());
+
+      // Write metadata with 0 triples.
+      await writeMetadata(0);
+
+      // Second run: cache hit but 0 triples.
+      const result = await importer.import(makeDistributions());
+      expect(result).toBeInstanceOf(ImportFailed);
+      expect((result as ImportFailed).error).toBe(
+        'Index is cached but contains 0 triples',
+      );
     });
 
     it('re-indexes when cacheIndex is false even with fresh cache', async () => {
       // First: create a cache marker via a cacheIndex=true run.
       const runner = stubTaskRunner(42);
       const importerWithCache = createImporter(runner, { cacheIndex: true });
-      await importerWithCache.import(makeDataset());
+      await importerWithCache.import(makeDistributions());
       expect(runner.commands.length).toBe(1);
 
       // Now create an importer with cacheIndex=false.
       const importerNoCache = createImporter(runner, { cacheIndex: false });
-      await importerNoCache.import(makeDataset());
+      await importerNoCache.import(makeDistributions());
       expect(runner.commands.length).toBe(2); // Forced re-index.
     });
   });

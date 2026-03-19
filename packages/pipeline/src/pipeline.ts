@@ -143,19 +143,28 @@ export class Pipeline {
   private async processDataset(dataset: Dataset): Promise<void> {
     this.reporter?.datasetStart?.(dataset);
 
-    const resolved = await this.distributionResolver.resolve(dataset, {
-      onProbe: (distribution, result) => {
-        this.reporter?.distributionProbed?.(
-          mapProbeResult(distribution, result),
-        );
-      },
-      onImportStart: () => {
-        this.reporter?.importStarted?.();
-      },
-      onImportFailed: (distribution, error) => {
-        this.reporter?.importFailed?.(distribution, error);
-      },
-    });
+    let resolved;
+    try {
+      resolved = await this.distributionResolver.resolve(dataset, {
+        onProbe: (distribution, result) => {
+          this.reporter?.distributionProbed?.(
+            mapProbeResult(distribution, result),
+          );
+        },
+        onImportStart: () => {
+          this.reporter?.importStarted?.();
+        },
+        onImportFailed: (distribution, error) => {
+          this.reporter?.importFailed?.(distribution, error);
+        },
+      });
+    } catch (error) {
+      this.reporter?.datasetSkipped?.(
+        dataset,
+        `Distribution resolution failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
 
     if (resolved instanceof NoDistributionAvailable) {
       this.reporter?.datasetSkipped?.(dataset, resolved.message);
