@@ -229,6 +229,60 @@ describe('Importer', () => {
       );
     });
 
+    it('retries with --parse-parallel false on multiline string literal error', async () => {
+      let callCount = 0;
+      const runner: TaskRunner<string> & { commands: string[] } = {
+        commands: [],
+        async run(command: string) {
+          runner.commands.push(command);
+          return command;
+        },
+        async wait() {
+          callCount++;
+          if (callCount === 1) {
+            throw new Error(
+              'The input contains a multiline string literal, please retry with --parse-parallel false',
+            );
+          }
+          return '{"num-triples":{"normal":42}}';
+        },
+        async stop() {
+          return null;
+        },
+      };
+      const importer = createImporter(runner);
+
+      const result = await importer.import(makeDistributions());
+
+      expect(result).toBeInstanceOf(ImportSuccessful);
+      expect(runner.commands.length).toBe(2);
+      expect(runner.commands[0]).not.toContain('--parse-parallel false');
+      expect(runner.commands[1]).toContain('--parse-parallel false');
+    });
+
+    it('does not retry non-multiline-literal errors', async () => {
+      const runner: TaskRunner<string> & { commands: string[] } = {
+        commands: [],
+        async run(command: string) {
+          runner.commands.push(command);
+          return command;
+        },
+        async wait() {
+          throw new Error('some other indexing error');
+        },
+        async stop() {
+          return null;
+        },
+      };
+      const importer = createImporter(runner);
+
+      const result = await importer.import(makeDistributions());
+
+      expect(result).toBeInstanceOf(ImportFailed);
+      expect((result as ImportFailed).error).toBe('some other indexing error');
+      expect(runner.commands.length).toBe(1);
+    });
+
     it('re-indexes when cacheIndex is false even with fresh cache', async () => {
       // First: create a cache marker via a cacheIndex=true run.
       const runner = stubTaskRunner(42);

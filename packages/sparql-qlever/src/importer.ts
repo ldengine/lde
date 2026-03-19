@@ -116,10 +116,20 @@ export class Importer implements ImporterInterface {
       return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
-    const logs = await this.index(
-      localFile,
-      this.fileFormatFromMimeType(distribution.mimeType),
-    );
+    const format = this.fileFormatFromMimeType(distribution.mimeType);
+    let logs: string;
+    try {
+      logs = await this.index(localFile, format);
+    } catch (error) {
+      if (
+        format === 'ttl' &&
+        (error as Error).message?.includes('multiline string literal')
+      ) {
+        logs = await this.index(localFile, format, false);
+      } else {
+        throw error;
+      }
+    }
     const tripleCount = this.parseTripleCount(logs);
 
     if (tripleCount === 0) {
@@ -202,7 +212,11 @@ export class Importer implements ImporterInterface {
     await writeFile(this.cacheInfoPath(dataFile), JSON.stringify(info));
   }
 
-  private async index(file: string, format: fileFormat): Promise<string> {
+  private async index(
+    file: string,
+    format: fileFormat,
+    parseParallel = true,
+  ): Promise<string> {
     const settingsFile = 'index.settings.json';
     await writeFile(
       `${dirname(file)}/${settingsFile}`,
@@ -217,7 +231,9 @@ export class Importer implements ImporterInterface {
         file,
       )}') | qlever-index -i ${
         this.indexName
-      } -s ${settingsFile} -F ${format} -p true -f - && cat ${metadataFile}`,
+      } -s ${settingsFile} -F ${format} -p true${
+        parseParallel ? '' : ' --parse-parallel false'
+      } -f - && cat ${metadataFile}`,
     );
     return await this.taskRunner.wait(indexTask);
   }
