@@ -97,7 +97,9 @@ describe('ImportResolver', () => {
     const result = await resolver.resolve(dataset);
 
     expect(result).toBeInstanceOf(ResolvedDistribution);
-    expect(mockImporter.import).toHaveBeenCalledWith(dataset);
+    expect(mockImporter.import).toHaveBeenCalledWith([
+      dataset.distributions[0],
+    ]);
     expect(server.start).toHaveBeenCalled();
     const resolved = result as ResolvedDistribution;
     expect(resolved.distribution.accessUrl.toString()).toBe(
@@ -222,7 +224,9 @@ describe('ImportResolver', () => {
       const result = await resolver.resolve(dataset);
 
       expect(inner.resolve).toHaveBeenCalled();
-      expect(mockImporter.import).toHaveBeenCalledWith(dataset);
+      expect(mockImporter.import).toHaveBeenCalledWith([
+        dataset.distributions[0],
+      ]);
       expect(result).toBeInstanceOf(ResolvedDistribution);
       expect(server.start).toHaveBeenCalled();
       const res = result as ResolvedDistribution;

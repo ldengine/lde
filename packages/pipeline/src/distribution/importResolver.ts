@@ -8,6 +8,7 @@ import {
   NoDistributionAvailable,
   ResolvedDistribution,
 } from './resolver.js';
+import { NetworkError } from './probe.js';
 
 export interface ImportResolverOptions {
   importer: Importer;
@@ -65,12 +66,42 @@ export class ImportResolver implements DistributionResolver {
     probeResults: NoDistributionAvailable['probeResults'],
     callbacks?: ResolveCallbacks,
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
+    const successfulUrls = new Set(
+      probeResults
+        .filter((r) => !(r instanceof NetworkError) && r.isSuccess())
+        .map((r) => r.url),
+    );
+
+    const candidates = dataset
+      .getDownloadDistributions()
+      .filter((d) => d.accessUrl && successfulUrls.has(d.accessUrl.toString()));
+
+    if (candidates.length === 0) {
+      return new NoDistributionAvailable(
+        dataset,
+        'No importable distributions passed probing',
+        probeResults,
+      );
+    }
+
     const importStart = Date.now();
     callbacks?.onImportStart?.();
-    const importResult = await this.options.importer.import(dataset);
+    const importResult = await this.options.importer.import(candidates);
 
     if (importResult instanceof ImportSuccessful) {
-      await this.options.server.start();
+      try {
+        await this.options.server.start();
+      } catch (error) {
+        callbacks?.onImportFailed?.(
+          importResult.distribution,
+          error instanceof Error ? error.message : String(error),
+        );
+        return new NoDistributionAvailable(
+          dataset,
+          'SPARQL server failed to start after import',
+          probeResults,
+        );
+      }
 
       const distribution = Distribution.sparql(
         this.options.server.queryEndpoint,
