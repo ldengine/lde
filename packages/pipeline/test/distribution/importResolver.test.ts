@@ -6,7 +6,11 @@ import {
   type DistributionResolver,
 } from '../../src/distribution/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
-import { ImportSuccessful, ImportFailed } from '@lde/sparql-importer';
+import {
+  ImportSuccessful,
+  ImportFailed,
+  NotSupported,
+} from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
 import { describe, it, expect, vi } from 'vitest';
 
@@ -191,6 +195,38 @@ describe('ImportResolver', () => {
     expect(noDistribution.importFailed).toBeInstanceOf(ImportFailed);
     expect(noDistribution.importFailed!.error).toBe('Parse error');
     expect(noDistribution.probeResults).toHaveLength(1);
+  });
+
+  it('returns NoDistributionAvailable when importer returns NotSupported', async () => {
+    const dataset = makeDataset();
+    const inner = makeInnerResolver(
+      new NoDistributionAvailable(dataset, 'No endpoint', [
+        dataDumpProbeResult,
+      ]),
+    );
+
+    const mockImporter = {
+      import: vi.fn().mockResolvedValue(new NotSupported()),
+    };
+
+    const onImportFailed = vi.fn();
+    const resolver = new ImportResolver(inner, {
+      importer: mockImporter,
+      server: makeServer(),
+    });
+    const result = await resolver.resolve(dataset, {
+      onImportFailed,
+    });
+
+    expect(result).toBeInstanceOf(NoDistributionAvailable);
+    const noDistribution = result as NoDistributionAvailable;
+    expect(noDistribution.message).toBe(
+      'No supported import format available',
+    );
+    expect(onImportFailed).toHaveBeenCalledWith(
+      dataset.distributions[0],
+      'No supported import format',
+    );
   });
 
   describe('import strategy', () => {
