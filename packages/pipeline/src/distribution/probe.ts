@@ -132,9 +132,16 @@ async function probeSparqlEndpoint(
     },
     body: `query=${encodeURIComponent('SELECT * { ?s ?p ?o } LIMIT 1')}`,
   });
-  const failureReason = response.ok
-    ? await validateSparqlResponse(response)
-    : null;
+  const isJsonResponse = response.headers
+    .get('Content-Type')
+    ?.startsWith('application/sparql-results+json');
+  let failureReason: string | null = null;
+  if (response.ok && isJsonResponse) {
+    failureReason = await validateSparqlResponse(response);
+  } else {
+    // Drain unconsumed body to release the underlying connection.
+    await response.body?.cancel();
+  }
 
   return new SparqlProbeResult(url, response, failureReason);
 }
