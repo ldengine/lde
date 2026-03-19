@@ -1,3 +1,13 @@
+## 0.11.0 (2026-03-19)
+
+### 🚀 Features
+
+- **sparql-qlever:** retry TTL indexing with parallel parsing disabled on multiline literal error ([#260](https://github.com/ldelements/lde/pull/260))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.10.2 (2026-03-19)
 
 ### 🩹 Fixes
