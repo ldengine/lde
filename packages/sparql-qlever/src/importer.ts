@@ -29,6 +29,8 @@ export interface Options {
     'ascii-prefixes-only': boolean;
     'num-triples-per-batch': number;
   };
+  /** Memory budget for the index build (e.g. `'10G'`). Defaults to `'10G'`. */
+  indexMemoryMax?: string;
   port?: number;
   /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
   cacheIndex?: boolean;
@@ -48,6 +50,7 @@ export class Importer implements ImporterInterface {
   private taskRunner: TaskRunner<unknown>;
   private downloader;
   private qleverOptions;
+  private indexMemoryMax;
   private cacheIndex;
 
   constructor({
@@ -55,6 +58,7 @@ export class Importer implements ImporterInterface {
     downloader,
     indexName,
     qleverOptions,
+    indexMemoryMax,
     cacheIndex,
   }: Options) {
     this.taskRunner = taskRunner;
@@ -62,8 +66,9 @@ export class Importer implements ImporterInterface {
     this.indexName = indexName ?? 'data';
     this.qleverOptions = qleverOptions ?? {
       'ascii-prefixes-only': true,
-      'num-triples-per-batch': 100000,
+      'num-triples-per-batch': 3_000_000,
     };
+    this.indexMemoryMax = indexMemoryMax ?? '10G';
     this.cacheIndex = cacheIndex ?? true;
   }
 
@@ -231,7 +236,7 @@ export class Importer implements ImporterInterface {
         file,
       )}') | qlever-index -i ${
         this.indexName
-      } -s ${settingsFile} -F ${format} -p true${
+      } -s ${settingsFile} -F ${format} -p true -m ${this.indexMemoryMax}${
         parseParallel ? '' : ' --parse-parallel false'
       } -f - && cat ${metadataFile}`,
     );
