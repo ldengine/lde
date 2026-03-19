@@ -1,3 +1,13 @@
+## 0.26.0 (2026-03-19)
+
+### 🚀 Features
+
+- **pipeline:** validate SPARQL probe response body and drain fetch responses ([#261](https://github.com/ldelements/lde/pull/261))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.25.3 (2026-03-19)
 
 ### 🩹 Fixes
