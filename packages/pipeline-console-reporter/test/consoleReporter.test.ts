@@ -85,10 +85,12 @@ describe('ConsoleReporter', () => {
       reporter.datasetStart(makeDataset());
       reporter.datasetComplete(makeDataset(), {
         memoryUsageBytes: 150 * 1024 * 1024,
+        heapUsedBytes: 100 * 1024 * 1024,
       });
 
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('memory: 150 MB');
+      expect(output).toContain('150 MB RSS');
+      expect(output).toContain('100 MB heap');
     });
   });
 
@@ -100,10 +102,12 @@ describe('ConsoleReporter', () => {
       reporter.pipelineComplete({
         duration: 60_000,
         memoryUsageBytes: 200 * 1024 * 1024,
+        heapUsedBytes: 130 * 1024 * 1024,
       });
 
       const output = spy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('memory: 200 MB');
+      expect(output).toContain('200 MB RSS');
+      expect(output).toContain('130 MB heap');
     });
   });
 

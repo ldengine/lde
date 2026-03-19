@@ -185,23 +185,57 @@ describe('Pipeline', () => {
     });
 
     it('fans out to multiple writers', async () => {
-      const writer2 = makeWriter();
-      const stage = makeStage('stage1');
+      const quadsA: Quad[] = [];
+      const quadsB: Quad[] = [];
+      const writerA: Writer = {
+        async write(_dataset, quads) {
+          for await (const quad of quads) quadsA.push(quad);
+        },
+        flush: vi.fn().mockResolvedValue(undefined),
+      };
+      const writerB: Writer = {
+        async write(_dataset, quads) {
+          for await (const quad of quads) quadsB.push(quad);
+        },
+        flush: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const testQuads = [
+        DataFactory.quad(
+          DataFactory.namedNode('http://s1'),
+          DataFactory.namedNode('http://p1'),
+          DataFactory.namedNode('http://o1'),
+        ),
+        DataFactory.quad(
+          DataFactory.namedNode('http://s2'),
+          DataFactory.namedNode('http://p2'),
+          DataFactory.namedNode('http://o2'),
+        ),
+      ];
+
+      const stage = new Stage({ name: 'stage1', executors: [] });
+      vi.spyOn(stage, 'run').mockImplementation(
+        async (_dataset, _distribution, stageWriter) => {
+          await stageWriter.write(
+            _dataset,
+            (async function* () {
+              yield* testQuads;
+            })(),
+          );
+        },
+      );
 
       const pipeline = new Pipeline({
         datasetSelector: makeDatasetSelector(dataset),
         stages: [stage],
-        writers: [writer, writer2],
+        writers: [writerA, writerB],
         distributionResolver: makeResolver(makeResolvedDistribution()),
       });
 
       await pipeline.run();
 
-      // Both stages should receive a FanOutWriter, not the individual writers.
-      const usedWriter = (stage.run as ReturnType<typeof vi.fn>).mock
-        .calls[0][2];
-      expect(usedWriter).not.toBe(writer);
-      expect(usedWriter).not.toBe(writer2);
+      expect(quadsA).toEqual(testQuads);
+      expect(quadsB).toEqual(testQuads);
     });
 
     it('calls flush on writer after all stages complete for a dataset', async () => {
