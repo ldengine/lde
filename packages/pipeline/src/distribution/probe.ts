@@ -43,11 +43,22 @@ abstract class ProbeResult {
  */
 export class SparqlProbeResult extends ProbeResult {
   public readonly acceptedContentType = 'application/sparql-results+json';
+  public readonly failureReason: string | null;
+
+  constructor(
+    url: string,
+    response: Response,
+    failureReason: string | null = null,
+  ) {
+    super(url, response);
+    this.failureReason = failureReason;
+  }
 
   override isSuccess(): boolean {
     return (
       super.isSuccess() &&
-      (this.contentType?.startsWith(this.acceptedContentType) ?? false)
+      (this.contentType?.startsWith(this.acceptedContentType) ?? false) &&
+      this.failureReason === null
     );
   }
 }
@@ -121,8 +132,31 @@ async function probeSparqlEndpoint(
     },
     body: `query=${encodeURIComponent('SELECT * { ?s ?p ?o } LIMIT 1')}`,
   });
+  const failureReason = response.ok
+    ? await validateSparqlResponse(response)
+    : null;
 
-  return new SparqlProbeResult(url, response);
+  return new SparqlProbeResult(url, response, failureReason);
+}
+
+async function validateSparqlResponse(
+  response: Response,
+): Promise<string | null> {
+  const body = await response.text();
+  if (body.length === 0) {
+    return 'SPARQL endpoint returned an empty response';
+  }
+
+  try {
+    const json = JSON.parse(body) as Record<string, unknown>;
+    if (!json.results || typeof json.results !== 'object') {
+      return 'SPARQL endpoint did not return a valid results object';
+    }
+  } catch {
+    return 'SPARQL endpoint returned invalid JSON';
+  }
+
+  return null;
 }
 
 async function probeDataDump(

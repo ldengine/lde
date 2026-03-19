@@ -94,5 +94,6 @@ export class SparqlUpdateWriter implements Writer {
         `SPARQL UPDATE failed with status ${response.status}: ${body}`,
       );
     }
+    await response.body?.cancel();
   }
 }
