@@ -45,20 +45,46 @@ export interface PipelineOptions {
   reporter?: ProgressReporter;
 }
 
+/**
+ * Split an async iterable into `count` branches that can be consumed
+ * independently. Backpressure is enforced by the slowest consumer —
+ * the source only advances once every branch has consumed the current item.
+ */
+function tee<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T>[] {
+  const iterator = source[Symbol.asyncIterator]();
+  let current: Promise<IteratorResult<T>> | undefined;
+  let consumed = 0;
+
+  function advance(): Promise<IteratorResult<T>> {
+    if (!current || consumed >= count) {
+      consumed = 0;
+      current = iterator.next();
+    }
+    consumed++;
+    return current;
+  }
+
+  return Array.from({ length: count }, () => ({
+    [Symbol.asyncIterator](): AsyncIterator<T> {
+      return {
+        async next() {
+          return advance();
+        },
+      };
+    },
+  }));
+}
+
 class FanOutWriter implements Writer {
   constructor(private readonly writers: Writer[]) {}
 
   async write(dataset: Dataset, quads: AsyncIterable<Quad>): Promise<void> {
-    const collected: Quad[] = [];
-    for await (const quad of quads) collected.push(quad);
-    for (const w of this.writers) {
-      await w.write(
-        dataset,
-        (async function* () {
-          yield* collected;
-        })(),
-      );
-    }
+    const branches = tee(quads, this.writers.length);
+    await Promise.all(
+      this.writers.map((writer, index) =>
+        writer.write(dataset, branches[index]),
+      ),
+    );
   }
 
   async flush(dataset: Dataset): Promise<void> {
@@ -134,9 +160,11 @@ export class Pipeline {
       await this.processDataset(dataset);
     }
 
+    const finalMemory = process.memoryUsage();
     this.reporter?.pipelineComplete?.({
       duration: Date.now() - start,
-      memoryUsageBytes: process.memoryUsage().rss,
+      memoryUsageBytes: finalMemory.rss,
+      heapUsedBytes: finalMemory.heapUsed,
     });
   }
 
@@ -199,8 +227,10 @@ export class Pipeline {
     }
 
     await this.writer.flush?.(dataset);
+    const datasetMemory = process.memoryUsage();
     this.reporter?.datasetComplete?.(dataset, {
-      memoryUsageBytes: process.memoryUsage().rss,
+      memoryUsageBytes: datasetMemory.rss,
+      heapUsedBytes: datasetMemory.heapUsed,
     });
   }
 
@@ -224,10 +254,12 @@ export class Pipeline {
       onProgress: (items, quads) => {
         itemsProcessed = items;
         quadsGenerated = quads;
+        const stageMemory = process.memoryUsage();
         this.reporter?.stageProgress?.({
           itemsProcessed,
           quadsGenerated,
-          memoryUsageBytes: process.memoryUsage().rss,
+          memoryUsageBytes: stageMemory.rss,
+          heapUsedBytes: stageMemory.heapUsed,
         });
       },
     });

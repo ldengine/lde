@@ -183,6 +183,7 @@ export class ConsoleReporter implements ProgressReporter {
     itemsProcessed: number;
     quadsGenerated: number;
     memoryUsageBytes: number;
+    heapUsedBytes: number;
   }): void {
     if (this.activeSpinner) {
       const elapsed = prettyMilliseconds(Date.now() - this.stageStartTime);
@@ -190,7 +191,7 @@ export class ConsoleReporter implements ProgressReporter {
         update.itemsProcessed,
       )} items, ${compactNumber.format(
         update.quadsGenerated,
-      )} quads, ${elapsed}, memory: ${formatBytes(update.memoryUsageBytes)}`;
+      )} quads, ${elapsed}, memory: ${formatBytes(update.memoryUsageBytes)} RSS, ${formatBytes(update.heapUsedBytes)} heap`;
     }
   }
 
@@ -243,13 +244,13 @@ export class ConsoleReporter implements ProgressReporter {
 
   datasetComplete(
     _dataset: Dataset,
-    result: { memoryUsageBytes: number },
+    result: { memoryUsageBytes: number; heapUsedBytes: number },
   ): void {
     this.printLine(
       'succeed',
       `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
-      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)})`)}`,
+      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)} RSS, ${formatBytes(result.heapUsedBytes)} heap)`)}`,
     );
   }
 
@@ -260,11 +261,12 @@ export class ConsoleReporter implements ProgressReporter {
   pipelineComplete(result: {
     duration: number;
     memoryUsageBytes: number;
+    heapUsedBytes: number;
   }): void {
     process.stderr.write(
       `\nPipeline completed in ${chalk.bold(
         prettyMilliseconds(result.duration),
-      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)})`)}\n`,
+      )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)} RSS, ${formatBytes(result.heapUsedBytes)} heap)`)}\n`,
     );
   }
 }

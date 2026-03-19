@@ -31,6 +31,7 @@ export interface ProgressReporter {
     itemsProcessed: number;
     quadsGenerated: number;
     memoryUsageBytes: number;
+    heapUsedBytes: number;
   }): void;
   stageComplete?(
     stage: string,
@@ -46,11 +47,12 @@ export interface ProgressReporter {
   stageSkipped?(stage: string, reason: string): void;
   datasetComplete?(
     dataset: Dataset,
-    result: { memoryUsageBytes: number },
+    result: { memoryUsageBytes: number; heapUsedBytes: number },
   ): void;
   datasetSkipped?(dataset: Dataset, reason: string): void;
   pipelineComplete?(result: {
     duration: number;
     memoryUsageBytes: number;
+    heapUsedBytes: number;
   }): void;
 }
