@@ -1,3 +1,13 @@
+## 0.25.3 (2026-03-19)
+
+### 🩹 Fixes
+
+- **pipeline:** handle `NotSupported` result from importer to prevent orphaned spinner ([#259](https://github.com/ldelements/lde/pull/259))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.25.2 (2026-03-19)
 
 ### 🩹 Fixes
