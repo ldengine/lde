@@ -1,6 +1,10 @@
 import { type Dataset, Distribution } from '@lde/dataset';
 import type { Importer } from '@lde/sparql-importer';
-import { ImportFailed, ImportSuccessful } from '@lde/sparql-importer';
+import {
+  ImportFailed,
+  ImportSuccessful,
+  NotSupported,
+} from '@lde/sparql-importer';
 import type { SparqlServer } from '@lde/sparql-server';
 import {
   type DistributionResolver,
@@ -122,6 +126,16 @@ export class ImportResolver implements DistributionResolver {
       callbacks?.onImportFailed?.(
         importResult.distribution,
         importResult.error,
+      );
+    }
+
+    if (importResult instanceof NotSupported) {
+      const failedDistribution = importResult.distribution ?? candidates[0];
+      callbacks?.onImportFailed?.(failedDistribution, 'No supported import format');
+      return new NoDistributionAvailable(
+        dataset,
+        'No supported import format available',
+        probeResults,
       );
     }
 
