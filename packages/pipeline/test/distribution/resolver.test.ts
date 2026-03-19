@@ -20,7 +20,7 @@ describe('SparqlDistributionResolver', () => {
 
   it('resolves to a valid SPARQL endpoint', async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response('{}', {
+      new Response('{"results": {"bindings": []}}', {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
       }),
@@ -93,7 +93,7 @@ describe('SparqlDistributionResolver', () => {
 
   it('does not mutate dataset.distributions', async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response('{}', {
+      new Response('{"results": {"bindings": []}}', {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
       }),

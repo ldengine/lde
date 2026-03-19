@@ -19,7 +19,7 @@ describe('probe', () => {
   describe('SPARQL endpoint', () => {
     it('returns SparqlProbeResult on successful probe', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        new Response('{}', {
+        new Response('{"results": {"bindings": []}}', {
           status: 200,
           headers: { 'Content-Type': 'application/sparql-results+json' },
         }),
@@ -33,6 +33,72 @@ describe('probe', () => {
 
       expect(result).toBeInstanceOf(SparqlProbeResult);
       expect((result as SparqlProbeResult).isSuccess()).toBe(true);
+    });
+
+    it('returns unsuccessful SparqlProbeResult on empty response body', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution);
+
+      expect(result).toBeInstanceOf(SparqlProbeResult);
+      const sparqlResult = result as SparqlProbeResult;
+      expect(sparqlResult.isSuccess()).toBe(false);
+      expect(sparqlResult.failureReason).toBe(
+        'SPARQL endpoint returned an empty response',
+      );
+    });
+
+    it('returns unsuccessful SparqlProbeResult on invalid JSON', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('not json', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution);
+
+      expect(result).toBeInstanceOf(SparqlProbeResult);
+      const sparqlResult = result as SparqlProbeResult;
+      expect(sparqlResult.isSuccess()).toBe(false);
+      expect(sparqlResult.failureReason).toBe(
+        'SPARQL endpoint returned invalid JSON',
+      );
+    });
+
+    it('returns unsuccessful SparqlProbeResult when results key is missing', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('{"error": "something went wrong"}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution);
+
+      expect(result).toBeInstanceOf(SparqlProbeResult);
+      const sparqlResult = result as SparqlProbeResult;
+      expect(sparqlResult.isSuccess()).toBe(false);
+      expect(sparqlResult.failureReason).toBe(
+        'SPARQL endpoint did not return a valid results object',
+      );
     });
 
     it('returns unsuccessful SparqlProbeResult on wrong content type', async () => {

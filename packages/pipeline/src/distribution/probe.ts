@@ -19,14 +19,17 @@ abstract class ProbeResult {
   public readonly statusText: string;
   public readonly lastModified: Date | null = null;
   public readonly contentType: string | null;
+  public readonly failureReason: string | null;
 
   constructor(
     public readonly url: string,
     response: Response,
+    failureReason: string | null = null,
   ) {
     this.statusCode = response.status;
     this.statusText = response.statusText;
     this.contentType = response.headers.get('Content-Type');
+    this.failureReason = failureReason;
     const lastModifiedHeader = response.headers.get('Last-Modified');
     if (lastModifiedHeader) {
       this.lastModified = new Date(lastModifiedHeader);
@@ -34,15 +37,21 @@ abstract class ProbeResult {
   }
 
   public isSuccess(): boolean {
-    return this.statusCode >= 200 && this.statusCode < 400;
+    return (
+      this.statusCode >= 200 &&
+      this.statusCode < 400 &&
+      this.failureReason === null
+    );
   }
 }
+
+const SPARQL_RESULTS_JSON = 'application/sparql-results+json';
 
 /**
  * Result of probing a SPARQL endpoint.
  */
 export class SparqlProbeResult extends ProbeResult {
-  public readonly acceptedContentType = 'application/sparql-results+json';
+  public readonly acceptedContentType = SPARQL_RESULTS_JSON;
 
   override isSuccess(): boolean {
     return (
@@ -57,23 +66,17 @@ export class SparqlProbeResult extends ProbeResult {
  */
 export class DataDumpProbeResult extends ProbeResult {
   public readonly contentSize: number | null = null;
-  public readonly failureReason: string | null;
 
   constructor(
     url: string,
     response: Response,
     failureReason: string | null = null,
   ) {
-    super(url, response);
-    this.failureReason = failureReason;
+    super(url, response, failureReason);
     const contentLengthHeader = response.headers.get('Content-Length');
     if (contentLengthHeader) {
       this.contentSize = parseInt(contentLengthHeader);
     }
-  }
-
-  override isSuccess(): boolean {
-    return super.isSuccess() && this.failureReason === null;
   }
 }
 
@@ -117,12 +120,42 @@ async function probeSparqlEndpoint(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-      Accept: 'application/sparql-results+json',
+      Accept: SPARQL_RESULTS_JSON,
     },
     body: `query=${encodeURIComponent('SELECT * { ?s ?p ?o } LIMIT 1')}`,
   });
+  const isJsonResponse = response.headers
+    .get('Content-Type')
+    ?.startsWith(SPARQL_RESULTS_JSON);
+  let failureReason: string | null = null;
+  if (response.ok && isJsonResponse) {
+    failureReason = await validateSparqlResponse(response);
+  } else {
+    // Drain unconsumed body to release the underlying connection.
+    await response.body?.cancel();
+  }
 
-  return new SparqlProbeResult(url, response);
+  return new SparqlProbeResult(url, response, failureReason);
+}
+
+async function validateSparqlResponse(
+  response: Response,
+): Promise<string | null> {
+  const body = await response.text();
+  if (body.length === 0) {
+    return 'SPARQL endpoint returned an empty response';
+  }
+
+  try {
+    const json = JSON.parse(body) as Record<string, unknown>;
+    if (!json.results || typeof json.results !== 'object') {
+      return 'SPARQL endpoint did not return a valid results object';
+    }
+  } catch {
+    return 'SPARQL endpoint returned invalid JSON';
+  }
+
+  return null;
 }
 
 async function probeDataDump(
