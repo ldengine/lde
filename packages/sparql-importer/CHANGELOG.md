@@ -1,3 +1,13 @@
+## 0.4.2 (2026-03-19)
+
+### 🩹 Fixes
+
+- **pipeline:** handle empty distributions and eliminate duplicate probing ([#257](https://github.com/ldelements/lde/pull/257))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.1 (2026-03-16)
 
 ### 🧱 Updated Dependencies

@@ -1,3 +1,17 @@
+## 0.25.1 (2026-03-19)
+
+### 🩹 Fixes
+
+- **pipeline:** handle empty distributions and eliminate duplicate probing ([#257](https://github.com/ldelements/lde/pull/257))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/sparql-importer to 0.4.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.25.0 (2026-03-18)
 
 ### 🚀 Features
