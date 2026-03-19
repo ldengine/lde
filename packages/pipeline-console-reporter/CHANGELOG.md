@@ -1,3 +1,17 @@
+## 0.16.2 (2026-03-19)
+
+### 🩹 Fixes
+
+- **pipeline:** eliminate FanOutWriter memory growth via tee pattern ([#258](https://github.com/ldelements/lde/pull/258))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.25.2
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.16.1 (2026-03-19)
 
 ### 🧱 Updated Dependencies
