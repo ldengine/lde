@@ -1,6 +1,6 @@
 {
   "name": "@lde/sparql-importer",
-  "version": "1.0.0",
+  "version": "0.5.0",
   "repository": {
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/sparql-importer"
