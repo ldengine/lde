@@ -1,3 +1,17 @@
+# 1.0.0 (2026-03-20)
+
+### 🚀 Features
+
+- ⚠️  **sparql-qlever:** tune QLever index build for large datasets ([#263](https://github.com/ldelements/lde/pull/263))
+
+### ⚠️  Breaking Changes
+
+- **sparql-qlever:** tune QLever index build for large datasets  ([#263](https://github.com/ldelements/lde/pull/263))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.4.2 (2026-03-19)
 
 ### 🩹 Fixes
