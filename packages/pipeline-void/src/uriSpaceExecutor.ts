@@ -93,13 +93,13 @@ async function* withUriSpaces(
 
   // Emit aggregated Linkset quads.
   const datasetNode = namedNode(datasetIri);
-  for (const [uriSpace, { count, metadata }] of aggregated) {
+  for (const [, { count, metadata }] of aggregated) {
     const linksetNode = blankNode();
-    const uriSpaceNode = namedNode(uriSpace);
+    const targetDatasetNode = metadata[0].subject;
 
     yield quad(linksetNode, rdfType, voidLinkset);
     yield quad(linksetNode, voidSubjectsTarget, datasetNode);
-    yield quad(linksetNode, voidObjectsTarget, uriSpaceNode);
+    yield quad(linksetNode, voidObjectsTarget, targetDatasetNode);
     yield quad(linksetNode, voidTriples, literal(count.toString(), xsdInteger));
 
     for (const metadataQuad of metadata) {

@@ -65,7 +65,7 @@ describe('UriSpaceExecutor', () => {
       'http://vocab.getty.edu/aat/',
       [
         quad(
-          namedNode('http://vocab.getty.edu/aat/'),
+          namedNode('https://data.getty.edu/'),
           dctermsTitle,
           literal('Art & Architecture Thesaurus', 'en'),
         ),
@@ -75,12 +75,12 @@ describe('UriSpaceExecutor', () => {
       'https://sws.geonames.org/',
       [
         quad(
-          namedNode('https://sws.geonames.org/'),
+          namedNode('https://www.geonames.org/'),
           dctermsTitle,
           literal('GeoNames', 'en'),
         ),
         quad(
-          namedNode('https://sws.geonames.org/'),
+          namedNode('https://www.geonames.org/'),
           dctermsTitle,
           literal('GeoNames', 'nl'),
         ),
@@ -109,7 +109,7 @@ describe('UriSpaceExecutor', () => {
     const objectsTargets = quads
       .filter((q) => q.predicate.equals(voidObjectsTarget))
       .map((q) => q.object.value);
-    expect(objectsTargets).toEqual(['http://vocab.getty.edu/aat/']);
+    expect(objectsTargets).toEqual(['https://data.getty.edu/']);
   });
 
   it('aggregates counts when multiple prefixes match one URI space', async () => {
@@ -201,7 +201,7 @@ describe('UriSpaceExecutor', () => {
       linksetQuadsList.find(
         (q) =>
           q.predicate.equals(voidObjectsTarget) &&
-          q.object.value === 'http://vocab.getty.edu/aat/',
+          q.object.value === 'https://data.getty.edu/',
       ),
     ).toBeDefined();
     expect(
