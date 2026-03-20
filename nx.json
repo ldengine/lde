@@ -70,6 +70,7 @@
       "conventionalCommits": true,
       "updateDependents": "auto",
       "fallbackCurrentVersionResolver": "disk",
+      "adjustSemverBumpsForZeroMajorVersion": true,
       "versionActionsOptions": {
         "skipLockFileUpdate": true
       }
