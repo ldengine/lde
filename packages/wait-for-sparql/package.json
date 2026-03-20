@@ -5,6 +5,7 @@
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/wait-for-sparql"
   },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
