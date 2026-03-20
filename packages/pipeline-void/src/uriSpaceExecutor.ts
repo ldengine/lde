@@ -22,10 +22,11 @@ const xsdInteger = namedNode(`${XSD}integer`);
 
 /**
  * Executor decorator that consumes `void:Linkset` quads from the inner executor,
- * matches each `void:objectsTarget` against configured URI spaces using `startsWith`,
- * aggregates triple counts per matched space, and emits filtered `void:Linkset` quads.
+ * matches each `void:objectsTarget` against configured URI space prefixes using
+ * `startsWith`, and aggregates triple counts per matched space.
  *
- * Inner quads are consumed and replaced with aggregated output — unmatched URI spaces
+ * Emitted `void:objectsTarget` values point to the target dataset IRI (taken from
+ * the metadata quad subjects), not the raw URI space prefix. Unmatched linksets
  * are discarded.
  */
 export class UriSpaceExecutor implements Executor {
