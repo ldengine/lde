@@ -1,3 +1,13 @@
+## 0.25.1 (2026-03-20)
+
+### 🩹 Fixes
+
+- **pipeline-void:** update UriSpaceExecutor JSDoc to reflect target dataset IRI behaviour ([#282](https://github.com/ldelements/lde/pull/282))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.25.0 (2026-03-20)
 
 ### 🧱 Updated Dependencies
