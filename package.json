@@ -46,7 +46,7 @@
     "prettier-plugin-packagejson": "^3.0.2",
     "tslib": "^2.3.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "8.56.1",
+    "typescript-eslint": "8.57.1",
     "verdaccio": "^6.3.2",
     "vite": "7.3.1",
     "vitest": "4.1.0"
