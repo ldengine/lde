@@ -12,6 +12,12 @@
   "references": [
     {
       "path": "../dataset/tsconfig.lib.json"
+    },
+    {
+      "path": "../distribution-downloader/tsconfig.lib.json"
+    },
+    {
+      "path": "../task-runner/tsconfig.lib.json"
     }
   ],
   "exclude": [

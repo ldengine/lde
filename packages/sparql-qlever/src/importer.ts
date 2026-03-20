@@ -1,43 +1,32 @@
 import {
   Importer as ImporterInterface,
+  ImporterOptions,
   ImportFailed,
   ImportSuccessful,
   NotSupported,
 } from '@lde/sparql-importer';
 import { Distribution } from '@lde/dataset';
-import {
-  Downloader,
-  LastModifiedDownloader,
-} from '@lde/distribution-downloader';
+import { LastModifiedDownloader } from '@lde/distribution-downloader';
 import { basename, dirname, join } from 'path';
 import { readFile, stat, writeFile } from 'node:fs/promises';
-import { TaskRunner } from '@lde/task-runner';
 
-type fileFormat = 'nt' | 'nq' | 'ttl';
-
-const supportedFormats = new Map<string, fileFormat>([
-  ['application/n-triples', 'nt'],
-  ['application/n-quads', 'nq'],
-  ['text/turtle', 'ttl'],
-]);
-
-export interface Options {
-  taskRunner: TaskRunner<unknown>;
-  indexName?: string;
-  downloader?: Downloader;
-  qleverOptions?: {
-    'ascii-prefixes-only': boolean;
-    'num-triples-per-batch': number;
-  };
-  /** Memory budget for the index build (e.g. `'10G'`). Defaults to `'10G'`. */
-  indexMemoryMax?: string;
-  port?: number;
-  /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
-  cacheIndex?: boolean;
+export interface QleverIndexOptions {
+  /** @default true */
+  'ascii-prefixes-only'?: boolean;
+  /** @default 3_000_000 */
+  'num-triples-per-batch'?: number;
+  /** Memory budget for sorting during the index build. @default '10G' */
+  'stxxl-memory'?: string;
+  /** @default true */
+  'parse-parallel'?: boolean;
+  /** Build only PSO and POS permutations. Faster, but queries with predicate variables won't work. Also disables pattern precomputation. @default false */
+  'only-pso-and-pos-permutations'?: boolean;
 }
 
-interface CacheInfo {
-  sourceFile: string;
+export interface QleverImporterOptions extends ImporterOptions {
+  /** @default 'data' */
+  indexName?: string;
+  qleverOptions?: QleverIndexOptions;
 }
 
 /**
@@ -45,31 +34,24 @@ interface CacheInfo {
  *
  * - Use the QLever CLI because the Graph Store Protocol is not parallelized.
  */
-export class Importer implements ImporterInterface {
-  private indexName;
-  private taskRunner: TaskRunner<unknown>;
-  private downloader;
-  private qleverOptions;
-  private indexMemoryMax;
-  private cacheIndex;
+type ResolvedOptions = Required<QleverImporterOptions> & {
+  qleverOptions: Required<QleverIndexOptions>;
+};
 
-  constructor({
-    taskRunner,
-    downloader,
-    indexName,
-    qleverOptions,
-    indexMemoryMax,
-    cacheIndex,
-  }: Options) {
-    this.taskRunner = taskRunner;
-    this.downloader = downloader ?? new LastModifiedDownloader();
-    this.indexName = indexName ?? 'data';
-    this.qleverOptions = qleverOptions ?? {
-      'ascii-prefixes-only': true,
-      'num-triples-per-batch': 3_000_000,
+export class Importer implements ImporterInterface {
+  private readonly options: ResolvedOptions;
+
+  constructor(options: QleverImporterOptions) {
+    this.options = {
+      ...options,
+      indexName: options.indexName ?? 'data',
+      downloader: options.downloader ?? new LastModifiedDownloader(),
+      cacheIndex: options.cacheIndex ?? true,
+      qleverOptions: {
+        ...defaultQleverIndexOptions,
+        ...options.qleverOptions,
+      },
     };
-    this.indexMemoryMax = indexMemoryMax ?? '10G';
-    this.cacheIndex = cacheIndex ?? true;
   }
 
   public async import(
@@ -108,7 +90,7 @@ export class Importer implements ImporterInterface {
   private async doImport(
     distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
-    const localFile = await this.downloader.download(distribution);
+    const localFile = await this.options.downloader.download(distribution);
 
     if (await this.isIndexUpToDate(localFile)) {
       const tripleCount = await this.readTripleCount(localFile);
@@ -121,7 +103,7 @@ export class Importer implements ImporterInterface {
       return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
-    const format = this.fileFormatFromMimeType(distribution.mimeType);
+    const format = fileFormatFromMimeType(distribution.mimeType);
     let logs: string;
     try {
       logs = await this.index(localFile, format);
@@ -149,14 +131,6 @@ export class Importer implements ImporterInterface {
     return new ImportSuccessful(distribution, undefined, tripleCount);
   }
 
-  private fileFormatFromMimeType(mimeType: string): fileFormat {
-    const format = supportedFormats.get(mimeType);
-    if (format === undefined) {
-      throw new Error(`Unsupported media type: ${mimeType}`);
-    }
-    return format;
-  }
-
   private parseTripleCount(logs: string): number | undefined {
     // Extract num-triples.normal from the metadata JSON that the index
     // command cats to stdout. Use a regex rather than JSON.parse because
@@ -166,14 +140,14 @@ export class Importer implements ImporterInterface {
   }
 
   private cacheInfoPath(dataFile: string): string {
-    return join(dirname(dataFile), `${this.indexName}.cache-info.json`);
+    return join(dirname(dataFile), `${this.options.indexName}.cache-info.json`);
   }
 
   /**
    * Check whether the cached index is still up to date.
    */
   private async isIndexUpToDate(dataFile: string): Promise<boolean> {
-    if (!this.cacheIndex) return false;
+    if (!this.options.cacheIndex) return false;
 
     let cacheInfo: CacheInfo;
     try {
@@ -203,7 +177,7 @@ export class Importer implements ImporterInterface {
     try {
       const metadataPath = join(
         dirname(dataFile),
-        `${this.indexName}.meta-data.json`,
+        `${this.options.indexName}.meta-data.json`,
       );
       const raw = await readFile(metadataPath, 'utf-8');
       return this.parseTripleCount(raw);
@@ -220,26 +194,72 @@ export class Importer implements ImporterInterface {
   private async index(
     file: string,
     format: fileFormat,
-    parseParallel = true,
+    parseParallel?: boolean,
   ): Promise<string> {
     const settingsFile = 'index.settings.json';
+    const settings = {
+      'ascii-prefixes-only': this.options.qleverOptions['ascii-prefixes-only'],
+      'num-triples-per-batch':
+        this.options.qleverOptions['num-triples-per-batch'],
+    };
     await writeFile(
       `${dirname(file)}/${settingsFile}`,
-      JSON.stringify(this.qleverOptions),
+      JSON.stringify(settings),
     );
 
     // TODO: write index to named volume instead of bind mount for better performance.
 
-    const metadataFile = `${this.indexName}.meta-data.json`;
-    const indexTask = await this.taskRunner.run(
+    const parallel =
+      parseParallel ?? this.options.qleverOptions['parse-parallel'];
+    const flags = [
+      `-i ${this.options.indexName}`,
+      `-s ${settingsFile}`,
+      `-F ${format}`,
+      `-p true`,
+      `-m ${this.options.qleverOptions['stxxl-memory']}`,
+      parallel ? '' : '--parse-parallel false',
+      this.options.qleverOptions['only-pso-and-pos-permutations']
+        ? '-o --no-patterns'
+        : '',
+      '-f -',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const metadataFile = `${this.options.indexName}.meta-data.json`;
+    const indexTask = await this.options.taskRunner.run(
       `(gunzip -c '${basename(file)}' 2>/dev/null || cat '${basename(
         file,
-      )}') | qlever-index -i ${
-        this.indexName
-      } -s ${settingsFile} -F ${format} -p true -m ${this.indexMemoryMax}${
-        parseParallel ? '' : ' --parse-parallel false'
-      } -f - && cat ${metadataFile}`,
+      )}') | qlever-index ${flags} && cat ${metadataFile}`,
     );
-    return await this.taskRunner.wait(indexTask);
+    return await this.options.taskRunner.wait(indexTask);
   }
+}
+
+type fileFormat = 'nt' | 'nq' | 'ttl';
+
+const supportedFormats = new Map<string, fileFormat>([
+  ['application/n-triples', 'nt'],
+  ['application/n-quads', 'nq'],
+  ['text/turtle', 'ttl'],
+]);
+
+const defaultQleverIndexOptions = {
+  'ascii-prefixes-only': true,
+  'num-triples-per-batch': 3_000_000,
+  'stxxl-memory': '10G',
+  'parse-parallel': true,
+  'only-pso-and-pos-permutations': false,
+} satisfies Required<QleverIndexOptions>;
+
+interface CacheInfo {
+  sourceFile: string;
+}
+
+function fileFormatFromMimeType(mimeType: string): fileFormat {
+  const format = supportedFormats.get(mimeType);
+  if (format === undefined) {
+    throw new Error(`Unsupported media type: ${mimeType}`);
+  }
+  return format;
 }
