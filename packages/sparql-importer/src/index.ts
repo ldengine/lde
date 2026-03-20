@@ -1,4 +1,14 @@
 import { Distribution } from '@lde/dataset';
+import { Downloader } from '@lde/distribution-downloader';
+import { TaskRunner } from '@lde/task-runner';
+
+/** Store-agnostic options shared by all {@link Importer} implementations. */
+export interface ImporterOptions {
+  taskRunner: TaskRunner<unknown>;
+  downloader?: Downloader;
+  /** Cache indices and skip re-indexing when source data is unchanged. @default true */
+  cacheIndex?: boolean;
+}
 
 /**
  * An Importer selects a suitable {@link Distribution} from the given candidates
@@ -7,7 +17,6 @@ import { Distribution } from '@lde/dataset';
  * This assumes that all Distributions of a dataset are roughly equivalent:
  * https://docs.nde.nl/requirements-datasets/#dataset-distributions.
  */
-// export interface Importer extends EventEmitter<Events> {
 export interface Importer {
   /**
    * Import one of the given {@link Distribution}s to a SPARQL server.
@@ -20,11 +29,6 @@ export interface Importer {
     distributions: Distribution[],
   ): Promise<NotSupported | ImportFailed | ImportSuccessful>;
 }
-
-// interface Events {
-//   imported: [statements: number];
-//   end: [statements: number];
-// }
 
 export class ImportSuccessful {
   constructor(

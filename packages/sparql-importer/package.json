@@ -24,6 +24,8 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.7.2",
+    "@lde/distribution-downloader": "0.5.3",
+    "@lde/task-runner": "0.2.10",
     "tslib": "^2.3.0"
   }
 }

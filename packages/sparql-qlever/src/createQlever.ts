@@ -5,7 +5,7 @@ import {
   Downloader,
   LastModifiedDownloader,
 } from '@lde/distribution-downloader';
-import { Importer } from './importer.js';
+import { Importer, QleverIndexOptions } from './importer.js';
 import { Server } from './server.js';
 
 export type QleverOptions = {
@@ -15,8 +15,9 @@ export type QleverOptions = {
   /** @default 7001 */
   port?: number;
   downloader?: Downloader;
-  /** Cache QLever indices and skip re-indexing when source data is unchanged. Defaults to `true`. */
+  /** Cache QLever indices and skip re-indexing when source data is unchanged. @default true */
   cacheIndex?: boolean;
+  qleverOptions?: QleverIndexOptions;
 } & (
   | {
       mode: 'docker';
@@ -26,6 +27,12 @@ export type QleverOptions = {
   | { mode: 'native' }
 );
 
+/**
+ * Create a paired QLever {@link Importer} and {@link Server} that share a
+ * single {@link TaskRunner}. In pipeline setups the importer and server must
+ * use the same runner (and therefore the same Docker container or working
+ * directory) so that the server can serve the index the importer built.
+ */
 export function createQlever(options: QleverOptions) {
   const port = options.port ?? 7001;
   const taskRunner: TaskRunner<unknown> =
@@ -45,6 +52,7 @@ export function createQlever(options: QleverOptions) {
       downloader:
         options.downloader ?? new LastModifiedDownloader(options.dataDir),
       cacheIndex: options.cacheIndex,
+      qleverOptions: options.qleverOptions,
     }),
     server: new Server({
       taskRunner,
