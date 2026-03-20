@@ -58,7 +58,7 @@ jobs:
       - name: Generate app token
         if: steps.check.outputs.up_to_date == 'false'
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
