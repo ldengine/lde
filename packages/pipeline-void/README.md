@@ -72,4 +72,4 @@ Global and domain-specific factories accept `VoidStageOptions` (`timeout`) and r
 ## Executor decorators
 
 - `VocabularyExecutor` — Wraps an executor; detects known vocabulary namespace prefixes in `void:property` quads and appends `void:vocabulary` triples.
-- `UriSpaceExecutor` — Wraps an executor; consumes `void:Linkset` quads, matches `void:objectsTarget` against configured URI spaces, and emits aggregated linksets.
+- `UriSpaceExecutor` — Wraps an executor; consumes `void:Linkset` quads, matches each `void:objectsTarget` against configured URI space prefixes using `startsWith`, and aggregates triple counts per matched space. Emits `void:objectsTarget` pointing to the target dataset IRI (taken from the metadata quad subjects), not the raw prefix. Unmatched linksets are discarded.
