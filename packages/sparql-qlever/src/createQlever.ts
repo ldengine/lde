@@ -6,7 +6,7 @@ import {
   LastModifiedDownloader,
 } from '@lde/distribution-downloader';
 import { Importer, QleverIndexOptions } from './importer.js';
-import { Server } from './server.js';
+import { QleverServerOptions, Server } from './server.js';
 
 export type QleverOptions = {
   /** Directory where downloaded data files are stored. */
@@ -17,9 +17,10 @@ export type QleverOptions = {
   downloader?: Downloader;
   /** Cache QLever indices and skip re-indexing when source data is unchanged. @default true */
   cacheIndex?: boolean;
-  /** QLever `--default-query-timeout` value (e.g. '30s', '5min'). @default '30s' */
-  queryTimeout?: string;
-  qleverOptions?: QleverIndexOptions;
+  /** Options for `qlever-index` (index building). */
+  indexOptions?: QleverIndexOptions;
+  /** Options for `qlever-server` (query processing). */
+  serverOptions?: QleverServerOptions;
 } & (
   | {
       mode: 'docker';
@@ -54,13 +55,13 @@ export function createQlever(options: QleverOptions) {
       downloader:
         options.downloader ?? new LastModifiedDownloader(options.dataDir),
       cacheIndex: options.cacheIndex,
-      qleverOptions: options.qleverOptions,
+      qleverOptions: options.indexOptions,
     }),
     server: new Server({
       taskRunner,
       indexName: options.indexName ?? 'data',
       port,
-      queryTimeout: options.queryTimeout,
+      qleverOptions: options.serverOptions,
     }),
   };
 }
