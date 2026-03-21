@@ -17,6 +17,8 @@ export type QleverOptions = {
   downloader?: Downloader;
   /** Cache QLever indices and skip re-indexing when source data is unchanged. @default true */
   cacheIndex?: boolean;
+  /** QLever `--default-query-timeout` value (e.g. '30s', '5min'). @default '30s' */
+  queryTimeout?: string;
   qleverOptions?: QleverIndexOptions;
 } & (
   | {
@@ -58,6 +60,7 @@ export function createQlever(options: QleverOptions) {
       taskRunner,
       indexName: options.indexName ?? 'data',
       port,
+      queryTimeout: options.queryTimeout,
     }),
   };
 }
