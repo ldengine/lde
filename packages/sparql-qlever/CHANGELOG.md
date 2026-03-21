@@ -1,3 +1,13 @@
+## 0.12.1 (2026-03-21)
+
+### 🩹 Fixes
+
+- **sparql-qlever:** fix conflicting --parse-parallel flags on import retry ([#287](https://github.com/ldelements/lde/pull/287))
+
+### ❤️ Thank You
+
+- David de Boer
+
 ## 0.12.0 (2026-03-20)
 
 ### 🚀 Features
