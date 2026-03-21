@@ -256,7 +256,7 @@ describe('Importer', () => {
 
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect(runner.commands.length).toBe(2);
-      expect(runner.commands[0]).not.toContain('--parse-parallel false');
+      expect(runner.commands[0]).toContain('--parse-parallel true');
       expect(runner.commands[1]).toContain('--parse-parallel false');
     });
 

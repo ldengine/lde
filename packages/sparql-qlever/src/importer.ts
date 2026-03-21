@@ -215,9 +215,8 @@ export class Importer implements ImporterInterface {
       `-i ${this.options.indexName}`,
       `-s ${settingsFile}`,
       `-F ${format}`,
-      `-p true`,
+      `--parse-parallel ${parallel}`,
       `-m ${this.options.qleverOptions['stxxl-memory']}`,
-      parallel ? '' : '--parse-parallel false',
       this.options.qleverOptions['only-pso-and-pos-permutations']
         ? '-o --no-patterns'
         : '',
