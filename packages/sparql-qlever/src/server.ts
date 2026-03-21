@@ -40,6 +40,7 @@ export class Server<Task> implements SparqlServer {
 export interface Arguments<Task> {
   taskRunner: TaskRunner<Task>;
   indexName: string;
+  /** @default 7001 */
   port?: number;
   /** QLever `--default-query-timeout` value (e.g. '30s', '5min'). @default '30s' */
   queryTimeout?: string;
