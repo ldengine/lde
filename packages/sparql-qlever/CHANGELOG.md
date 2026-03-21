@@ -1,3 +1,20 @@
+## 0.13.0 (2026-03-21)
+
+### 🚀 Features
+
+- ⚠️  **sparql-qlever:** expose configurable QLever server options ([#289](https://github.com/ldelements/lde/pull/289), [#288](https://github.com/ldelements/lde/issues/288))
+
+### ⚠️  Breaking Changes
+
+- **sparql-qlever:** expose configurable QLever server options  ([#289](https://github.com/ldelements/lde/pull/289), [#288](https://github.com/ldelements/lde/issues/288))
+  `qleverOptions` renamed to `indexOptions`;
+  `queryTimeout` replaced by `serverOptions`.
+  * docs(sparql-qlever): document index and server options in README
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.12.2 (2026-03-21)
 
 ### 🚀 Features
