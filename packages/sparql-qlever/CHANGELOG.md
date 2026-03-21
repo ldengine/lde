@@ -16,24 +16,6 @@
 
 - David de Boer @ddeboer
 
-# 1.0.0 (2026-03-20)
-
-### 🚀 Features
-
-- ⚠️  **sparql-qlever:** tune QLever index build for large datasets ([#263](https://github.com/ldelements/lde/pull/263))
-
-### ⚠️  Breaking Changes
-
-- **sparql-qlever:** tune QLever index build for large datasets  ([#263](https://github.com/ldelements/lde/pull/263))
-
-### 🧱 Updated Dependencies
-
-- Updated @lde/sparql-importer to 1.0.0
-
-### ❤️ Thank You
-
-- David de Boer @ddeboer
-
 ## 0.11.0 (2026-03-19)
 
 ### 🚀 Features
