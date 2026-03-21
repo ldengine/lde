@@ -1,3 +1,13 @@
+## 0.12.2 (2026-03-21)
+
+### 🚀 Features
+
+- **sparql-qlever:** add queryTimeout option to QLever server ([#288](https://github.com/ldelements/lde/pull/288))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.12.1 (2026-03-21)
 
 ### 🩹 Fixes
