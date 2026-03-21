@@ -12,6 +12,7 @@
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/docgen"
   },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./package.json": "./package.json",

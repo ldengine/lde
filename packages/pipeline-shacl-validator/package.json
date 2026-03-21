@@ -6,6 +6,7 @@
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/pipeline-shacl-validator"
   },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./package.json": "./package.json",

@@ -5,6 +5,7 @@
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/pipeline"
   },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
