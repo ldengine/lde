@@ -1,3 +1,23 @@
+## 0.6.0 (2026-03-22)
+
+### 🚀 Features
+
+- ⚠️  detect and correct MIME type mismatches in distribution imports ([#291](https://github.com/ldelements/lde/pull/291))
+
+### ⚠️  Breaking Changes
+
+- detect and correct MIME type mismatches in distribution imports  ([#291](https://github.com/ldelements/lde/pull/291))
+  Downloader.download() returns DownloadResult instead
+  of string; qleverOptions on createQlever() renamed to indexOptions.
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-downloader to 0.6.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.5.0 (2026-03-20)
 
 ### 🚀 Features
