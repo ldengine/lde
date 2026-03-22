@@ -68,6 +68,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
+          sign-commits: true
           branch: build/nx-migrate-${{ steps.check.outputs.latest }}
           commit-message: 'build(deps): migrate Nx to ${{ steps.check.outputs.latest }}'
           title: 'build(deps): migrate Nx to ${{ steps.check.outputs.latest }}'
