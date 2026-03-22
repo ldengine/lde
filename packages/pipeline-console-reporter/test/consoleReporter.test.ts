@@ -19,6 +19,7 @@ function makeProbeResult(
     type: 'sparql',
     available: true,
     statusCode: 200,
+    warnings: [],
     ...overrides,
   };
 }

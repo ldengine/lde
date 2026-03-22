@@ -90,7 +90,8 @@ export class Importer implements ImporterInterface {
   private async doImport(
     distribution: Distribution & { mimeType: string },
   ): Promise<ImportSuccessful | ImportFailed> {
-    const localFile = await this.options.downloader.download(distribution);
+    const { path: localFile, headers } =
+      await this.options.downloader.download(distribution);
 
     if (await this.isIndexUpToDate(localFile)) {
       const tripleCount = await this.readTripleCount(localFile);
@@ -103,7 +104,11 @@ export class Importer implements ImporterInterface {
       return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
-    const format = fileFormatFromMimeType(distribution.mimeType);
+    const { format, warning } = fileFormatFor(
+      distribution.mimeType,
+      basename(localFile),
+      headers.get('Content-Type') ?? undefined,
+    );
     let logs: string;
     try {
       logs = await this.index(localFile, format);
@@ -128,7 +133,8 @@ export class Importer implements ImporterInterface {
 
     await this.writeCacheInfo(localFile);
 
-    return new ImportSuccessful(distribution, undefined, tripleCount);
+    const warnings = warning ? [warning] : [];
+    return new ImportSuccessful(distribution, undefined, tripleCount, warnings);
   }
 
   private parseTripleCount(logs: string): number | undefined {
@@ -255,10 +261,69 @@ interface CacheInfo {
   sourceFile: string;
 }
 
-function fileFormatFromMimeType(mimeType: string): fileFormat {
-  const format = supportedFormats.get(mimeType);
-  if (format === undefined) {
-    throw new Error(`Unsupported media type: ${mimeType}`);
+const extensionFormats = new Map<string, fileFormat>([
+  ['.nt', 'nt'],
+  ['.nq', 'nq'],
+  ['.ttl', 'ttl'],
+]);
+
+interface ResolvedFormat {
+  format: fileFormat;
+  warning?: string;
+}
+
+const compressionTypes = new Set([
+  'application/gzip',
+  'application/x-gzip',
+  'application/octet-stream',
+]);
+
+/**
+ * Determine the QLever format flag for a distribution.
+ *
+ * Priority:
+ * 1. Server Content-Type (if it maps to a supported RDF format)
+ * 2. File extension (fallback when Content-Type is a compression type or missing)
+ * 3. Declared MIME type from the dataset registry (last resort)
+ */
+function fileFormatFor(
+  declaredMimeType: string,
+  filename: string,
+  serverContentType?: string,
+): ResolvedFormat {
+  const declaredFormat = supportedFormats.get(declaredMimeType);
+  if (declaredFormat === undefined) {
+    throw new Error(`Unsupported media type: ${declaredMimeType}`);
   }
-  return format;
+
+  // Try server Content-Type first (strip parameters like "; charset=utf-8").
+  if (serverContentType) {
+    const actualType = serverContentType.split(';')[0].trim();
+    if (!compressionTypes.has(actualType)) {
+      const serverFormat = supportedFormats.get(actualType);
+      if (serverFormat !== undefined && serverFormat !== declaredFormat) {
+        return {
+          format: serverFormat,
+          warning: `Server Content-Type ${actualType} does not match declared media type ${declaredMimeType}; using ${serverFormat} format`,
+        };
+      }
+      if (serverFormat !== undefined) {
+        return { format: serverFormat };
+      }
+    }
+  }
+
+  // Fall back to file extension.
+  const stripped = filename.replace(/\.(gz|bz2|xz|zst)$/i, '');
+  const extension = stripped.slice(stripped.lastIndexOf('.'));
+  const extensionFormat = extensionFormats.get(extension);
+
+  if (extensionFormat !== undefined && extensionFormat !== declaredFormat) {
+    return {
+      format: extensionFormat,
+      warning: `Declared media type ${declaredMimeType} does not match file extension ${extension}; using ${extensionFormat} format`,
+    };
+  }
+
+  return { format: declaredFormat };
 }

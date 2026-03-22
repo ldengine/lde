@@ -60,7 +60,10 @@ describe('Importer', () => {
         indexName: 'test-index',
         downloader: {
           async download() {
-            return resolve('test/fixtures/importer/data.ttl');
+            return {
+              path: resolve('test/fixtures/importer/data.ttl'),
+              headers: new Headers(),
+            };
           },
         },
       });
@@ -110,7 +113,7 @@ describe('Importer', () => {
         indexName,
         downloader: {
           async download() {
-            return dataFile;
+            return { path: dataFile, headers: new Headers() };
           },
         },
         cacheIndex: options?.cacheIndex,
@@ -294,6 +297,83 @@ describe('Importer', () => {
       const importerNoCache = createImporter(runner, { cacheIndex: false });
       await importerNoCache.import(makeDistributions());
       expect(runner.commands.length).toBe(2); // Forced re-index.
+    });
+
+    it('overrides format from server Content-Type when it contradicts declared MIME type', async () => {
+      const runner = stubTaskRunner(42);
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download() {
+            return {
+              path: dataFile,
+              headers: new Headers({ 'Content-Type': 'application/n-quads' }),
+            };
+          },
+        },
+      });
+
+      // Distribution declares application/n-triples, server says application/n-quads.
+      const distributions = [
+        new Distribution(
+          new URL('https://example.com/data.nq'),
+          'application/n-triples',
+        ),
+      ];
+
+      const result = await importer.import(distributions);
+
+      expect(result).toBeInstanceOf(ImportSuccessful);
+      expect(runner.commands[0]).toContain('-F nq');
+      expect((result as ImportSuccessful).warnings).toEqual([
+        'Server Content-Type application/n-quads does not match declared media type application/n-triples; using nq format',
+      ]);
+    });
+
+    it('falls back to file extension when Content-Type is a compression type', async () => {
+      const nqFile = join(tempDir, 'data.nq');
+      await copyFile(dataFile, nqFile);
+
+      const runner = stubTaskRunner(42);
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download() {
+            return {
+              path: nqFile,
+              headers: new Headers({ 'Content-Type': 'application/gzip' }),
+            };
+          },
+        },
+      });
+
+      const distributions = [
+        new Distribution(
+          new URL('https://example.com/data.nq.gz'),
+          'application/n-triples',
+        ),
+      ];
+
+      const result = await importer.import(distributions);
+
+      expect(result).toBeInstanceOf(ImportSuccessful);
+      expect(runner.commands[0]).toContain('-F nq');
+      expect((result as ImportSuccessful).warnings).toEqual([
+        'Declared media type application/n-triples does not match file extension .nq; using nq format',
+      ]);
+    });
+
+    it('uses declared MIME type format when all sources agree', async () => {
+      const runner = stubTaskRunner(42);
+      const importer = createImporter(runner);
+
+      const result = await importer.import(makeDistributions());
+
+      expect(result).toBeInstanceOf(ImportSuccessful);
+      expect(runner.commands[0]).toContain('-F ttl');
+      expect((result as ImportSuccessful).warnings).toEqual([]);
     });
   });
 });

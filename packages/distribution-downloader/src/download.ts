@@ -28,12 +28,17 @@ export interface DownloadOptions {
   logger?: Logger;
 }
 
+export interface DownloadResult {
+  path: string;
+  headers: Headers;
+}
+
 export interface Downloader {
   download(
     distribution: Distribution,
     target?: string,
     options?: DownloadOptions,
-  ): Promise<string>;
+  ): Promise<DownloadResult>;
 }
 
 export class LastModifiedDownloader implements Downloader {
@@ -43,7 +48,7 @@ export class LastModifiedDownloader implements Downloader {
     distribution: Distribution,
     target = join(this.path, filenamifyUrl(distribution.accessUrl)),
     options?: DownloadOptions,
-  ): Promise<string> {
+  ): Promise<DownloadResult> {
     const logger = options?.logger ?? noopLogger;
     const downloadUrl = distribution.accessUrl;
     const filePath = resolve(target);
@@ -56,7 +61,7 @@ export class LastModifiedDownloader implements Downloader {
 
     if (await this.localFileIsUpToDate(filePath, distribution)) {
       logger.debug(`File ${filePath} is up to date, skipping download.`);
-      return filePath;
+      return { path: filePath, headers: new Headers() };
     }
 
     const downloadResponse = await fetch(downloadUrl, {
@@ -81,7 +86,7 @@ export class LastModifiedDownloader implements Downloader {
       throw new Error('Distribution download is empty');
     }
 
-    return filePath;
+    return { path: filePath, headers: downloadResponse.headers };
   }
 
   private async localFileIsUpToDate(

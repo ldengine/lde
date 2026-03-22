@@ -44,6 +44,9 @@ export async function* probeResultsToQuads(
       yield quad(action, namedNode(`${SCHEMA}error`), literal(result.message));
     } else if (result.isSuccess()) {
       yield* successQuads(action, result, datasetIri);
+      for (const warning of result.warnings) {
+        yield quad(action, namedNode(`${SCHEMA}error`), literal(warning));
+      }
     } else if (result.failureReason) {
       yield quad(
         action,

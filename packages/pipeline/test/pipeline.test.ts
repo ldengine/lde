@@ -647,18 +647,21 @@ describe('Pipeline', () => {
         type: 'sparql',
         available: true,
         statusCode: 200,
+        warnings: [],
       });
       expect(reporter.distributionProbed).toHaveBeenCalledWith({
         distribution: dataDumpDist,
         type: 'data-dump',
         available: false,
         statusCode: 404,
+        warnings: [],
       });
       expect(reporter.distributionProbed).toHaveBeenCalledWith({
         distribution: downDist,
         type: 'network-error',
         available: false,
         error: 'Connection refused',
+        warnings: [],
       });
     });
 
@@ -770,6 +773,7 @@ describe('Pipeline', () => {
         type: 'network-error',
         available: false,
         error: 'Connection refused',
+        warnings: [],
       });
       expect(reporter.distributionSelected).not.toHaveBeenCalled();
     });

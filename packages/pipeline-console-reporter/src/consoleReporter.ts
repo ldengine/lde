@@ -28,9 +28,8 @@ export class ConsoleReporter implements ProgressReporter {
   private importTimer?: ReturnType<typeof setInterval>;
   private probeLines: { url: string; text: string }[] = [];
 
-  /** Print a static succeed/fail line without starting a spinner animation. */
-  private printLine(method: 'succeed' | 'fail', text: string): void {
-    const symbol = method === 'succeed' ? logSymbols.success : logSymbols.error;
+  /** Print a static line with a symbol prefix. */
+  private printLine(symbol: string, text: string): void {
     process.stderr.write(`${symbol} ${text}\n`);
   }
 
@@ -84,15 +83,18 @@ export class ConsoleReporter implements ProgressReporter {
       const detail =
         result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
       const text = `${typeLabel} ${url}${detail}`;
-      this.printLine('succeed', text);
+      this.printLine(logSymbols.success, text);
       this.probeLines.push({ url, text });
+      for (const warning of result.warnings) {
+        this.printLine(logSymbols.warning, warning);
+      }
     } else {
       const detail = result.error
         ? ` (${result.error})`
         : result.statusCode !== undefined
           ? ` (HTTP ${result.statusCode})`
           : '';
-      this.printLine('fail', `${typeLabel} ${url}${detail}`);
+      this.printLine(logSymbols.error, `${typeLabel} ${url}${detail}`);
       this.probeLines.push({ url, text: '' });
     }
   }
@@ -113,7 +115,7 @@ export class ConsoleReporter implements ProgressReporter {
       this.activeSpinner.suffixText = '';
       this.activeSpinner.fail();
     } else {
-      this.printLine('fail', `Import failed: ${error}`);
+      this.printLine(logSymbols.error, `Import failed: ${error}`);
     }
     this.clearImportTimer();
     this.activeSpinner = undefined;
@@ -141,7 +143,7 @@ export class ConsoleReporter implements ProgressReporter {
         this.activeSpinner.suffixText = '';
         this.activeSpinner.succeed();
       } else {
-        this.printLine('succeed', text);
+        this.printLine(logSymbols.success, text);
       }
       this.clearImportTimer();
       this.activeSpinner = undefined;
@@ -156,13 +158,13 @@ export class ConsoleReporter implements ProgressReporter {
         const linesUp = this.probeLines.length - this.probeLines.indexOf(probe);
         // Move cursor up to the probe line and clear it.
         process.stderr.write(`\x1B[${linesUp}A\x1B[2K\r`);
-        this.printLine('succeed', selectedText);
+        this.printLine(logSymbols.success, selectedText);
         // Move cursor back down to original position.
         if (linesUp > 1) {
           process.stderr.write(`\x1B[${linesUp - 1}B`);
         }
       } else {
-        this.printLine('succeed', selectedText);
+        this.printLine(logSymbols.success, selectedText);
       }
     }
   }
@@ -255,7 +257,7 @@ export class ConsoleReporter implements ProgressReporter {
   }
 
   datasetSkipped(_dataset: Dataset, reason: string): void {
-    this.printLine('fail', `Skipped: ${chalk.red(reason)}`);
+    this.printLine(logSymbols.error, `Skipped: ${chalk.red(reason)}`);
   }
 
   pipelineComplete(result: {
