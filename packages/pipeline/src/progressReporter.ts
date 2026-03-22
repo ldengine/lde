@@ -7,6 +7,7 @@ export interface DistributionAnalysisResult {
   available: boolean;
   statusCode?: number;
   error?: string;
+  warnings: string[];
 }
 
 export interface ProgressReporter {

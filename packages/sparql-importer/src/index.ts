@@ -35,6 +35,7 @@ export class ImportSuccessful {
     public readonly distribution: Distribution,
     public readonly identifier?: string,
     public readonly tripleCount?: number,
+    public readonly warnings: string[] = [],
   ) {}
 }
 

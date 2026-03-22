@@ -375,6 +375,7 @@ function mapProbeResult(
       type: 'network-error' as const,
       available: false,
       error: result.message,
+      warnings: [],
     };
   }
   return {
@@ -385,5 +386,7 @@ function mapProbeResult(
         : ('data-dump' as const),
     available: result.isSuccess(),
     statusCode: result.statusCode,
+    error: result.failureReason ?? undefined,
+    warnings: result.warnings,
   };
 }

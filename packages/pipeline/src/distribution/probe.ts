@@ -20,6 +20,7 @@ abstract class ProbeResult {
   public readonly lastModified: Date | null = null;
   public readonly contentType: string | null;
   public readonly failureReason: string | null;
+  public readonly warnings: string[] = [];
 
   constructor(
     public readonly url: string,
@@ -191,10 +192,14 @@ async function probeDataDump(
     const failureReason = isHttpSuccess
       ? validateBody(body, getResponse.headers.get('Content-Type'))
       : null;
-    return new DataDumpProbeResult(url, getResponse, failureReason);
+    const result = new DataDumpProbeResult(url, getResponse, failureReason);
+    checkContentTypeMismatch(result, distribution.mimeType);
+    return result;
   }
 
-  return new DataDumpProbeResult(url, headResponse);
+  const result = new DataDumpProbeResult(url, headResponse);
+  checkContentTypeMismatch(result, distribution.mimeType);
+  return result;
 }
 
 const rdfContentTypes = [
@@ -221,4 +226,31 @@ function validateBody(body: string, contentType: string | null): string | null {
   }
 
   return null;
+}
+
+/** Content types that indicate compression, not the RDF serialization format. */
+const compressionTypes = new Set([
+  'application/gzip',
+  'application/x-gzip',
+  'application/octet-stream',
+]);
+
+/**
+ * Compare the declared MIME type from the dataset registry against the
+ * server's Content-Type header. Adds a warning when they disagree.
+ */
+function checkContentTypeMismatch(
+  result: DataDumpProbeResult,
+  declaredMimeType: string | undefined,
+): void {
+  if (!result.isSuccess() || !declaredMimeType || !result.contentType) return;
+
+  const actual = result.contentType.split(';')[0].trim();
+  if (compressionTypes.has(actual)) return;
+
+  if (actual !== declaredMimeType) {
+    result.warnings.push(
+      `Server Content-Type ${actual} does not match declared media type ${declaredMimeType}`,
+    );
+  }
 }

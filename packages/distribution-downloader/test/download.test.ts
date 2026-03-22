@@ -33,8 +33,8 @@ describe('LastModifiedDownloader', () => {
     it('downloads file', async () => {
       nock('https://example.com').get('/file.nt').reply(200, 'mock file');
 
-      const filePath = await downloader.download(distribution);
-      expect(filePath).toBe(localFile);
+      const result = await downloader.download(distribution);
+      expect(result.path).toBe(localFile);
 
       const fileContent = await fs.readFile(localFile, 'utf8');
       expect(fileContent).toBe('mock file');
@@ -45,7 +45,7 @@ describe('LastModifiedDownloader', () => {
         .get('/file.nt')
         .times(1)
         .reply(200, 'mock file');
-      const filePath = await downloader.download(distribution);
+      const { path: filePath } = await downloader.download(distribution);
       const stat = await fs.stat(filePath);
 
       distribution.lastModified = new Date('2001-01-01');

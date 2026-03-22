@@ -131,7 +131,10 @@ export class ImportResolver implements DistributionResolver {
 
     if (importResult instanceof NotSupported) {
       const failedDistribution = importResult.distribution ?? candidates[0];
-      callbacks?.onImportFailed?.(failedDistribution, 'No supported import format');
+      callbacks?.onImportFailed?.(
+        failedDistribution,
+        'No supported import format',
+      );
       return new NoDistributionAvailable(
         dataset,
         'No supported import format available',
