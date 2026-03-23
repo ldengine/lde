@@ -30,17 +30,51 @@ const selector = new RegistrySelector({
 const selector = new ManualDatasetSelection([dataset]);
 ```
 
+### Stage
+
+A stage groups an item selector, one or more executors, and configuration:
+
+```typescript
+new Stage({
+  name: 'per-class',
+  itemSelector: new SparqlItemSelector({
+    query: 'SELECT DISTINCT ?class WHERE { ?s a ?class }',
+  }),
+  executors: executor,
+  batchSize: 100,
+  maxConcurrency: 5,
+});
+```
+
+#### Batch size
+
+`batchSize` (default: 10) controls how many variable bindings are passed to each executor call as a `VALUES` clause. It also sets the page size for the item selector's SPARQL requests, so that each paginated request fills exactly one executor batch.
+
+A `LIMIT` clause in the selector query overrides `batchSize` as the page size — use this when the SPARQL endpoint enforces a hard result limit:
+
+```typescript
+// Endpoint caps results at 1000, but process in batches of 100.
+new Stage({
+  name: 'per-class',
+  itemSelector: new SparqlItemSelector({
+    query: 'SELECT DISTINCT ?class WHERE { ?s a ?class } LIMIT 1000',
+  }),
+  executors: executor,
+  batchSize: 100,
+});
+```
+
 ### Item Selector
 
 Selects resources from the distribution and fans out executor calls per batch of results. Implements the `ItemSelector` interface:
 
 ```typescript
 interface ItemSelector {
-  select(distribution: Distribution): AsyncIterable<VariableBindings>;
+  select(distribution: Distribution, batchSize?: number): AsyncIterable<VariableBindings>;
 }
 ```
 
-The distribution is received at run time, so selectors don't need the endpoint URL at construction time. Use `SparqlItemSelector` for SPARQL-based selection with automatic pagination:
+The distribution is received at run time, so selectors don't need the endpoint URL at construction time. The `batchSize` parameter is set by the stage. Use `SparqlItemSelector` for SPARQL-based selection with automatic pagination:
 
 ```typescript
 new SparqlItemSelector({
@@ -52,9 +86,9 @@ For dynamic queries that depend on the distribution, implement `ItemSelector` di
 
 ```typescript
 const itemSelector: ItemSelector = {
-  select: (distribution) => {
+  select: (distribution, batchSize) => {
     const query = buildQuery(distribution);
-    return new SparqlItemSelector({ query }).select(distribution);
+    return new SparqlItemSelector({ query }).select(distribution, batchSize);
   },
 };
 ```

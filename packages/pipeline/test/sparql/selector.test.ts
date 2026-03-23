@@ -29,7 +29,7 @@ function bindingsStream(
 describe('SparqlItemSelector', () => {
   const query = 'SELECT ?uri WHERE { ?uri a <http://example.com/Class> }';
 
-  it('yields all bindings when results are fewer than pageSize', async () => {
+  it('yields all bindings when results are fewer than page size', async () => {
     const mockFetcher = {
       fetchBindings: vi
         .fn()
@@ -43,12 +43,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      pageSize: 10,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector.select(distribution)) {
+    for await (const row of selector.select(distribution, 10)) {
       rows.push(row);
     }
 
@@ -76,12 +75,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      pageSize: 2,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector.select(distribution)) {
+    for await (const row of selector.select(distribution, 2)) {
       rows.push(row);
     }
 
@@ -116,30 +114,6 @@ describe('SparqlItemSelector', () => {
     expect(rows).toHaveLength(0);
   });
 
-  it('respects custom pageSize in LIMIT clause', async () => {
-    const queries: string[] = [];
-    const mockFetcher = {
-      fetchBindings: vi
-        .fn()
-        .mockImplementation((_endpoint: string, q: string) => {
-          queries.push(q);
-          return bindingsStream([{ uri: namedNode('http://example.com/1') }]);
-        }),
-    };
-
-    const selector = new SparqlItemSelector({
-      query,
-      pageSize: 50,
-      fetcher: mockFetcher as never,
-    });
-
-    for await (const _row of selector.select(distribution)) {
-      // consume
-    }
-
-    expect(queries[0]).toMatch(/LIMIT\s+50/);
-  });
-
   it('skips rows where all projected variables are non-NamedNode', async () => {
     const mockFetcher = {
       fetchBindings: vi
@@ -156,12 +130,11 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query,
-      pageSize: 10,
       fetcher: mockFetcher as never,
     });
 
     const rows: VariableBindings[] = [];
-    for await (const row of selector.select(distribution)) {
+    for await (const row of selector.select(distribution, 10)) {
       rows.push(row);
     }
 
@@ -170,7 +143,7 @@ describe('SparqlItemSelector', () => {
     expect(rows[1].uri.value).toBe('http://example.com/2');
   });
 
-  it('defaults pageSize to 10', async () => {
+  it('defaults page size to 10', async () => {
     const queries: string[] = [];
     const mockFetcher = {
       fetchBindings: vi
@@ -193,7 +166,30 @@ describe('SparqlItemSelector', () => {
     expect(queries[0]).toMatch(/LIMIT\s+10/);
   });
 
-  it('uses query LIMIT as default pageSize', async () => {
+  it('uses batchSize from select()', async () => {
+    const queries: string[] = [];
+    const mockFetcher = {
+      fetchBindings: vi
+        .fn()
+        .mockImplementation((_endpoint: string, q: string) => {
+          queries.push(q);
+          return bindingsStream([]);
+        }),
+    };
+
+    const selector = new SparqlItemSelector({
+      query,
+      fetcher: mockFetcher as never,
+    });
+
+    for await (const _row of selector.select(distribution, 500)) {
+      // consume
+    }
+
+    expect(queries[0]).toMatch(/LIMIT\s+500/);
+  });
+
+  it('uses query LIMIT as page size', async () => {
     const queries: string[] = [];
     const mockFetcher = {
       fetchBindings: vi
@@ -213,11 +209,10 @@ describe('SparqlItemSelector', () => {
       // consume
     }
 
-    // Query LIMIT 25 becomes the pageSize.
     expect(queries[0]).toMatch(/LIMIT\s+25/);
   });
 
-  it('pageSize option overrides query LIMIT', async () => {
+  it('prefers query LIMIT over batchSize from select()', async () => {
     const queries: string[] = [];
     const mockFetcher = {
       fetchBindings: vi
@@ -230,16 +225,15 @@ describe('SparqlItemSelector', () => {
 
     const selector = new SparqlItemSelector({
       query: 'SELECT ?class WHERE { ?s a ?class } LIMIT 25',
-      pageSize: 5,
       fetcher: mockFetcher as never,
     });
 
-    for await (const _row of selector.select(distribution)) {
+    for await (const _row of selector.select(distribution, 500)) {
       // consume
     }
 
-    // Explicit pageSize overrides query LIMIT.
-    expect(queries[0]).toMatch(/LIMIT\s+5/);
+    // Query LIMIT 25 takes priority over batchSize from select().
+    expect(queries[0]).toMatch(/LIMIT\s+25/);
   });
 
   it('collects all projected variables per row', async () => {

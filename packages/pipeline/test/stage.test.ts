@@ -312,10 +312,29 @@ describe('Stage', () => {
     const result = await stage.run(dataset, distribution, writer);
     expect(result).not.toBeInstanceOf(NotSupported);
 
-    expect(selectFn).toHaveBeenCalledWith(distribution);
+    expect(selectFn).toHaveBeenCalledWith(distribution, 10);
     expect(executor.execute).toHaveBeenCalledWith(dataset, distribution, {
       bindings,
     });
+  });
+
+  it('passes batchSize to item selector', async () => {
+    const executor = capturingExecutor([q1]);
+    const selectFn = vi.fn(async function* () {
+      yield { class: namedNode('http://example.org/Person') };
+    });
+
+    const stage = new Stage({
+      name: 'test',
+      executors: executor,
+      itemSelector: { select: selectFn },
+      batchSize: 500,
+    });
+
+    const writer = collectingWriter();
+    await stage.run(dataset, distribution, writer);
+
+    expect(selectFn).toHaveBeenCalledWith(distribution, 500);
   });
 
   describe('sub-stages', () => {

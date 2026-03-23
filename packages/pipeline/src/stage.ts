@@ -17,7 +17,15 @@ export interface StageOptions {
   name: string;
   executors: Executor | Executor[];
   itemSelector?: ItemSelector;
-  /** Maximum number of bindings per executor call. @default 10 */
+  /**
+   * Maximum number of bindings per executor call.
+   *
+   * Also used as the selector's page size so that each paginated request
+   * fills exactly one batch. A `LIMIT` clause in the selector query
+   * overrides this for endpoints with hard result limits.
+   *
+   * @default 10
+   */
   batchSize?: number;
   /** Maximum concurrent in-flight executor batches. @default 10 */
   maxConcurrency?: number;
@@ -69,7 +77,7 @@ export class Stage {
   ): Promise<NotSupported | void> {
     if (this.itemSelector) {
       return this.runWithSelector(
-        this.itemSelector.select(distribution),
+        this.itemSelector.select(distribution, this.batchSize),
         dataset,
         distribution,
         writer,
@@ -313,5 +321,8 @@ async function* mergeStreams(
 
 /** Selects items (as variable bindings) for executors to process. Pagination is an implementation detail. */
 export interface ItemSelector {
-  select(distribution: Distribution): AsyncIterable<VariableBindings>;
+  select(
+    distribution: Distribution,
+    batchSize?: number,
+  ): AsyncIterable<VariableBindings>;
 }
