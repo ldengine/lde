@@ -1,3 +1,13 @@
+## 0.19.3 (2026-03-23)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** retain item and quad counts on stage completion ([#293](https://github.com/ldelements/lde/pull/293))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.19.2 (2026-03-23)
 
 ### 🚀 Features
