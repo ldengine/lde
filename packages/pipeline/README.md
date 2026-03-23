@@ -50,17 +50,17 @@ new Stage({
 
 `batchSize` (default: 10) controls how many variable bindings are passed to each executor call as a `VALUES` clause. It also sets the page size for the item selector's SPARQL requests, so that each paginated request fills exactly one executor batch.
 
-A `LIMIT` clause in the selector query overrides `batchSize` as the page size — use this when the SPARQL endpoint enforces a hard result limit:
+Some SPARQL endpoints enforce different result limits for SELECT and CONSTRUCT queries. Since the selector uses SELECT and the executor uses CONSTRUCT, a `LIMIT` clause in the selector query overrides `batchSize` as the page size. Use this when the endpoint caps SELECT results below your desired batch size:
 
 ```typescript
-// Endpoint caps results at 1000, but process in batches of 100.
+// Endpoint caps SELECT results at 500, but each CONSTRUCT can handle 1000 bindings.
 new Stage({
   name: 'per-class',
   itemSelector: new SparqlItemSelector({
-    query: 'SELECT DISTINCT ?class WHERE { ?s a ?class } LIMIT 1000',
+    query: 'SELECT DISTINCT ?class WHERE { ?s a ?class } LIMIT 500',
   }),
   executors: executor,
-  batchSize: 100,
+  batchSize: 1000, // Two SELECT pages fill one CONSTRUCT batch.
 });
 ```
 
