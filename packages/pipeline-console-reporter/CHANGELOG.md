@@ -1,3 +1,13 @@
+## 0.19.2 (2026-03-23)
+
+### 🚀 Features
+
+- **pipeline-console-reporter:** indent output to reflect dataset/stage hierarchy ([#295](https://github.com/ldelements/lde/pull/295))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.19.1 (2026-03-23)
 
 ### 🩹 Fixes
