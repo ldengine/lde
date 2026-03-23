@@ -41,5 +41,6 @@ await runner.stop(container);
 - Mounts a host directory as `/mount` with the `mountDir` option
 - Runs commands as the current user (UID/GID) for file permissions
 - Exposes ports with `port` option
+- Stops containers (without removing) so logs remain available via `docker logs`
 - Removes previous containers with the same name on restart
 - Streams container logs to stdout

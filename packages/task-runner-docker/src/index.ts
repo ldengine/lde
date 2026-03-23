@@ -103,7 +103,7 @@ export class DockerTaskRunner implements TaskRunner<Container> {
       stderr: true,
       follow: false,
     });
-    await task.remove({ force: true });
+    await task.stop();
     return logs.toString();
   }
 }
