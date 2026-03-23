@@ -1,3 +1,43 @@
+## 0.19.2 (2026-03-23)
+
+### 🚀 Features
+
+- **pipeline-console-reporter:** indent output to reflect dataset/stage hierarchy ([#295](https://github.com/ldelements/lde/pull/295))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
+## 0.19.1 (2026-03-23)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** use log symbols instead of literal strings for status lines ([#294](https://github.com/ldelements/lde/pull/294))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
+## 0.19.0 (2026-03-22)
+
+### 🚀 Features
+
+- ⚠️  detect and correct MIME type mismatches in distribution imports ([#291](https://github.com/ldelements/lde/pull/291))
+
+### ⚠️  Breaking Changes
+
+- detect and correct MIME type mismatches in distribution imports  ([#291](https://github.com/ldelements/lde/pull/291))
+  Downloader.download() returns DownloadResult instead
+  of string; qleverOptions on createQlever() renamed to indexOptions.
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.28.0
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.18.0 (2026-03-20)
 
 ### 🧱 Updated Dependencies
