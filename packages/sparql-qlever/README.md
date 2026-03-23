@@ -22,6 +22,7 @@ Passed to `qlever-server` at startup.
 | ----------------------- | ------------------------------------------------ | ------- |
 | `memory-max-size`       | Maximum memory for query processing and caching. | `'4G'`  |
 | `default-query-timeout` | Default query timeout.                           | `'30s'` |
+| `cache-max-size`        | Maximum cache size for query results.            | —       |
 
 Example:
 

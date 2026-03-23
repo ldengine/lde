@@ -7,19 +7,27 @@ export interface QleverServerOptions {
   'memory-max-size'?: string;
   /** Default query timeout. @default '30s' */
   'default-query-timeout'?: string;
+  /** Maximum cache size for query results. QLever default: '30G'. */
+  'cache-max-size'?: string;
 }
 
-const defaultQleverServerOptions = {
+/** Options that have defaults and are always present in the command. */
+type RequiredQleverServerOptions = Required<
+  Pick<QleverServerOptions, 'memory-max-size' | 'default-query-timeout'>
+>;
+
+const defaultQleverServerOptions: RequiredQleverServerOptions = {
   'memory-max-size': '4G',
   'default-query-timeout': '30s',
-} satisfies Required<QleverServerOptions>;
+};
 
 export class Server<Task> implements SparqlServer {
   private readonly taskRunner: TaskRunner<Task>;
   private readonly indexName: string;
   private task?: Task;
   private readonly port: number;
-  private readonly qleverOptions: Required<QleverServerOptions>;
+  private readonly qleverOptions: RequiredQleverServerOptions &
+    Pick<QleverServerOptions, 'cache-max-size'>;
 
   constructor({ taskRunner, indexName, port, qleverOptions }: Arguments<Task>) {
     this.taskRunner = taskRunner;
@@ -31,9 +39,19 @@ export class Server<Task> implements SparqlServer {
   public async start(): Promise<void> {
     // TODO prevent double starts.
 
-    this.task = await this.taskRunner.run(
-      `qlever-server --index-basename ${this.indexName} --memory-max-size ${this.qleverOptions['memory-max-size']} --default-query-timeout ${this.qleverOptions['default-query-timeout']} --port ${this.port}`,
-    );
+    const args = [
+      'qlever-server',
+      `--index-basename ${this.indexName}`,
+      `--memory-max-size ${this.qleverOptions['memory-max-size']}`,
+      `--default-query-timeout ${this.qleverOptions['default-query-timeout']}`,
+      `--port ${this.port}`,
+    ];
+
+    if (this.qleverOptions['cache-max-size'] !== undefined) {
+      args.push(`--cache-max-size ${this.qleverOptions['cache-max-size']}`);
+    }
+
+    this.task = await this.taskRunner.run(args.join(' '));
     await waitForSparqlEndpointAvailable(this.queryEndpoint.toString());
   }
 
