@@ -1,3 +1,9 @@
+## 0.14.1 (2026-03-23)
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/task-runner-docker to 0.2.12
+
 ## 0.14.0 (2026-03-22)
 
 ### 🚀 Features

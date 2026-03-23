@@ -1,3 +1,13 @@
+## 0.2.12 (2026-03-23)
+
+### 🩹 Fixes
+
+- **task-runner-docker:** stop container instead of removing it ([#300](https://github.com/ldelements/lde/pull/300))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.2.11 (2026-02-27)
 
 ### 🩹 Fixes
