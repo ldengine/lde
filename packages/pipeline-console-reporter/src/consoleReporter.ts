@@ -29,15 +29,19 @@ export class ConsoleReporter implements ProgressReporter {
   private probeLines: { url: string; text: string }[] = [];
 
   /** Print a static line with a symbol prefix. */
-  private printLine(symbol: string, text: string): void {
-    process.stderr.write(`${symbol} ${text}\n`);
+  private printLine(symbol: string, text: string, indent = 0): void {
+    process.stderr.write(`${'  '.repeat(indent)}${symbol} ${text}\n`);
   }
 
   /** Stop any active spinner and start a new one. */
-  private startSpinner(text: string): Ora {
+  private startSpinner(text: string, indent = 0): Ora {
     this.activeSpinner?.stop();
     this.clearImportTimer();
-    this.activeSpinner = ora({ discardStdin: false }).start(text);
+    const padding = '  '.repeat(indent);
+    this.activeSpinner = ora({
+      discardStdin: false,
+      prefixText: padding,
+    }).start(text);
     return this.activeSpinner;
   }
 
@@ -83,10 +87,10 @@ export class ConsoleReporter implements ProgressReporter {
       const detail =
         result.statusCode !== undefined ? ` (HTTP ${result.statusCode})` : '';
       const text = `${typeLabel} ${url}${detail}`;
-      this.printLine(logSymbols.success, text);
+      this.printLine(logSymbols.success, text, 1);
       this.probeLines.push({ url, text });
       for (const warning of result.warnings) {
-        this.printLine(logSymbols.warning, warning);
+        this.printLine(logSymbols.warning, warning, 1);
       }
     } else {
       const detail = result.error
@@ -94,14 +98,14 @@ export class ConsoleReporter implements ProgressReporter {
         : result.statusCode !== undefined
           ? ` (HTTP ${result.statusCode})`
           : '';
-      this.printLine(logSymbols.error, `${typeLabel} ${url}${detail}`);
+      this.printLine(logSymbols.error, `${typeLabel} ${url}${detail}`, 1);
       this.probeLines.push({ url, text: '' });
     }
   }
 
   importStarted(): void {
     const importStart = Date.now();
-    const spinner = this.startSpinner('Importing\u2026');
+    const spinner = this.startSpinner('Importing\u2026', 1);
     this.importTimer = setInterval(() => {
       if (spinner.isSpinning) {
         spinner.suffixText = prettyMilliseconds(Date.now() - importStart);
@@ -115,7 +119,7 @@ export class ConsoleReporter implements ProgressReporter {
       this.activeSpinner.suffixText = '';
       this.activeSpinner.fail();
     } else {
-      this.printLine(logSymbols.error, `Import failed: ${error}`);
+      this.printLine(logSymbols.error, `Import failed: ${error}`, 1);
     }
     this.clearImportTimer();
     this.activeSpinner = undefined;
@@ -143,7 +147,7 @@ export class ConsoleReporter implements ProgressReporter {
         this.activeSpinner.suffixText = '';
         this.activeSpinner.succeed();
       } else {
-        this.printLine(logSymbols.success, text);
+        this.printLine(logSymbols.success, text, 1);
       }
       this.clearImportTimer();
       this.activeSpinner = undefined;
@@ -158,13 +162,13 @@ export class ConsoleReporter implements ProgressReporter {
         const linesUp = this.probeLines.length - this.probeLines.indexOf(probe);
         // Move cursor up to the probe line and clear it.
         process.stderr.write(`\x1B[${linesUp}A\x1B[2K\r`);
-        this.printLine(logSymbols.success, selectedText);
+        this.printLine(logSymbols.success, selectedText, 1);
         // Move cursor back down to original position.
         if (linesUp > 1) {
           process.stderr.write(`\x1B[${linesUp - 1}B`);
         }
       } else {
-        this.printLine(logSymbols.success, selectedText);
+        this.printLine(logSymbols.success, selectedText, 1);
       }
     }
   }
@@ -178,7 +182,7 @@ export class ConsoleReporter implements ProgressReporter {
 
   stageStart(stage: string): void {
     this.stageStartTime = Date.now();
-    this.startSpinner(`Stage ${chalk.bold(stage)}`);
+    this.startSpinner(`Stage ${chalk.bold(stage)}`, 1);
   }
 
   stageProgress(update: {
@@ -227,11 +231,13 @@ export class ConsoleReporter implements ProgressReporter {
       this.printLine(
         logSymbols.success,
         `Validated ${compactNumber.format(report.quadsValidated)} quads`,
+        2,
       );
     } else {
       this.printLine(
         logSymbols.error,
         `Validated ${compactNumber.format(report.quadsValidated)} quads: ${chalk.red(`${compactNumber.format(report.violations)} violation(s)`)}`,
+        2,
       );
     }
   }
@@ -253,11 +259,12 @@ export class ConsoleReporter implements ProgressReporter {
       `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
       )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)} RSS, ${formatBytes(result.heapUsedBytes)} heap)`)}`,
+      1,
     );
   }
 
   datasetSkipped(_dataset: Dataset, reason: string): void {
-    this.printLine(logSymbols.error, `Skipped: ${chalk.red(reason)}`);
+    this.printLine(logSymbols.error, `Skipped: ${chalk.red(reason)}`, 1);
   }
 
   pipelineComplete(result: {
