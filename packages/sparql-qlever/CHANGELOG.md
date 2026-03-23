@@ -1,3 +1,13 @@
+## 0.14.2 (2026-03-23)
+
+### 🚀 Features
+
+- **sparql-qlever:** add cache-max-size option to Server ([#306](https://github.com/ldelements/lde/pull/306))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.14.1 (2026-03-23)
 
 ### 🧱 Updated Dependencies
