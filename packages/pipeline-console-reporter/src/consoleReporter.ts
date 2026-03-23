@@ -225,12 +225,12 @@ export class ConsoleReporter implements ProgressReporter {
   stageValidated(_stage: string, report: ValidationReport): void {
     if (report.conforms) {
       this.printLine(
-        'succeed',
+        logSymbols.success,
         `Validated ${compactNumber.format(report.quadsValidated)} quads`,
       );
     } else {
       this.printLine(
-        'fail',
+        logSymbols.error,
         `Validated ${compactNumber.format(report.quadsValidated)} quads: ${chalk.red(`${compactNumber.format(report.violations)} violation(s)`)}`,
       );
     }
@@ -249,7 +249,7 @@ export class ConsoleReporter implements ProgressReporter {
     result: { memoryUsageBytes: number; heapUsedBytes: number },
   ): void {
     this.printLine(
-      'succeed',
+      logSymbols.success,
       `Completed in ${chalk.bold(
         prettyMilliseconds(Date.now() - this.datasetStartTime),
       )} ${chalk.dim(`(memory: ${formatBytes(result.memoryUsageBytes)} RSS, ${formatBytes(result.heapUsedBytes)} heap)`)}`,
