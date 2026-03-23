@@ -1,3 +1,13 @@
+## 0.28.2 (2026-03-23)
+
+### 🚀 Features
+
+- **pipeline:** add lineBuffer option to work around N3.js chunk-splitting bug ([#304](https://github.com/ldelements/lde/pull/304))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.28.1 (2026-03-23)
 
 ### 🚀 Features
