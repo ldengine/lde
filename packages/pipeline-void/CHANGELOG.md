@@ -1,3 +1,17 @@
+## 0.26.1 (2026-03-23)
+
+### 🚀 Features
+
+- **pipeline:** use batchSize as selector page size ([#301](https://github.com/ldelements/lde/pull/301))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.28.1
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.26.0 (2026-03-22)
 
 ### 🧱 Updated Dependencies
