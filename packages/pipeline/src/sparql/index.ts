@@ -1,5 +1,6 @@
 export {
   SparqlConstructExecutor,
+  LineBufferTransform,
   NotSupported,
   readQueryFile,
   type ExecuteOptions,

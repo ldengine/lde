@@ -3,6 +3,8 @@ import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import type { NamedNode, Quad } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { Transform } from 'node:stream';
+import { StreamParser } from 'n3';
 import { Parser } from '@traqula/parser-sparql-1-1';
 import { Generator } from '@traqula/generator-sparql-1-1';
 import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
@@ -62,6 +64,18 @@ export interface SparqlConstructExecutorOptions {
    * Optional custom SparqlEndpointFetcher instance.
    */
   fetcher?: SparqlEndpointFetcher;
+
+  /**
+   * Buffer complete lines before passing them to the N3 parser.
+   *
+   * Works around an [N3.js bug](https://github.com/rdfjs/N3.js/issues/578)
+   * where language tags (e.g. `@nl-nl`) split across HTTP chunk boundaries
+   * cause parse errors. Enable this when querying endpoints that return
+   * line-oriented formats such as N-Triples (e.g. QLever).
+   *
+   * @default false
+   */
+  lineBuffer?: boolean;
 }
 
 /**
@@ -96,11 +110,13 @@ export class SparqlConstructExecutor implements Executor {
   private readonly preParsed?: QueryConstruct;
   private readonly fetcher: SparqlEndpointFetcher;
   private readonly retries: number;
+  private readonly lineBuffer: boolean;
   private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
     this.rawQuery = options.query;
     this.retries = options.retries ?? 3;
+    this.lineBuffer = options.lineBuffer ?? false;
 
     if (!options.query.includes('#subjectFilter#')) {
       const parsed = new Parser().parse(options.query);
@@ -161,12 +177,36 @@ export class SparqlConstructExecutor implements Executor {
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
     return await pRetry(
-      () => this.fetcher.fetchTriples(endpoint.toString(), query),
+      () => this.fetchQuads(endpoint.toString(), query),
       {
         retries: this.retries,
         shouldRetry: ({ error }) => isTransientError(error),
       },
     );
+  }
+
+  /**
+   * Fetch quads from the endpoint, optionally line-buffering the response
+   * stream before it reaches the N3 parser to work around
+   * {@link https://github.com/rdfjs/N3.js/issues/578 | N3.js#578}.
+   */
+  private async fetchQuads(
+    endpoint: string,
+    query: string,
+  ): Promise<AsyncIterable<Quad>> {
+    if (!this.lineBuffer) {
+      return this.fetcher.fetchTriples(endpoint, query);
+    }
+
+    const [contentType, , responseStream] =
+      await this.fetcher.fetchRawStream(
+        endpoint,
+        query,
+        SparqlEndpointFetcher.CONTENTTYPE_TURTLE,
+      );
+    return responseStream
+      .pipe(new LineBufferTransform())
+      .pipe(new StreamParser({ format: contentType }));
   }
 
   /**
@@ -189,6 +229,51 @@ export class SparqlConstructExecutor implements Executor {
  */
 export async function readQueryFile(filename: string): Promise<string> {
   return (await readFile(resolve(filename))).toString();
+}
+
+/**
+ * Buffers incoming data until complete lines (`\n`-terminated) are available,
+ * then pushes them downstream as a single chunk.
+ *
+ * **Why this exists:** `fetch-sparql-endpoint` pipes the raw HTTP response
+ * stream directly into N3.js's `StreamParser`. N3.js has a bug
+ * ({@link https://github.com/rdfjs/N3.js/issues/578 | N3.js#578}) where
+ * tokens that straddle chunk boundaries — most commonly language tags like
+ * `@nl-nl` — cause spurious `Unexpected "-nl"` parse errors. The error is
+ * non-deterministic and typically surfaces only on responses larger than
+ * ~12 MB, because that is when HTTP chunking starts splitting mid-token.
+ *
+ * By ensuring each chunk passed to the parser ends on a line boundary, we
+ * prevent any N-Triples token from being split. Memory overhead is minimal:
+ * at most one partial line is buffered at a time.
+ *
+ * This transform can be removed once N3.js#578 is fixed upstream.
+ *
+ * @see https://github.com/rdfjs/N3.js/issues/578
+ */
+export class LineBufferTransform extends Transform {
+  private remainder = '';
+
+  override _transform(
+    chunk: Buffer,
+    _encoding: string,
+    callback: () => void,
+  ) {
+    const data = this.remainder + chunk.toString();
+    const lines = data.split('\n');
+    this.remainder = lines.pop() ?? '';
+    if (lines.length > 0) {
+      this.push(lines.join('\n') + '\n');
+    }
+    callback();
+  }
+
+  override _flush(callback: () => void) {
+    if (this.remainder.length > 0) {
+      this.push(this.remainder);
+    }
+    callback();
+  }
 }
 
 const transientStatusPattern = /HTTP status (\d+)/;

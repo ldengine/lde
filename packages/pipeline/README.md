@@ -103,6 +103,15 @@ const executor = new SparqlConstructExecutor({
 });
 ```
 
+When querying endpoints that return line-oriented formats like N-Triples (e.g. QLever), enable `lineBuffer` to work around an [N3.js chunk-splitting bug](https://github.com/rdfjs/N3.js/issues/578) that causes intermittent parse errors on large responses:
+
+```typescript
+const executor = new SparqlConstructExecutor({
+  query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+  lineBuffer: true,
+});
+```
+
 `Executor` is an interface, so you can implement your own for logic that's hard to express in pure SPARQL — for example, cleaning up messy date notations or converting locale-specific dates to ISO 8601. The decorator pattern lets you wrap a SPARQL executor and post-process its quad stream in TypeScript:
 
 ```typescript

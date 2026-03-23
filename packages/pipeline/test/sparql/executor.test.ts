@@ -1,5 +1,6 @@
 import {
   SparqlConstructExecutor,
+  LineBufferTransform,
   readQueryFile,
 } from '../../src/sparql/index.js';
 import { Dataset, Distribution } from '@lde/dataset';
@@ -9,6 +10,7 @@ import {
 } from '@lde/local-sparql-endpoint';
 import { DataFactory } from 'n3';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
+import { Readable } from 'node:stream';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 
 const { namedNode } = DataFactory;
@@ -479,6 +481,66 @@ describe('SparqlConstructExecutor', () => {
     });
   });
 
+  describe('lineBuffer', () => {
+    it('returns quads when lineBuffer is enabled', async () => {
+      const datasetIri = 'http://foo.org/id/dataset/foo';
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT {
+          ?dataset ?p ?o .
+        }
+        WHERE {
+          <${datasetIri}> ?p ?o .
+        }`,
+        lineBuffer: true,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`),
+        'http://foo.org/id/graph/foo',
+      );
+
+      const dataset = new Dataset({
+        iri: new URL(datasetIri),
+        distributions: [distribution],
+      });
+
+      const result = await executor.execute(dataset, distribution);
+
+      const quads = [];
+      for await (const quad of result) {
+        quads.push(quad);
+      }
+      expect(quads.length).toBe(2);
+    });
+
+    it('uses fetchRawStream instead of fetchTriples', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const triplesSpy = vi.spyOn(fetcher, 'fetchTriples');
+      const rawSpy = vi.spyOn(fetcher, 'fetchRawStream');
+
+      const executor = new SparqlConstructExecutor({
+        query: `CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 1`,
+        fetcher,
+        lineBuffer: true,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL(`http://localhost:${port}/sparql`),
+      );
+
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      await executor.execute(dataset, distribution);
+
+      expect(triplesSpy).not.toHaveBeenCalled();
+      expect(rawSpy).toHaveBeenCalled();
+    });
+  });
+
   describe('fromFile', () => {
     it('creates executor from a file', async () => {
       const executor = await SparqlConstructExecutor.fromFile(
@@ -487,6 +549,52 @@ describe('SparqlConstructExecutor', () => {
 
       expect(executor).toBeInstanceOf(SparqlConstructExecutor);
     });
+  });
+});
+
+describe('LineBufferTransform', () => {
+  async function collect(stream: Readable): Promise<string> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks).toString();
+  }
+
+  it('passes complete lines through', async () => {
+    const transform = new LineBufferTransform();
+    const input = Readable.from(['<s> <p> "hello"@nl .\n<s> <p> "world"@en .\n']);
+    const result = await collect(input.pipe(transform));
+    expect(result).toBe('<s> <p> "hello"@nl .\n<s> <p> "world"@en .\n');
+  });
+
+  it('buffers a line split across chunks', async () => {
+    const transform = new LineBufferTransform();
+    // Simulate a language tag split across chunk boundaries
+    const input = Readable.from([
+      '<s> <p> "hallo"@',
+      'nl-nl .\n',
+    ]);
+    const result = await collect(input.pipe(transform));
+    expect(result).toBe('<s> <p> "hallo"@nl-nl .\n');
+  });
+
+  it('flushes a trailing partial line on end', async () => {
+    const transform = new LineBufferTransform();
+    const input = Readable.from(['<s> <p> "no newline"']);
+    const result = await collect(input.pipe(transform));
+    expect(result).toBe('<s> <p> "no newline"');
+  });
+
+  it('handles multiple chunks with interleaved splits', async () => {
+    const transform = new LineBufferTransform();
+    const input = Readable.from([
+      '<a> <b> "één"@',
+      'nl .\n<c> <d> "tw',
+      'ee"@nl .\n',
+    ]);
+    const result = await collect(input.pipe(transform));
+    expect(result).toBe('<a> <b> "één"@nl .\n<c> <d> "twee"@nl .\n');
   });
 });
 
