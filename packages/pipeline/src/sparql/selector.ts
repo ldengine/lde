@@ -16,10 +16,13 @@ const generator = new Generator();
 const F = new AstFactory();
 
 export interface SparqlItemSelectorOptions {
-  /** SELECT query projecting at least one named variable. A LIMIT in the query sets the default page size. */
+  /**
+   * SELECT query projecting at least one named variable.
+   *
+   * A `LIMIT` clause in the query overrides the stage's `batchSize` as the
+   * page size — use this when the SPARQL endpoint enforces a result limit.
+   */
   query: string;
-  /** Results per page. Overrides any LIMIT in the query. @default 10 */
-  pageSize?: number;
   /** Custom fetcher instance. */
   fetcher?: SparqlEndpointFetcher;
 }
@@ -30,13 +33,15 @@ export interface SparqlItemSelectorOptions {
  *
  * The endpoint URL comes from the {@link Distribution} passed to {@link select}.
  * Pagination is an internal detail — consumers iterate binding rows directly.
- * If the query contains a LIMIT, it is used as the default page size
- * (can be overridden by the `pageSize` option). Pagination continues
- * until a page returns fewer results than the page size.
+ *
+ * The page size (results per SPARQL request) is determined by, in order:
+ * 1. A `LIMIT` clause in the selector query (for endpoints with hard result limits)
+ * 2. The stage's {@link StageOptions.batchSize} (passed via {@link select})
+ * 3. A default of 10
  */
 export class SparqlItemSelector implements ItemSelector {
   private readonly parsed: QuerySelect;
-  private readonly pageSize: number;
+  private readonly queryLimit?: number;
   private readonly fetcher: SparqlEndpointFetcher;
 
   constructor(options: SparqlItemSelectorOptions) {
@@ -53,22 +58,21 @@ export class SparqlItemSelector implements ItemSelector {
     }
 
     this.parsed = parsed as QuerySelect;
-    this.pageSize =
-      options.pageSize ??
-      this.parsed.solutionModifiers.limitOffset?.limit ??
-      10;
+    this.queryLimit = this.parsed.solutionModifiers.limitOffset?.limit;
     this.fetcher = options.fetcher ?? new SparqlEndpointFetcher();
   }
 
   async *select(
     distribution: Distribution,
+    batchSize?: number,
   ): AsyncIterableIterator<VariableBindings> {
+    const effectivePageSize = this.queryLimit ?? batchSize ?? 10;
     const endpoint = distribution.accessUrl!;
     let offset = 0;
 
     while (true) {
       this.parsed.solutionModifiers.limitOffset = F.solutionModifierLimitOffset(
-        this.pageSize,
+        effectivePageSize,
         offset,
         F.gen(),
       );
@@ -79,7 +83,7 @@ export class SparqlItemSelector implements ItemSelector {
         paginatedQuery,
       )) as AsyncIterable<Record<string, Term>>;
 
-      let pageSize = 0;
+      let count = 0;
       for await (const record of stream) {
         const row = Object.fromEntries(
           Object.entries(record).filter(
@@ -89,15 +93,15 @@ export class SparqlItemSelector implements ItemSelector {
 
         if (Object.keys(row).length > 0) {
           yield row;
-          pageSize++;
+          count++;
         }
       }
 
-      if (pageSize === 0 || pageSize < this.pageSize) {
+      if (count === 0 || count < effectivePageSize) {
         return;
       }
 
-      offset += pageSize;
+      offset += count;
     }
   }
 }

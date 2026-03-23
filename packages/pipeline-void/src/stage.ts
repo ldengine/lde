@@ -84,7 +84,7 @@ async function createVoidStage(
 
 function classSelector(): ItemSelector {
   return {
-    select: (distribution) => {
+    select: (distribution, batchSize) => {
       const subjectFilter = distribution.subjectFilter ?? '';
       let fromClause = '';
       if (distribution.namedGraph) {
@@ -100,8 +100,7 @@ function classSelector(): ItemSelector {
 
       return new SparqlItemSelector({
         query: selectorQuery,
-        pageSize: 1000,
-      }).select(distribution);
+      }).select(distribution, batchSize);
     },
   };
 }
