@@ -1,3 +1,13 @@
+## 0.19.1 (2026-03-23)
+
+### 🩹 Fixes
+
+- **pipeline-console-reporter:** use log symbols instead of literal strings for status lines ([#294](https://github.com/ldelements/lde/pull/294))
+
+### ❤️ Thank You
+
+- David de Boer @ddeboer
+
 ## 0.19.0 (2026-03-22)
 
 ### 🚀 Features
