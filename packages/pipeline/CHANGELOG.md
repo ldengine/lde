@@ -1,3 +1,9 @@
+## 0.28.5 (2026-03-24)
+
+### 🚀 Features
+
+- **pipeline:** add deduplicate option to SparqlConstructExecutor ([#309](https://github.com/ldelements/lde/pull/309))
+
 ## 0.28.4 (2026-03-24)
 
 ### 🩹 Fixes
