@@ -1,3 +1,9 @@
+## 0.28.3 (2026-03-24)
+
+### 🚀 Features
+
+- **pipeline:** run executors in parallel per batch ([#311](https://github.com/ldelements/lde/pull/311))
+
 ## 0.28.2 (2026-03-23)
 
 ### 🚀 Features
