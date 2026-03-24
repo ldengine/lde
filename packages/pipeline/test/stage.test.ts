@@ -439,6 +439,33 @@ describe('Stage', () => {
       expect(writer.quads).toHaveLength(4);
     });
 
+    it('shares maxConcurrency across parallel executors', async () => {
+      const tracker = { current: 0, max: 0 };
+      // 2 executors with maxConcurrency=4 → 2 concurrent batches × 2 executors = 4 queries.
+      const stage = new Stage({
+        name: 'test',
+        executors: [
+          delayExecutor([q1], 30, tracker),
+          delayExecutor([q2], 30, tracker),
+        ],
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+          { class: namedNode('http://example.org/B') },
+          { class: namedNode('http://example.org/C') },
+          { class: namedNode('http://example.org/D') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 4,
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      // 2 batches × 2 executors = 4 concurrent queries, within maxConcurrency.
+      expect(tracker.max).toBeLessThanOrEqual(4);
+      expect(writer.quads).toHaveLength(8);
+    });
+
     it('bounds parallelism to maxConcurrency', async () => {
       const tracker = { current: 0, max: 0 };
       const stage = new Stage({

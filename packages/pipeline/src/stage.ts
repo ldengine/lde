@@ -28,9 +28,10 @@ export interface StageOptions {
    */
   batchSize?: number;
   /**
-   * Maximum concurrent in-flight batches. Within each batch, all executors
-   * run in parallel, so the peak number of concurrent SPARQL queries is
-   * `maxConcurrency × executorCount`.
+   * Maximum concurrent in-flight SPARQL queries. Within each batch, all
+   * executors run in parallel; the number of concurrent batches is
+   * automatically reduced to `⌊maxConcurrency / executorCount⌋` so the
+   * total query pressure stays within this limit.
    *
    * @default 10
    */
@@ -169,6 +170,14 @@ export class Stage {
       const inFlight = new Set<Promise<void>>();
       let firstError: unknown;
 
+      // Divide maxConcurrency by executor count so the total concurrent
+      // SPARQL queries stays at maxConcurrency (each batch runs all
+      // executors in parallel).
+      const maxConcurrentBatches = Math.max(
+        1,
+        Math.floor(this.maxConcurrency / this.executors.length),
+      );
+
       const track = (promise: Promise<void>) => {
         const p = promise.then(
           () => {
@@ -187,7 +196,7 @@ export class Stage {
           if (firstError) break;
 
           // Respect maxConcurrency: wait for a slot to open.
-          if (inFlight.size >= this.maxConcurrency) {
+          if (inFlight.size >= maxConcurrentBatches) {
             await Promise.race(inFlight);
             if (firstError) break;
           }
