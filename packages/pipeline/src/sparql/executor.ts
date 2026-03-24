@@ -1,6 +1,6 @@
 import { Dataset, Distribution, assertSafeIri } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import type { Literal, NamedNode, Quad, Term } from '@rdfjs/types';
+import type { NamedNode, Quad } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Transform } from 'node:stream';
@@ -10,6 +10,7 @@ import { Generator } from '@traqula/generator-sparql-1-1';
 import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
 import isNetworkError from 'is-network-error';
 import pRetry from 'p-retry';
+import { quadToStringQuad } from 'rdf-string';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
 
@@ -82,7 +83,7 @@ export interface SparqlConstructExecutorOptions {
    *
    * SPARQL CONSTRUCT queries can produce duplicate triples — for example,
    * constant triples (like `?dataset a edm:ProvidedCHO`) are emitted for
-   * every solution row. When enabled, a streaming hash-based filter removes
+   * every solution row. When enabled, a streaming identity filter removes
    * duplicates inline without buffering.
    *
    * The dedup set is scoped to each {@link execute} call, so memory stays
@@ -301,9 +302,10 @@ export class LineBufferTransform extends Transform {
  * Remove duplicate quads from an async quad stream.
  *
  * Uses string-based identity (the same approach as Comunica's
- * `distinctConstruct`): each quad is serialised to a canonical string key
- * and checked against a {@link Set}. Only the first occurrence of each
- * unique quad is yielded.
+ * `distinctConstruct`): each quad is serialised via
+ * [`rdf-string`](https://github.com/rubensworks/rdf-string.js) and checked
+ * against a {@link Set}. Only the first occurrence of each unique quad is
+ * yielded.
  *
  * @example
  * ```typescript
@@ -318,51 +320,11 @@ export async function* deduplicateQuads(
 ): AsyncIterable<Quad> {
   const seen = new Set<string>();
   for await (const quad of quads) {
-    const key = quadKey(quad);
+    const key = Object.values(quadToStringQuad(quad)).join(' ');
     if (!seen.has(key)) {
       seen.add(key);
       yield quad;
     }
-  }
-}
-
-/**
- * Create a string key that uniquely identifies a quad.
- *
- * The format follows `rdf-string` conventions used by Comunica:
- * - NamedNode: the IRI value
- * - BlankNode: `_:` + label
- * - Literal: `"value"` + optional `^^datatype` + optional `@language`
- * - DefaultGraph: empty string
- */
-function quadKey(quad: Quad): string {
-  return `${termKey(quad.subject)} ${termKey(quad.predicate)} ${termKey(quad.object)} ${termKey(quad.graph)}`;
-}
-
-function termKey(term: Term): string {
-  switch (term.termType) {
-    case 'NamedNode':
-      return term.value;
-    case 'BlankNode':
-      return `_:${term.value}`;
-    case 'Literal': {
-      const literal = term as Literal;
-      return (
-        `"${literal.value}"` +
-        (literal.datatype &&
-        literal.datatype.value !==
-          'http://www.w3.org/2001/XMLSchema#string' &&
-        literal.datatype.value !==
-          'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'
-          ? `^^${literal.datatype.value}`
-          : '') +
-        (literal.language ? `@${literal.language}` : '')
-      );
-    }
-    case 'DefaultGraph':
-      return '';
-    default:
-      return term.value;
   }
 }
 
