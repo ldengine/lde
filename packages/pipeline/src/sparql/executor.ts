@@ -10,6 +10,7 @@ import { Generator } from '@traqula/generator-sparql-1-1';
 import type { QueryConstruct } from '@traqula/rules-sparql-1-1';
 import isNetworkError from 'is-network-error';
 import pRetry from 'p-retry';
+import { quadToStringQuad } from 'rdf-string';
 import { withDefaultGraph } from './graph.js';
 import { injectValues } from './values.js';
 
@@ -76,6 +77,23 @@ export interface SparqlConstructExecutorOptions {
    * @default false
    */
   lineBuffer?: boolean;
+
+  /**
+   * Deduplicate triples in the CONSTRUCT output stream.
+   *
+   * SPARQL CONSTRUCT queries can produce duplicate triples — for example,
+   * constant triples (like `?dataset a edm:ProvidedCHO`) are emitted for
+   * every solution row. When enabled, a streaming identity filter removes
+   * duplicates inline without buffering.
+   *
+   * The dedup set is scoped to each {@link execute} call, so memory stays
+   * bounded to the number of unique quads per call (typically one batch).
+   *
+   * Inspired by Comunica's `distinctConstruct` context option.
+   *
+   * @default false
+   */
+  deduplicate?: boolean;
 }
 
 /**
@@ -111,12 +129,14 @@ export class SparqlConstructExecutor implements Executor {
   private readonly fetcher: SparqlEndpointFetcher;
   private readonly retries: number;
   private readonly lineBuffer: boolean;
+  private readonly deduplicate: boolean;
   private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
     this.rawQuery = options.query;
     this.retries = options.retries ?? 3;
     this.lineBuffer = options.lineBuffer ?? false;
+    this.deduplicate = options.deduplicate ?? false;
 
     if (!options.query.includes('#subjectFilter#')) {
       const parsed = new Parser().parse(options.query);
@@ -176,13 +196,15 @@ export class SparqlConstructExecutor implements Executor {
     assertSafeIri(dataset.iri.toString());
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
-    return await pRetry(
+    const quads = await pRetry(
       () => this.fetchQuads(endpoint.toString(), query),
       {
         retries: this.retries,
         shouldRetry: ({ error }) => isTransientError(error),
       },
     );
+
+    return this.deduplicate ? deduplicateQuads(quads) : quads;
   }
 
   /**
@@ -273,6 +295,36 @@ export class LineBufferTransform extends Transform {
       this.push(this.remainder);
     }
     callback();
+  }
+}
+
+/**
+ * Remove duplicate quads from an async quad stream.
+ *
+ * Uses string-based identity (the same approach as Comunica's
+ * `distinctConstruct`): each quad is serialised via
+ * [`rdf-string`](https://github.com/rubensworks/rdf-string.js) and checked
+ * against a {@link Set}. Only the first occurrence of each unique quad is
+ * yielded.
+ *
+ * @example
+ * ```typescript
+ * const unique = deduplicateQuads(quadStream);
+ * for await (const quad of unique) {
+ *   // each quad appears at most once
+ * }
+ * ```
+ */
+export async function* deduplicateQuads(
+  quads: AsyncIterable<Quad>,
+): AsyncIterable<Quad> {
+  const seen = new Set<string>();
+  for await (const quad of quads) {
+    const key = Object.values(quadToStringQuad(quad)).join(' ');
+    if (!seen.has(key)) {
+      seen.add(key);
+      yield quad;
+    }
   }
 }
 

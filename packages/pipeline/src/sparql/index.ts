@@ -1,4 +1,5 @@
 export {
+  deduplicateQuads,
   SparqlConstructExecutor,
   LineBufferTransform,
   NotSupported,

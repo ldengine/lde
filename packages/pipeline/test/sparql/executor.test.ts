@@ -1,4 +1,5 @@
 import {
+  deduplicateQuads,
   SparqlConstructExecutor,
   LineBufferTransform,
   readQueryFile,
@@ -541,6 +542,82 @@ describe('SparqlConstructExecutor', () => {
     });
   });
 
+  describe('deduplicate', () => {
+    it('removes duplicate quads from CONSTRUCT output', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const q = DataFactory.quad(
+        namedNode('http://example.org/s'),
+        namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'),
+      );
+      vi.spyOn(fetcher, 'fetchTriples').mockResolvedValue(
+        (async function* () {
+          yield q;
+          yield q;
+          yield q;
+        })() as never,
+      );
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+        deduplicate: true,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      const result = await executor.execute(dataset, distribution);
+      const quads = [];
+      for await (const quad of result) {
+        quads.push(quad);
+      }
+
+      expect(quads).toHaveLength(1);
+    });
+
+    it('does not deduplicate when option is false', async () => {
+      const fetcher = new SparqlEndpointFetcher();
+      const q = DataFactory.quad(
+        namedNode('http://example.org/s'),
+        namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'),
+      );
+      vi.spyOn(fetcher, 'fetchTriples').mockResolvedValue(
+        (async function* () {
+          yield q;
+          yield q;
+        })() as never,
+      );
+
+      const executor = new SparqlConstructExecutor({
+        query: 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }',
+        fetcher,
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [distribution],
+      });
+
+      const result = await executor.execute(dataset, distribution);
+      const quads = [];
+      for await (const quad of result) {
+        quads.push(quad);
+      }
+
+      expect(quads).toHaveLength(2);
+    });
+  });
+
   describe('fromFile', () => {
     it('creates executor from a file', async () => {
       const executor = await SparqlConstructExecutor.fromFile(
@@ -595,6 +672,132 @@ describe('LineBufferTransform', () => {
     ]);
     const result = await collect(input.pipe(transform));
     expect(result).toBe('<a> <b> "één"@nl .\n<c> <d> "twee"@nl .\n');
+  });
+});
+
+describe('deduplicateQuads', () => {
+  const { namedNode, literal, blankNode, quad } = DataFactory;
+
+  async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+    const items: T[] = [];
+    for await (const item of iterable) {
+      items.push(item);
+    }
+    return items;
+  }
+
+  it('removes duplicate quads', async () => {
+    const q1 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o'),
+    );
+    const q2 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o'),
+    );
+
+    async function* source() {
+      yield q1;
+      yield q2;
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(1);
+  });
+
+  it('preserves distinct quads', async () => {
+    const q1 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o1'),
+    );
+    const q2 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o2'),
+    );
+
+    async function* source() {
+      yield q1;
+      yield q2;
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(2);
+  });
+
+  it('distinguishes literals by language tag', async () => {
+    const q1 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      literal('hello', 'en'),
+    );
+    const q2 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      literal('hello', 'nl'),
+    );
+
+    async function* source() {
+      yield q1;
+      yield q2;
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(2);
+  });
+
+  it('distinguishes literals by datatype', async () => {
+    const q1 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      literal('42', namedNode('http://www.w3.org/2001/XMLSchema#integer')),
+    );
+    const q2 = quad(
+      namedNode('http://example.org/s'),
+      namedNode('http://example.org/p'),
+      literal('42', namedNode('http://www.w3.org/2001/XMLSchema#decimal')),
+    );
+
+    async function* source() {
+      yield q1;
+      yield q2;
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(2);
+  });
+
+  it('deduplicates blank nodes by label', async () => {
+    const q1 = quad(
+      blankNode('b0'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o'),
+    );
+    const q2 = quad(
+      blankNode('b0'),
+      namedNode('http://example.org/p'),
+      namedNode('http://example.org/o'),
+    );
+
+    async function* source() {
+      yield q1;
+      yield q2;
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(1);
+  });
+
+  it('handles an empty stream', async () => {
+    async function* source() {
+      // empty
+    }
+
+    const result = await collect(deduplicateQuads(source()));
+    expect(result).toHaveLength(0);
   });
 });
 
