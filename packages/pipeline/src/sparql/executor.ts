@@ -1,6 +1,6 @@
 import { Dataset, Distribution, assertSafeIri } from '@lde/dataset';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import type { NamedNode, Quad } from '@rdfjs/types';
+import type { Literal, NamedNode, Quad, Term } from '@rdfjs/types';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Transform } from 'node:stream';
@@ -76,6 +76,23 @@ export interface SparqlConstructExecutorOptions {
    * @default false
    */
   lineBuffer?: boolean;
+
+  /**
+   * Deduplicate triples in the CONSTRUCT output stream.
+   *
+   * SPARQL CONSTRUCT queries can produce duplicate triples — for example,
+   * constant triples (like `?dataset a edm:ProvidedCHO`) are emitted for
+   * every solution row. When enabled, a streaming hash-based filter removes
+   * duplicates inline without buffering.
+   *
+   * The dedup set is scoped to each {@link execute} call, so memory stays
+   * bounded to the number of unique quads per call (typically one batch).
+   *
+   * Inspired by Comunica's `distinctConstruct` context option.
+   *
+   * @default false
+   */
+  deduplicate?: boolean;
 }
 
 /**
@@ -111,12 +128,14 @@ export class SparqlConstructExecutor implements Executor {
   private readonly fetcher: SparqlEndpointFetcher;
   private readonly retries: number;
   private readonly lineBuffer: boolean;
+  private readonly deduplicate: boolean;
   private readonly generator = new Generator();
 
   constructor(options: SparqlConstructExecutorOptions) {
     this.rawQuery = options.query;
     this.retries = options.retries ?? 3;
     this.lineBuffer = options.lineBuffer ?? false;
+    this.deduplicate = options.deduplicate ?? false;
 
     if (!options.query.includes('#subjectFilter#')) {
       const parsed = new Parser().parse(options.query);
@@ -176,13 +195,15 @@ export class SparqlConstructExecutor implements Executor {
     assertSafeIri(dataset.iri.toString());
     query = query.replaceAll('?dataset', `<${dataset.iri}>`);
 
-    return await pRetry(
+    const quads = await pRetry(
       () => this.fetchQuads(endpoint.toString(), query),
       {
         retries: this.retries,
         shouldRetry: ({ error }) => isTransientError(error),
       },
     );
+
+    return this.deduplicate ? deduplicateQuads(quads) : quads;
   }
 
   /**
@@ -273,6 +294,75 @@ export class LineBufferTransform extends Transform {
       this.push(this.remainder);
     }
     callback();
+  }
+}
+
+/**
+ * Remove duplicate quads from an async quad stream.
+ *
+ * Uses string-based identity (the same approach as Comunica's
+ * `distinctConstruct`): each quad is serialised to a canonical string key
+ * and checked against a {@link Set}. Only the first occurrence of each
+ * unique quad is yielded.
+ *
+ * @example
+ * ```typescript
+ * const unique = deduplicateQuads(quadStream);
+ * for await (const quad of unique) {
+ *   // each quad appears at most once
+ * }
+ * ```
+ */
+export async function* deduplicateQuads(
+  quads: AsyncIterable<Quad>,
+): AsyncIterable<Quad> {
+  const seen = new Set<string>();
+  for await (const quad of quads) {
+    const key = quadKey(quad);
+    if (!seen.has(key)) {
+      seen.add(key);
+      yield quad;
+    }
+  }
+}
+
+/**
+ * Create a string key that uniquely identifies a quad.
+ *
+ * The format follows `rdf-string` conventions used by Comunica:
+ * - NamedNode: the IRI value
+ * - BlankNode: `_:` + label
+ * - Literal: `"value"` + optional `^^datatype` + optional `@language`
+ * - DefaultGraph: empty string
+ */
+function quadKey(quad: Quad): string {
+  return `${termKey(quad.subject)} ${termKey(quad.predicate)} ${termKey(quad.object)} ${termKey(quad.graph)}`;
+}
+
+function termKey(term: Term): string {
+  switch (term.termType) {
+    case 'NamedNode':
+      return term.value;
+    case 'BlankNode':
+      return `_:${term.value}`;
+    case 'Literal': {
+      const literal = term as Literal;
+      return (
+        `"${literal.value}"` +
+        (literal.datatype &&
+        literal.datatype.value !==
+          'http://www.w3.org/2001/XMLSchema#string' &&
+        literal.datatype.value !==
+          'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'
+          ? `^^${literal.datatype.value}`
+          : '') +
+        (literal.language ? `@${literal.language}` : '')
+      );
+    }
+    case 'DefaultGraph':
+      return '';
+    default:
+      return term.value;
   }
 }
 

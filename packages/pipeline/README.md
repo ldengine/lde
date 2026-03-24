@@ -116,6 +116,17 @@ const executor = new SparqlConstructExecutor({
 });
 ```
 
+SPARQL CONSTRUCT queries can produce duplicate triples — for example, constant triples (like `?dataset a edm:ProvidedCHO`) are emitted for every solution row. Enable `deduplicate` to remove duplicates inline on the stream using a string-based identity set (inspired by [Comunica's `distinctConstruct`](https://comunica.dev/docs/query/advanced/context/#14--distinct-construct)):
+
+```typescript
+const executor = new SparqlConstructExecutor({
+  query: 'CONSTRUCT { ?s a edm:ProvidedCHO . ?s ?p ?o } WHERE { ?s ?p ?o }',
+  deduplicate: true,
+});
+```
+
+The dedup set is scoped to each `execute()` call, so memory stays bounded to the number of unique quads per batch. A standalone `deduplicateQuads()` function is also exported for use outside the executor.
+
 `Executor` is an interface, so you can implement your own for logic that's hard to express in pure SPARQL — for example, cleaning up messy date notations or converting locale-specific dates to ISO 8601. The decorator pattern lets you wrap a SPARQL executor and post-process its quad stream in TypeScript:
 
 ```typescript
