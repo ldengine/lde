@@ -394,6 +394,29 @@ describe('Stage', () => {
       };
     }
 
+    it('runs multiple executors in parallel within a batch', async () => {
+      const tracker = { current: 0, max: 0 };
+      const stage = new Stage({
+        name: 'test',
+        executors: [
+          delayExecutor([q1], 30, tracker),
+          delayExecutor([q2], 30, tracker),
+        ],
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        batchSize: 1,
+        maxConcurrency: 1,
+      });
+
+      const writer = collectingWriter();
+      await stage.run(dataset, distribution, writer);
+
+      // Both executors should have run concurrently within the single batch.
+      expect(tracker.max).toBe(2);
+      expect(writer.quads).toEqual([q1, q2]);
+    });
+
     it('runs executor batches concurrently', async () => {
       const tracker = { current: 0, max: 0 };
       const stage = new Stage({
@@ -456,6 +479,29 @@ describe('Stage', () => {
       const writer = collectingWriter();
       await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
         'executor failure',
+      );
+    });
+
+    it('propagates error when one of multiple parallel executors fails', async () => {
+      const stage = new Stage({
+        name: 'test',
+        executors: [
+          mockExecutor([q1]),
+          {
+            async execute(): Promise<AsyncIterable<Quad> | NotSupported> {
+              throw new Error('second executor failed');
+            },
+          },
+        ],
+        itemSelector: mockItemSelector([
+          { class: namedNode('http://example.org/A') },
+        ]),
+        batchSize: 1,
+      });
+
+      const writer = collectingWriter();
+      await expect(stage.run(dataset, distribution, writer)).rejects.toThrow(
+        'second executor failed',
       );
     });
 

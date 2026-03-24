@@ -27,7 +27,13 @@ export interface StageOptions {
    * @default 10
    */
   batchSize?: number;
-  /** Maximum concurrent in-flight executor batches. @default 10 */
+  /**
+   * Maximum concurrent in-flight batches. Within each batch, all executors
+   * run in parallel, so the peak number of concurrent SPARQL queries is
+   * `maxConcurrency × executorCount`.
+   *
+   * @default 10
+   */
   maxConcurrency?: number;
   /** Child stages that chain off this stage's output. */
   stages?: Stage[];
@@ -188,18 +194,24 @@ export class Stage {
 
           track(
             (async () => {
-              const batchQuads: Quad[] = [];
-              for (const executor of this.executors) {
-                const result = await executor.execute(dataset, distribution, {
-                  bindings,
-                });
-                if (!(result instanceof NotSupported)) {
+              // Run all executors for this batch in parallel.
+              const executorOutputs = await Promise.all(
+                this.executors.map(async (executor) => {
+                  const result = await executor.execute(
+                    dataset,
+                    distribution,
+                    { bindings },
+                  );
+                  if (result instanceof NotSupported) return [];
                   hasResults = true;
+                  const quads: Quad[] = [];
                   for await (const quad of result) {
-                    batchQuads.push(quad);
+                    quads.push(quad);
                   }
-                }
-              }
+                  return quads;
+                }),
+              );
+              const batchQuads = executorOutputs.flat();
 
               if (
                 this.validation &&
