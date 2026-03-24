@@ -1,3 +1,9 @@
+## 0.28.4 (2026-03-24)
+
+### 🩹 Fixes
+
+- **pipeline:** share maxConcurrency across parallel executors ([#312](https://github.com/ldelements/lde/pull/312))
+
 ## 0.28.3 (2026-03-24)
 
 ### 🚀 Features
