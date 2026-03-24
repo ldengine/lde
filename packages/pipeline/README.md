@@ -64,6 +64,10 @@ new Stage({
 });
 ```
 
+#### Concurrency
+
+`maxConcurrency` (default: 10) controls how many batches run in parallel. Within each batch, all executors run in parallel too, so the peak number of concurrent SPARQL queries is `maxConcurrency × executorCount`. For example, with `maxConcurrency: 5` and two executors per stage, up to 10 SPARQL queries may be in flight at the same time. Lower `maxConcurrency` if the endpoint can't handle the load.
+
 ### Item Selector
 
 Selects resources from the distribution and fans out executor calls per batch of results. Implements the `ItemSelector` interface:
