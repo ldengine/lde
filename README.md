@@ -212,6 +212,8 @@ graph TD
 
 <a href="https://netwerkdigitaalerfgoed.nl/en/"><img src="https://github.com/netwerk-digitaal-erfgoed.png?size=40" width="20" valign="middle"></a>&ensp;<a href="https://netwerkdigitaalerfgoed.nl/en/">Netwerk Digitaal Erfgoed</a> — Dutch national digital heritage infrastructure, commissioned by the Ministry of Education, Culture and Science
 
+<a href="https://dc4eu.nl"><img src="https://dc4eu.nl/wp-content/uploads/2022/01/logo.png" width="20" valign="middle"></a>&ensp;<a href="https://dc4eu.nl">DC4EU</a> — Dutch Collections for Europe, the accredited national aggregator connecting Dutch heritage institutions with Europeana
+
 ## Comparison
 
 |                       | **LD Elements**           | **[TriplyETL](https://docs.triply.cc/triply-etl/)** | **[rdf-connect](https://rdf-connect.github.io)** | **[OpenLDES / LDI](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/)** |
