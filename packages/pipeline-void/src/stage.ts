@@ -10,7 +10,10 @@ import { assertSafeIri } from '@lde/dataset';
 import type { Quad } from '@rdfjs/types';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { VocabularyExecutor } from './vocabularyAnalyzer.js';
+import {
+  VocabularyExecutor,
+  defaultVocabularies,
+} from './vocabularyAnalyzer.js';
 import { UriSpaceExecutor } from './uriSpaceExecutor.js';
 
 const queriesDir = resolve(
@@ -48,6 +51,8 @@ export interface PerClassVoidStageOptions extends VoidStageOptions {
 export interface VoidStagesOptions extends PerClassVoidStageOptions {
   /** When provided, includes the object URI space stage using this map. */
   uriSpaces?: ReadonlyMap<string, readonly Quad[]>;
+  /** Additional vocabulary namespace URIs to detect beyond the built-in defaults. */
+  vocabularies?: readonly string[];
 }
 
 async function createVoidStage(
@@ -211,7 +216,14 @@ export function uriSpaces(
   });
 }
 
-export function detectVocabularies(options?: VoidStageOptions): Promise<Stage> {
+export interface DetectVocabulariesOptions extends VoidStageOptions {
+  /** Additional vocabulary namespace URIs to detect beyond the built-in defaults. */
+  vocabularies?: readonly string[];
+}
+
+export function detectVocabularies(
+  options?: DetectVocabulariesOptions,
+): Promise<Stage> {
   return createVoidStage('entity-properties.rq', {
     ...options,
     executor: (query) =>
@@ -220,6 +232,9 @@ export function detectVocabularies(options?: VoidStageOptions): Promise<Stage> {
           query,
           timeout: options?.timeout ?? 60_000,
         }),
+        options?.vocabularies
+          ? [...defaultVocabularies, ...options.vocabularies]
+          : undefined,
       ),
   });
 }
@@ -235,7 +250,11 @@ export function detectVocabularies(options?: VoidStageOptions): Promise<Stage> {
 export async function voidStages(
   options?: VoidStagesOptions,
 ): Promise<Stage[]> {
-  const { uriSpaces: uriSpaceMap, ...stageOptions } = options ?? {};
+  const {
+    uriSpaces: uriSpaceMap,
+    vocabularies,
+    ...stageOptions
+  } = options ?? {};
 
   return Promise.all([
     // Global counting stages.
@@ -258,7 +277,7 @@ export async function voidStages(
 
     // Other stages.
     detectLicenses(stageOptions),
-    detectVocabularies(stageOptions),
+    detectVocabularies({ ...stageOptions, vocabularies }),
     subjectUriSpaces(stageOptions),
     ...(uriSpaceMap ? [uriSpaces(uriSpaceMap, stageOptions)] : []),
   ]);
