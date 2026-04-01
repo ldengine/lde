@@ -1,3 +1,9 @@
+## 0.26.6 (2026-04-01)
+
+### 🚀 Features
+
+- **pipeline-void:** allow passing additional vocabularies to detectVocabularies and voidStages ([#328](https://github.com/ldelements/lde/pull/328))
+
 ## 0.26.5 (2026-03-24)
 
 ### 🧱 Updated Dependencies
