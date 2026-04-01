@@ -17,6 +17,7 @@ Accepts an optional `VoidStagesOptions` object:
 | `maxConcurrency` | 10      | Maximum concurrent in-flight executor batches (per-class stages only) |
 | `perClass`       | —       | Override per-class iteration for all five per-class stages            |
 | `uriSpaces`      | —       | When provided, includes the object URI space stage                    |
+| `vocabularies`   | —       | Additional vocabulary namespace URIs to detect beyond the built-in defaults |
 
 ```typescript
 import { voidStages } from '@lde/pipeline-void';
@@ -66,10 +67,10 @@ Global and domain-specific factories accept `VoidStageOptions` (`timeout`) and r
 
 | Factory                  | Description                                                                                                                       |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `detectVocabularies()`   | [`entity-properties.rq`](queries/entity-properties.rq) — Entity properties with automatic `void:vocabulary` detection             |
+| `detectVocabularies()`   | [`entity-properties.rq`](queries/entity-properties.rq) — Entity properties with automatic `void:vocabulary` detection. Accepts `DetectVocabulariesOptions` with an optional `vocabularies` array to extend the built-in defaults. |
 | `uriSpaces(uriSpaceMap)` | [`object-uri-space.rq`](queries/object-uri-space.rq) — Object URI namespace linksets, aggregated against a provided URI space map |
 
 ## Executor decorators
 
-- `VocabularyExecutor` — Wraps an executor; detects known vocabulary namespace prefixes in `void:property` quads and appends `void:vocabulary` triples.
+- `VocabularyExecutor` — Wraps an executor; detects known vocabulary namespace prefixes in `void:property` quads and appends `void:vocabulary` triples. The built-in defaults are exported as `defaultVocabularies` (sourced from `@zazuko/prefixes`).
 - `UriSpaceExecutor` — Wraps an executor; consumes `void:Linkset` quads, matches each `void:objectsTarget` against configured URI space prefixes using `startsWith`, and aggregates triple counts per matched space. Emits `void:objectsTarget` pointing to the target dataset IRI (taken from the metadata quad subjects), not the raw prefix. Unmatched linksets are discarded.

@@ -14,7 +14,7 @@ const VOID = 'http://rdfs.org/ns/void#';
 const voidProperty = namedNode(`${VOID}property`);
 const voidVocabulary = namedNode(`${VOID}vocabulary`);
 
-const defaultVocabularies: readonly string[] = [
+export const defaultVocabularies: readonly string[] = [
   ...new Set(Object.values(prefixes)),
 ];
 
