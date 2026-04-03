@@ -28,7 +28,7 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "c12": "^3.0.2",
+    "c12": "^3.3.4",
     "commander": "^14.0.3",
     "cron": "^4.1.0",
     "drizzle-kit": "1.0.0-beta.19",
