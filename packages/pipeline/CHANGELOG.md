@@ -1,3 +1,9 @@
+## 0.28.6 (2026-04-06)
+
+### 🚀 Features
+
+- **pipeline:** add schema.org namespace normalization plugin ([#335](https://github.com/ldelements/lde/pull/335))
+
 ## 0.28.5 (2026-03-24)
 
 ### 🚀 Features
