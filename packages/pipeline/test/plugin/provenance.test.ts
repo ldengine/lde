@@ -1,4 +1,4 @@
-import { provenanceTransform, provenancePlugin } from '../src/index.js';
+import { provenanceTransform, provenancePlugin } from '../../src/index.js';
 import { Dataset } from '@lde/dataset';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DataFactory } from 'n3';

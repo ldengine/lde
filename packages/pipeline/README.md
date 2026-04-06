@@ -225,6 +225,27 @@ Writes generated quads to a destination:
 - `SparqlUpdateWriter` — writes to a SPARQL endpoint via UPDATE queries
 - `FileWriter` — writes to local files
 
+### Plugins
+
+Plugins hook into the pipeline lifecycle via the `PipelinePlugin` interface. Register them in the `plugins` array when constructing a `Pipeline`.
+
+#### `provenancePlugin()`
+
+Appends [PROV-O](https://www.w3.org/TR/prov-o/) provenance quads (`prov:Entity`, `prov:Activity`, `prov:startedAtTime`, `prov:endedAtTime`) to every stage’s output.
+
+#### `schemaOrgNormalizationPlugin()`
+
+Normalizes `http://schema.org/` to `https://schema.org/` in `void:class` and `void:property` quad objects, so downstream consumers can rely on a single canonical namespace. `void:vocabulary` quads are left unchanged so consumers can see which namespace the source dataset actually uses.
+
+```typescript
+import { schemaOrgNormalizationPlugin, provenancePlugin } from '@lde/pipeline';
+
+new Pipeline({
+  // ...
+  plugins: [schemaOrgNormalizationPlugin(), provenancePlugin()],
+});
+```
+
 ## Usage
 
 ```typescript
