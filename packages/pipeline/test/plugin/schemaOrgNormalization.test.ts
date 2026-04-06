@@ -1,7 +1,7 @@
 import {
   schemaOrgNormalizationTransform,
   schemaOrgNormalizationPlugin,
-} from '../src/index.js';
+} from '../../src/index.js';
 import { Dataset } from '@lde/dataset';
 import { describe, it, expect } from 'vitest';
 import { DataFactory } from 'n3';
