@@ -1,3 +1,9 @@
+## 0.28.7 (2026-04-09)
+
+### 🩹 Fixes
+
+- **pipeline:** fix race condition in tee that skips quads for slow consumers ([#336](https://github.com/ldelements/lde/pull/336))
+
 ## 0.28.6 (2026-04-06)
 
 ### 🚀 Features
