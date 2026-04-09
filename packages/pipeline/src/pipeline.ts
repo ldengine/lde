@@ -47,28 +47,44 @@ export interface PipelineOptions {
 
 /**
  * Split an async iterable into `count` branches that can be consumed
- * independently. Backpressure is enforced by the slowest consumer —
+ * independently. Backpressure is enforced by the slowest consumer –
  * the source only advances once every branch has consumed the current item.
  */
 function tee<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T>[] {
   const iterator = source[Symbol.asyncIterator]();
   let current: Promise<IteratorResult<T>> | undefined;
-  let consumed = 0;
+  const consumed = new Array<boolean>(count).fill(false);
+  const waiting: (() => void)[] = [];
 
-  function advance(): Promise<IteratorResult<T>> {
-    if (!current || consumed >= count) {
-      consumed = 0;
+  function advance(branch: number): Promise<IteratorResult<T>> {
+    // First branch to request a new round fetches from the source.
+    if (!current || consumed.every(Boolean)) {
+      consumed.fill(false);
       current = iterator.next();
     }
-    consumed++;
+
+    // This branch already consumed the current item – wait for the next round.
+    if (consumed[branch]) {
+      return new Promise<void>(resolve => waiting.push(resolve)).then(() =>
+        advance(branch),
+      );
+    }
+
+    consumed[branch] = true;
+
+    // All branches consumed – wake up any that are waiting for the next round.
+    if (consumed.every(Boolean)) {
+      for (const resolve of waiting.splice(0)) resolve();
+    }
+
     return current;
   }
 
-  return Array.from({ length: count }, () => ({
+  return Array.from({length: count}, (_, index) => ({
     [Symbol.asyncIterator](): AsyncIterator<T> {
       return {
         async next() {
-          return advance();
+          return advance(index);
         },
       };
     },

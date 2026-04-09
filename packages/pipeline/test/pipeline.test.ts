@@ -238,6 +238,67 @@ describe('Pipeline', () => {
       expect(quadsB).toEqual(testQuads);
     });
 
+    it('fans out correctly when writers consume at different speeds', async () => {
+      const quadsA: Quad[] = [];
+      const quadsB: Quad[] = [];
+      const writerA: Writer = {
+        async write(_dataset, quads) {
+          for await (const quad of quads) quadsA.push(quad);
+        },
+      };
+      const writerB: Writer = {
+        async write(_dataset, quads) {
+          for await (const quad of quads) {
+            // Simulate a slow consumer (e.g. HTTP-based SparqlUpdateWriter).
+            await new Promise(resolve => setTimeout(resolve, 50));
+            quadsB.push(quad);
+          }
+        },
+      };
+
+      const testQuads = [
+        DataFactory.quad(
+          DataFactory.namedNode('http://s1'),
+          DataFactory.namedNode('http://p1'),
+          DataFactory.namedNode('http://o1'),
+        ),
+        DataFactory.quad(
+          DataFactory.namedNode('http://s2'),
+          DataFactory.namedNode('http://p2'),
+          DataFactory.namedNode('http://o2'),
+        ),
+        DataFactory.quad(
+          DataFactory.namedNode('http://s3'),
+          DataFactory.namedNode('http://p3'),
+          DataFactory.namedNode('http://o3'),
+        ),
+      ];
+
+      const stage = new Stage({name: 'stage1', executors: []});
+      vi.spyOn(stage, 'run').mockImplementation(
+        async (_dataset, _distribution, stageWriter) => {
+          await stageWriter.write(
+            _dataset,
+            (async function* () {
+              yield* testQuads;
+            })(),
+          );
+        },
+      );
+
+      const pipeline = new Pipeline({
+        datasetSelector: makeDatasetSelector(dataset),
+        stages: [stage],
+        writers: [writerA, writerB],
+        distributionResolver: makeResolver(makeResolvedDistribution()),
+      });
+
+      await pipeline.run();
+
+      expect(quadsA).toEqual(testQuads);
+      expect(quadsB).toEqual(testQuads);
+    });
+
     it('calls flush on writer after all stages complete for a dataset', async () => {
       const stage1 = makeStage('stage1');
       const stage2 = makeStage('stage2');
