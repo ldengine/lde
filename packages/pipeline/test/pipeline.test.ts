@@ -184,7 +184,7 @@ describe('Pipeline', () => {
       );
     });
 
-    it('fans out to multiple writers', async () => {
+    it('fans out to multiple writers at different speeds', async () => {
       const quadsA: Quad[] = [];
       const quadsB: Quad[] = [];
       const writerA: Writer = {
@@ -195,7 +195,11 @@ describe('Pipeline', () => {
       };
       const writerB: Writer = {
         async write(_dataset, quads) {
-          for await (const quad of quads) quadsB.push(quad);
+          for await (const quad of quads) {
+            // Simulate a slow consumer (e.g. HTTP-based SparqlUpdateWriter).
+            await new Promise(resolve => setTimeout(resolve, 50));
+            quadsB.push(quad);
+          }
         },
         flush: vi.fn().mockResolvedValue(undefined),
       };
@@ -211,9 +215,14 @@ describe('Pipeline', () => {
           DataFactory.namedNode('http://p2'),
           DataFactory.namedNode('http://o2'),
         ),
+        DataFactory.quad(
+          DataFactory.namedNode('http://s3'),
+          DataFactory.namedNode('http://p3'),
+          DataFactory.namedNode('http://o3'),
+        ),
       ];
 
-      const stage = new Stage({ name: 'stage1', executors: [] });
+      const stage = new Stage({name: 'stage1', executors: []});
       vi.spyOn(stage, 'run').mockImplementation(
         async (_dataset, _distribution, stageWriter) => {
           await stageWriter.write(
