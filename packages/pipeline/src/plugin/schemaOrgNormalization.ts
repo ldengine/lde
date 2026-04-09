@@ -1,53 +1,42 @@
-import type { QuadTransform } from '../stage.js';
-import type { PipelinePlugin } from '../pipeline.js';
-import type { Quad } from '@rdfjs/types';
-import { DataFactory } from 'n3';
-
-const { namedNode, quad } = DataFactory;
-
-const VOID_CLASS = namedNode('http://rdfs.org/ns/void#class');
-const VOID_PROPERTY = namedNode('http://rdfs.org/ns/void#property');
+import type {QuadTransform} from '../stage.js';
+import type {PipelinePlugin} from '../pipeline.js';
+import {
+  namespaceNormalizationPlugin,
+  namespaceNormalizationTransform,
+} from './namespaceNormalization.js';
 
 const HTTP_SCHEMA_ORG = 'http://schema.org/';
 const HTTPS_SCHEMA_ORG = 'https://schema.org/';
 
+export interface SchemaOrgNormalizationOptions {
+  /** When true, normalizes `https://schema.org/` to `http://schema.org/` instead. */
+  reverse?: boolean;
+}
+
 /** QuadTransform that normalizes `http://schema.org/` to `https://schema.org/` in `void:class` and `void:property` objects. */
-export const schemaOrgNormalizationTransform: QuadTransform = (quads) =>
-  normalizeSchemaOrg(quads);
+export const schemaOrgNormalizationTransform: QuadTransform =
+  namespaceNormalizationTransform({
+    from: HTTP_SCHEMA_ORG,
+    to: HTTPS_SCHEMA_ORG,
+  });
 
 /**
- * Pipeline plugin that normalizes `http://schema.org/` to `https://schema.org/`
- * in `void:class` and `void:property` quad objects.
+ * Pipeline plugin that normalizes Schema.org namespace prefixes in `void:class`
+ * and `void:property` quad objects.
+ *
+ * By default, rewrites `http://schema.org/` to `https://schema.org/`. Pass
+ * `{ reverse: true }` to normalize in the opposite direction.
  *
  * `void:vocabulary` quads are left unchanged so consumers can see which
  * namespace the source dataset actually uses.
  */
-export function schemaOrgNormalizationPlugin(): PipelinePlugin {
+export function schemaOrgNormalizationPlugin(
+  options?: SchemaOrgNormalizationOptions,
+): PipelinePlugin {
+  const from = options?.reverse ? HTTPS_SCHEMA_ORG : HTTP_SCHEMA_ORG;
+  const to = options?.reverse ? HTTP_SCHEMA_ORG : HTTPS_SCHEMA_ORG;
   return {
+    ...namespaceNormalizationPlugin({from, to}),
     name: 'schema-org-normalization',
-    beforeStageWrite: schemaOrgNormalizationTransform,
   };
-}
-
-async function* normalizeSchemaOrg(
-  quads: AsyncIterable<Quad>,
-): AsyncIterable<Quad> {
-  for await (const q of quads) {
-    if (
-      (q.predicate.equals(VOID_CLASS) || q.predicate.equals(VOID_PROPERTY)) &&
-      q.object.termType === 'NamedNode' &&
-      q.object.value.startsWith(HTTP_SCHEMA_ORG)
-    ) {
-      yield quad(
-        q.subject,
-        q.predicate,
-        namedNode(
-          HTTPS_SCHEMA_ORG + q.object.value.slice(HTTP_SCHEMA_ORG.length),
-        ),
-        q.graph,
-      );
-    } else {
-      yield q;
-    }
-  }
 }
