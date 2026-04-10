@@ -34,7 +34,7 @@
     "drizzle-kit": "1.0.0-beta.20",
     "drizzle-orm": "1.0.0-beta.20",
     "fetch-sparql-endpoint": "^7.1.0",
-    "postgres": "^3.4.5",
+    "postgres": "^3.4.9",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
