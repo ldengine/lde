@@ -1,3 +1,9 @@
+## 0.28.8 (2026-04-15)
+
+### 🚀 Features
+
+- **pipeline:** add generic namespace normalization plugin ([#337](https://github.com/ldelements/lde/pull/337))
+
 ## 0.28.7 (2026-04-09)
 
 ### 🩹 Fixes
