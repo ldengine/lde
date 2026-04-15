@@ -133,6 +133,57 @@ describe('schemaOrgNormalizationPlugin', () => {
 
   it('has a beforeStageWrite hook', () => {
     const plugin = schemaOrgNormalizationPlugin();
-    expect(plugin.beforeStageWrite).toBe(schemaOrgNormalizationTransform);
+    expect(plugin.beforeStageWrite).toBeTypeOf('function');
+  });
+
+  it('normalizes http to https by default', async () => {
+    const input = quad(
+      namedNode(dataset.iri.toString()),
+      namedNode(`${VOID}class`),
+      namedNode('http://schema.org/Person'),
+    );
+
+    const quads = await collect(
+      schemaOrgNormalizationPlugin().beforeStageWrite!(
+        quadStream([input]),
+        dataset,
+      ),
+    );
+
+    expect(quads[0].object.value).toBe('https://schema.org/Person');
+  });
+
+  it('normalizes https to http when reverse is true', async () => {
+    const input = quad(
+      namedNode(dataset.iri.toString()),
+      namedNode(`${VOID}class`),
+      namedNode('https://schema.org/Person'),
+    );
+
+    const quads = await collect(
+      schemaOrgNormalizationPlugin({reverse: true}).beforeStageWrite!(
+        quadStream([input]),
+        dataset,
+      ),
+    );
+
+    expect(quads[0].object.value).toBe('http://schema.org/Person');
+  });
+
+  it('does not rewrite http URIs when reverse is true', async () => {
+    const input = quad(
+      namedNode(dataset.iri.toString()),
+      namedNode(`${VOID}class`),
+      namedNode('http://schema.org/Person'),
+    );
+
+    const quads = await collect(
+      schemaOrgNormalizationPlugin({reverse: true}).beforeStageWrite!(
+        quadStream([input]),
+        dataset,
+      ),
+    );
+
+    expect(quads[0].object.value).toBe('http://schema.org/Person');
   });
 });

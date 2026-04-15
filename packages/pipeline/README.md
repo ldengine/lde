@@ -229,20 +229,46 @@ Writes generated quads to a destination:
 
 Plugins hook into the pipeline lifecycle via the `PipelinePlugin` interface. Register them in the `plugins` array when constructing a `Pipeline`.
 
+#### `namespaceNormalizationPlugin(options)`
+
+Generic plugin that rewrites namespace prefixes in `void:class` and `void:property` quad objects. Accepts `from` and `to` options specifying the source and target namespace URI prefixes. `void:vocabulary` quads are left unchanged so consumers can see which namespace the source dataset actually uses.
+
+```typescript
+import { namespaceNormalizationPlugin } from ‘@lde/pipeline’;
+
+new Pipeline({
+  // ...
+  plugins: [
+    namespaceNormalizationPlugin({
+      from: ‘http://example.org/’,
+      to: ‘https://example.org/’,
+    }),
+  ],
+});
+```
+
 #### `provenancePlugin()`
 
 Appends [PROV-O](https://www.w3.org/TR/prov-o/) provenance quads (`prov:Entity`, `prov:Activity`, `prov:startedAtTime`, `prov:endedAtTime`) to every stage’s output.
 
-#### `schemaOrgNormalizationPlugin()`
+#### `schemaOrgNormalizationPlugin(options?)`
 
-Normalizes `http://schema.org/` to `https://schema.org/` in `void:class` and `void:property` quad objects, so downstream consumers can rely on a single canonical namespace. `void:vocabulary` quads are left unchanged so consumers can see which namespace the source dataset actually uses.
+Normalizes Schema.org namespace prefixes in `void:class` and `void:property` quad objects. By default, rewrites `http://schema.org/` to `https://schema.org/`. Pass `{ reverse: true }` to normalize in the opposite direction (`https://` to `http://`). `void:vocabulary` quads are left unchanged so consumers can see which namespace the source dataset actually uses.
+
+This is a convenience wrapper around `namespaceNormalizationPlugin`.
 
 ```typescript
-import { schemaOrgNormalizationPlugin, provenancePlugin } from '@lde/pipeline';
+import { schemaOrgNormalizationPlugin, provenancePlugin } from ‘@lde/pipeline’;
 
 new Pipeline({
   // ...
   plugins: [schemaOrgNormalizationPlugin(), provenancePlugin()],
+});
+
+// Or reverse: normalize https to http
+new Pipeline({
+  // ...
+  plugins: [schemaOrgNormalizationPlugin({reverse: true})],
 });
 ```
 
