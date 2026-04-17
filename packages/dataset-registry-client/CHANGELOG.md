@@ -1,3 +1,9 @@
+## 0.7.5 (2026-04-17)
+
+### 🚀 Features
+
+- **dataset-registry-client:** expose full DCAT 3 vocabulary ([#356](https://github.com/ldelements/lde/pull/356))
+
 ## 0.7.4 (2026-03-16)
 
 ### 🧱 Updated Dependencies
