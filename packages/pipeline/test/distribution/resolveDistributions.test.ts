@@ -38,6 +38,8 @@ describe('resolveDistributions', () => {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
       }),
+      0,
+      'application/sparql-results+json',
     );
     const dataset = new Dataset({
       iri: new URL('http://example.org/dataset'),
@@ -65,6 +67,7 @@ describe('resolveDistributions', () => {
     const networkError = new NetworkError(
       'http://example.org/sparql',
       'Connection refused',
+      0,
     );
     const resolver = mockResolver(
       new NoDistributionAvailable(
@@ -102,6 +105,7 @@ describe('resolveDistributions', () => {
         status: 200,
         headers: { 'Content-Length': '1000' },
       }),
+      0,
     );
     const importFailed = new ImportFailed(dataDumpDistribution, 'Parse error');
     const resolver = mockResolver(
@@ -137,6 +141,8 @@ describe('resolveDistributions', () => {
         status: 200,
         headers: { 'Content-Type': 'application/sparql-results+json' },
       }),
+      0,
+      'application/sparql-results+json',
     );
     const dataset = new Dataset({
       iri: new URL('http://custom.org/dataset'),

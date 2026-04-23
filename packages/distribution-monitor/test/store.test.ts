@@ -17,7 +17,7 @@ describe('PostgresObservationStore', () => {
     beforeAll(async () => {
       container = await new PostgreSqlContainer('postgres:18').start();
       store = await PostgresObservationStore.create(
-        container.getConnectionUri()
+        container.getConnectionUri(),
       );
     }, 60000);
 
@@ -84,7 +84,7 @@ describe('PostgresObservationStore', () => {
       // Close and recreate store to test idempotent schema push
       await store.close();
       store = await PostgresObservationStore.create(
-        container.getConnectionUri()
+        container.getConnectionUri(),
       );
       expect(store).toBeDefined();
     });

@@ -348,6 +348,338 @@ describe('probe', () => {
 
       expect(result).toBeInstanceOf(NetworkError);
       expect((result as NetworkError).message).toBe('Connection refused');
+      expect((result as NetworkError).responseTimeMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('options', () => {
+    it('accepts ProbeOptions with timeoutMs', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution, { timeoutMs: 1000 });
+
+      expect(result).toBeInstanceOf(SparqlProbeResult);
+    });
+
+    it('accepts a bare number for backwards compatibility', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution, 1000);
+
+      expect(result).toBeInstanceOf(SparqlProbeResult);
+    });
+  });
+
+  describe('URL-embedded Basic auth', () => {
+    it('moves user:pass from URL into Authorization header (SPARQL)', async () => {
+      let capturedUrl: string | undefined;
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        capturedUrl =
+          typeof input === 'string' ? input : (input as URL).toString();
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://alice:secret@example.org/sparql'),
+      );
+
+      await probe(distribution);
+
+      expect(capturedUrl).toBe('http://example.org/sparql');
+      expect(capturedHeaders?.get('Authorization')).toBe(
+        `Basic ${Buffer.from('alice:secret').toString('base64')}`,
+      );
+    });
+
+    it('decodes URL-encoded credentials', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://user%40domain:p%40ss@example.org/sparql'),
+      );
+
+      await probe(distribution);
+
+      expect(capturedHeaders?.get('Authorization')).toBe(
+        `Basic ${Buffer.from('user@domain:p@ss').toString('base64')}`,
+      );
+    });
+
+    it('applies URL auth to data-dump probes too', async () => {
+      let capturedUrl: string | undefined;
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        capturedUrl =
+          typeof input === 'string' ? input : (input as URL).toString();
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('', {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/n-triples',
+            'Content-Length': '50000',
+          },
+        });
+      });
+
+      const distribution = new Distribution(
+        new URL('http://alice:secret@example.org/data.nt'),
+        'application/n-triples',
+      );
+
+      await probe(distribution);
+
+      expect(capturedUrl).toBe('http://example.org/data.nt');
+      expect(capturedHeaders?.get('Authorization')).toBe(
+        `Basic ${Buffer.from('alice:secret').toString('base64')}`,
+      );
+    });
+
+    it('does not overwrite a caller-supplied Authorization header', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const callerHeaders = new Headers({
+        Authorization: 'Bearer caller-token',
+      });
+      const distribution = Distribution.sparql(
+        new URL('http://alice:secret@example.org/sparql'),
+      );
+
+      await probe(distribution, { headers: callerHeaders });
+
+      expect(capturedHeaders?.get('Authorization')).toBe('Bearer caller-token');
+    });
+  });
+
+  describe('custom headers', () => {
+    it('merges caller headers with probe-generated ones', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      await probe(distribution, {
+        headers: new Headers({ 'User-Agent': 'TestAgent/1.0' }),
+      });
+
+      expect(capturedHeaders?.get('User-Agent')).toBe('TestAgent/1.0');
+      expect(capturedHeaders?.get('Accept')).toBe(
+        'application/sparql-results+json',
+      );
+    });
+
+    it('lets caller headers override probe-generated Accept', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      await probe(distribution, {
+        headers: new Headers({ Accept: 'application/sparql-results+xml' }),
+      });
+
+      expect(capturedHeaders?.get('Accept')).toBe(
+        'application/sparql-results+xml',
+      );
+    });
+  });
+
+  describe('custom SPARQL query', () => {
+    it('uses the supplied query instead of the default', async () => {
+      let capturedBody: string | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedBody = init?.body?.toString();
+        return new Response('{"boolean": true}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution, {
+        sparqlQuery: 'ASK { ?s ?p ?o }',
+      });
+
+      expect(capturedBody).toContain(encodeURIComponent('ASK { ?s ?p ?o }'));
+      expect((result as SparqlProbeResult).isSuccess()).toBe(true);
+    });
+
+    it('validates ASK response body', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('{"results": {}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution, {
+        sparqlQuery: 'ASK { ?s ?p ?o }',
+      });
+
+      const sparqlResult = result as SparqlProbeResult;
+      expect(sparqlResult.isSuccess()).toBe(false);
+      expect(sparqlResult.failureReason).toBe(
+        'SPARQL endpoint did not return a valid ASK result',
+      );
+    });
+
+    it('requests an RDF media type for CONSTRUCT queries', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('<http://s> <http://p> <http://o> .\n', {
+          status: 200,
+          headers: { 'Content-Type': 'application/n-triples' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = await probe(distribution, {
+        sparqlQuery: 'CONSTRUCT WHERE { ?s ?p ?o } LIMIT 1',
+      });
+
+      expect(capturedHeaders?.get('Accept')).toContain('application/n-triples');
+      expect((result as SparqlProbeResult).isSuccess()).toBe(true);
+    });
+
+    it('ignores # comments when detecting query type', async () => {
+      let capturedHeaders: Headers | undefined;
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response('{"boolean": true}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        });
+      });
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      await probe(distribution, {
+        sparqlQuery: '# SELECT is in a comment\nASK { ?s ?p ?o }',
+      });
+
+      expect(capturedHeaders?.get('Accept')).toBe(
+        'application/sparql-results+json',
+      );
+    });
+  });
+
+  describe('responseTimeMs', () => {
+    it('is set on SparqlProbeResult', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('{"results": {"bindings": []}}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }),
+      );
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = (await probe(distribution)) as SparqlProbeResult;
+
+      expect(result.responseTimeMs).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(result.responseTimeMs)).toBe(true);
+    });
+
+    it('is set on DataDumpProbeResult', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response('', {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/n-triples',
+            'Content-Length': '50000',
+          },
+        }),
+      );
+
+      const distribution = new Distribution(
+        new URL('http://example.org/data.nt'),
+        'application/n-triples',
+      );
+
+      const result = (await probe(distribution)) as DataDumpProbeResult;
+
+      expect(result.responseTimeMs).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(result.responseTimeMs)).toBe(true);
+    });
+
+    it('is set on NetworkError', async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error('Connection refused'));
+
+      const distribution = Distribution.sparql(
+        new URL('http://example.org/sparql'),
+      );
+
+      const result = (await probe(distribution)) as NetworkError;
+
+      expect(result.responseTimeMs).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(result.responseTimeMs)).toBe(true);
     });
   });
 });

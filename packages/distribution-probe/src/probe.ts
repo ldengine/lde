@@ -2,12 +2,36 @@ import { Distribution } from '@lde/dataset';
 import { Parser } from 'n3';
 
 /**
+ * Options for {@link probe}.
+ */
+export interface ProbeOptions {
+  /** Request timeout in milliseconds. Defaults to 5 000. */
+  timeoutMs?: number;
+  /**
+   * Extra HTTP headers to send with the request. Merged with probe-generated
+   * headers; caller-supplied values take precedence on conflict.
+   */
+  headers?: Headers;
+  /**
+   * SPARQL query to use when probing a SPARQL endpoint. The query’s type
+   * (`ASK` / `SELECT` / `CONSTRUCT` / `DESCRIBE`) determines the `Accept`
+   * header and the response validation strategy. Ignored for data-dump
+   * distributions. Defaults to `SELECT * { ?s ?p ?o } LIMIT 1`.
+   */
+  sparqlQuery?: string;
+}
+
+const DEFAULT_SPARQL_QUERY = 'SELECT * { ?s ?p ?o } LIMIT 1';
+const DEFAULT_TIMEOUT_MS = 5000;
+
+/**
  * Result of a network error during probing.
  */
 export class NetworkError {
   constructor(
     public readonly url: string,
     public readonly message: string,
+    public readonly responseTimeMs: number,
   ) {}
 }
 
@@ -21,16 +45,19 @@ abstract class ProbeResult {
   public readonly contentType: string | null;
   public readonly failureReason: string | null;
   public readonly warnings: string[] = [];
+  public readonly responseTimeMs: number;
 
   constructor(
     public readonly url: string,
     response: Response,
+    responseTimeMs: number,
     failureReason: string | null = null,
   ) {
     this.statusCode = response.status;
     this.statusText = response.statusText;
     this.contentType = response.headers.get('Content-Type');
     this.failureReason = failureReason;
+    this.responseTimeMs = responseTimeMs;
     const lastModifiedHeader = response.headers.get('Last-Modified');
     if (lastModifiedHeader) {
       this.lastModified = new Date(lastModifiedHeader);
@@ -47,12 +74,24 @@ abstract class ProbeResult {
 }
 
 const SPARQL_RESULTS_JSON = 'application/sparql-results+json';
+const SPARQL_RDF_RESULTS = 'application/n-triples';
 
 /**
  * Result of probing a SPARQL endpoint.
  */
 export class SparqlProbeResult extends ProbeResult {
-  public readonly acceptedContentType = SPARQL_RESULTS_JSON;
+  public readonly acceptedContentType: string;
+
+  constructor(
+    url: string,
+    response: Response,
+    responseTimeMs: number,
+    acceptedContentType: string,
+    failureReason: string | null = null,
+  ) {
+    super(url, response, responseTimeMs, failureReason);
+    this.acceptedContentType = acceptedContentType;
+  }
 
   override isSuccess(): boolean {
     return (
@@ -71,9 +110,10 @@ export class DataDumpProbeResult extends ProbeResult {
   constructor(
     url: string,
     response: Response,
+    responseTimeMs: number,
     failureReason: string | null = null,
   ) {
-    super(url, response, failureReason);
+    super(url, response, responseTimeMs, failureReason);
     const contentLengthHeader = response.headers.get('Content-Length');
     if (contentLengthHeader) {
       this.contentSize = parseInt(contentLengthHeader);
@@ -86,90 +126,218 @@ export type ProbeResultType =
   | DataDumpProbeResult
   | NetworkError;
 
+type SparqlQueryType = 'ASK' | 'SELECT' | 'CONSTRUCT' | 'DESCRIBE';
+
 /**
  * Probe a distribution to check availability and gather metadata.
  *
- * For SPARQL endpoints, sends a simple SELECT query.
- * For data dumps, sends HEAD (or GET if HEAD returns no Content-Length).
+ * For SPARQL endpoints, issues the configured SPARQL query (default: a
+ * minimal `SELECT`). For data dumps, issues `HEAD` (with a `GET` fallback
+ * for small or unknown-size bodies).
  *
- * Returns pure probe results without mutating the distribution.
+ * Returns a pure result object; never throws.
+ *
+ * @param distribution The distribution to probe.
+ * @param options Probe options. For back-compat, passing a `number` is
+ *   equivalent to `{ timeoutMs: number }` and is deprecated.
  */
 export async function probe(
   distribution: Distribution,
-  timeout = 5000,
+  options?: number | ProbeOptions,
 ): Promise<ProbeResultType> {
+  const resolved = resolveOptions(options);
+  const url = distribution.accessUrl?.toString() ?? 'unknown';
+  const [authUrl, authHeaders] =
+    distribution.accessUrl !== undefined
+      ? extractUrlCredentials(distribution.accessUrl, resolved.headers)
+      : [new URL(url), new Headers(resolved.headers)];
+
+  const start = performance.now();
   try {
     if (distribution.isSparql()) {
-      return await probeSparqlEndpoint(distribution, timeout);
+      return await probeSparqlEndpoint(
+        authUrl.toString(),
+        distribution,
+        resolved,
+        authHeaders,
+        start,
+      );
     }
-    return await probeDataDump(distribution, timeout);
+    return await probeDataDump(
+      authUrl.toString(),
+      distribution,
+      resolved,
+      authHeaders,
+      start,
+    );
   } catch (e) {
+    const responseTimeMs = Math.round(performance.now() - start);
     return new NetworkError(
-      distribution.accessUrl?.toString() ?? 'unknown',
+      url,
       e instanceof Error ? e.message : String(e),
+      responseTimeMs,
     );
   }
 }
 
+function resolveOptions(
+  options: number | ProbeOptions | undefined,
+): Required<ProbeOptions> {
+  if (typeof options === 'number') {
+    return {
+      timeoutMs: options,
+      headers: new Headers(),
+      sparqlQuery: DEFAULT_SPARQL_QUERY,
+    };
+  }
+  return {
+    timeoutMs: options?.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    headers: options?.headers ?? new Headers(),
+    sparqlQuery: options?.sparqlQuery ?? DEFAULT_SPARQL_QUERY,
+  };
+}
+
+/**
+ * Strip `user:pass@` from a URL and turn it into an `Authorization: Basic`
+ * header. Returns the cleaned URL and a merged Headers object that preserves
+ * any caller-supplied headers.
+ */
+function extractUrlCredentials(url: URL, baseHeaders: Headers): [URL, Headers] {
+  const headers = new Headers(baseHeaders);
+  if (url.username === '' && url.password === '') {
+    return [url, headers];
+  }
+  const credentials = `${decodeURIComponent(url.username)}:${decodeURIComponent(
+    url.password,
+  )}`;
+  if (!headers.has('Authorization')) {
+    headers.set(
+      'Authorization',
+      `Basic ${Buffer.from(credentials).toString('base64')}`,
+    );
+  }
+  const cleanUrl = new URL(url.toString());
+  cleanUrl.username = '';
+  cleanUrl.password = '';
+  return [cleanUrl, headers];
+}
+
+/**
+ * Classify a SPARQL query. Comments are stripped; the first keyword match
+ * wins. Falls back to `SELECT` when no keyword is found – robust enough for
+ * availability probing but not a full SPARQL parser.
+ */
+function detectSparqlQueryType(query: string): SparqlQueryType {
+  const withoutComments = query.replace(/#[^\n\r]*/g, ' ');
+  const match = /\b(ASK|SELECT|CONSTRUCT|DESCRIBE)\b/i.exec(withoutComments);
+  return (match?.[1].toUpperCase() ?? 'SELECT') as SparqlQueryType;
+}
+
+function acceptHeaderForQueryType(queryType: SparqlQueryType): string {
+  if (queryType === 'ASK' || queryType === 'SELECT') {
+    return SPARQL_RESULTS_JSON;
+  }
+  return SPARQL_RDF_RESULTS;
+}
+
 async function probeSparqlEndpoint(
-  distribution: Distribution,
-  timeout: number,
+  url: string,
+  _distribution: Distribution,
+  options: Required<ProbeOptions>,
+  authHeaders: Headers,
+  start: number,
 ): Promise<SparqlProbeResult | NetworkError> {
-  const url = distribution.accessUrl!.toString();
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(timeout),
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-      Accept: SPARQL_RESULTS_JSON,
-    },
-    body: `query=${encodeURIComponent('SELECT * { ?s ?p ?o } LIMIT 1')}`,
+  const queryType = detectSparqlQueryType(options.sparqlQuery);
+  const accept = acceptHeaderForQueryType(queryType);
+  const headers = new Headers({
+    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+    Accept: accept,
   });
-  const isJsonResponse = response.headers
-    .get('Content-Type')
-    ?.startsWith(SPARQL_RESULTS_JSON);
+  for (const [key, value] of authHeaders) {
+    headers.set(key, value);
+  }
+
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(options.timeoutMs),
+    method: 'POST',
+    headers,
+    body: `query=${encodeURIComponent(options.sparqlQuery)}`,
+  });
+
+  const actualContentType = response.headers.get('Content-Type');
+  const contentTypeMatches = actualContentType?.startsWith(accept) ?? false;
   let failureReason: string | null = null;
-  if (response.ok && isJsonResponse) {
-    failureReason = await validateSparqlResponse(response);
+  if (response.ok && contentTypeMatches) {
+    failureReason = await validateSparqlResponse(response, queryType);
   } else {
     // Drain unconsumed body to release the underlying connection.
     await response.body?.cancel();
   }
 
-  return new SparqlProbeResult(url, response, failureReason);
+  const responseTimeMs = Math.round(performance.now() - start);
+  return new SparqlProbeResult(
+    url,
+    response,
+    responseTimeMs,
+    accept,
+    failureReason,
+  );
 }
 
 async function validateSparqlResponse(
   response: Response,
+  queryType: SparqlQueryType,
 ): Promise<string | null> {
   const body = await response.text();
   if (body.length === 0) {
     return 'SPARQL endpoint returned an empty response';
   }
 
+  if (queryType === 'CONSTRUCT' || queryType === 'DESCRIBE') {
+    // Body should be RDF; a non-empty response is sufficient to confirm the
+    // endpoint answered. Deep parse validation is the data-dump path’s job.
+    return null;
+  }
+
+  let json: Record<string, unknown>;
   try {
-    const json = JSON.parse(body) as Record<string, unknown>;
-    if (!json.results || typeof json.results !== 'object') {
-      return 'SPARQL endpoint did not return a valid results object';
-    }
+    json = JSON.parse(body) as Record<string, unknown>;
   } catch {
     return 'SPARQL endpoint returned invalid JSON';
   }
 
+  if (queryType === 'ASK') {
+    if (typeof json.boolean !== 'boolean') {
+      return 'SPARQL endpoint did not return a valid ASK result';
+    }
+    return null;
+  }
+
+  // SELECT
+  if (!json.results || typeof json.results !== 'object') {
+    return 'SPARQL endpoint did not return a valid results object';
+  }
   return null;
 }
 
 async function probeDataDump(
+  url: string,
   distribution: Distribution,
-  timeout: number,
+  options: Required<ProbeOptions>,
+  authHeaders: Headers,
+  start: number,
 ): Promise<DataDumpProbeResult | NetworkError> {
-  const url = distribution.accessUrl!.toString();
+  const headers = new Headers({
+    Accept: distribution.mimeType ?? '*/*',
+    'Accept-Encoding': 'identity',
+  });
+  for (const [key, value] of authHeaders) {
+    headers.set(key, value);
+  }
+
   const requestOptions = {
-    signal: AbortSignal.timeout(timeout),
-    headers: {
-      Accept: distribution.mimeType ?? '*/*',
-      'Accept-Encoding': 'identity', // Return uncompressed responses.
-    },
+    signal: AbortSignal.timeout(options.timeoutMs),
+    headers,
   };
 
   const headResponse = await fetch(url, {
@@ -192,12 +360,19 @@ async function probeDataDump(
     const failureReason = isHttpSuccess
       ? validateBody(body, getResponse.headers.get('Content-Type'))
       : null;
-    const result = new DataDumpProbeResult(url, getResponse, failureReason);
+    const responseTimeMs = Math.round(performance.now() - start);
+    const result = new DataDumpProbeResult(
+      url,
+      getResponse,
+      responseTimeMs,
+      failureReason,
+    );
     checkContentTypeMismatch(result, distribution.mimeType);
     return result;
   }
 
-  const result = new DataDumpProbeResult(url, headResponse);
+  const responseTimeMs = Math.round(performance.now() - start);
+  const result = new DataDumpProbeResult(url, headResponse, responseTimeMs);
   checkContentTypeMismatch(result, distribution.mimeType);
   return result;
 }

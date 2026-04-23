@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { MonitorService } from './service.js';
 import { PostgresObservationStore } from './store.js';
 import type { MonitorConfig } from './types.js';
-import { normalizeConfig, type SparqlMonitorConfig } from './config.js';
+import { normalizeConfig, type DistributionMonitorConfig } from './config.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -14,6 +14,7 @@ interface MonitorContext {
   config: {
     databaseUrl: string;
     intervalSeconds?: number;
+    timeoutMs?: number;
     monitors: MonitorConfig[];
   };
   store: PostgresObservationStore;
@@ -21,10 +22,10 @@ interface MonitorContext {
 }
 
 async function loadMonitorContext(
-  configFile?: string
+  configFile?: string,
 ): Promise<MonitorContext> {
-  const { config: rawConfig } = await loadConfig<SparqlMonitorConfig>({
-    name: 'sparql-monitor',
+  const { config: rawConfig } = await loadConfig<DistributionMonitorConfig>({
+    name: 'distribution-monitor',
     configFile,
     dotenv: true,
   });
@@ -32,7 +33,7 @@ async function loadMonitorContext(
   if (!rawConfig) {
     console.error('Error: No configuration found.');
     console.error(
-      'Create a sparql-monitor.config.ts file or specify --config.'
+      'Create a distribution-monitor.config.ts file or specify --config.',
     );
     process.exit(1);
   }
@@ -42,7 +43,7 @@ async function loadMonitorContext(
   const databaseUrl = config.databaseUrl ?? process.env.DATABASE_URL;
   if (!databaseUrl) {
     console.error(
-      'Error: databaseUrl required (set in config or DATABASE_URL env).'
+      'Error: databaseUrl required (set in config or DATABASE_URL env).',
     );
     process.exit(1);
   }
@@ -57,6 +58,7 @@ async function loadMonitorContext(
     store,
     monitors: config.monitors,
     intervalSeconds: config.intervalSeconds,
+    timeoutMs: config.timeoutMs,
   });
 
   return {
@@ -69,13 +71,13 @@ async function loadMonitorContext(
 const program = new Command();
 
 program
-  .name('sparql-monitor')
-  .description('Monitor SPARQL endpoints')
+  .name('distribution-monitor')
+  .description('Monitor DCAT distributions (SPARQL endpoints and data dumps)')
   .version(version);
 
 program
   .command('start')
-  .description('Start monitoring all configured endpoints')
+  .description('Start monitoring all configured distributions')
   .option('-c, --config <path>', 'Config file path')
   .action(async (options) => {
     const { config, store, service } = await loadMonitorContext(options.config);
@@ -83,7 +85,7 @@ program
     await service.checkAll();
     service.start();
 
-    console.log(`Monitoring ${config.monitors.length} endpoint(s)...`);
+    console.log(`Monitoring ${config.monitors.length} distribution(s)...`);
     console.log(`Interval: ${config.intervalSeconds ?? 300} seconds`);
 
     const shutdown = async () => {
@@ -107,13 +109,13 @@ program
     try {
       if (identifier) {
         const monitor = config.monitors.find(
-          (m) => m.identifier === identifier
+          (m) => m.identifier === identifier,
         );
         if (!monitor) {
           console.error(`Error: Monitor '${identifier}' not found.`);
           console.error(
             'Available monitors:',
-            config.monitors.map((m) => m.identifier).join(', ')
+            config.monitors.map((m) => m.identifier).join(', '),
           );
           process.exit(1);
         }
@@ -121,7 +123,7 @@ program
         await service.checkNow(identifier);
         console.log(`Check completed for ${identifier}.`);
       } else {
-        console.log(`Checking ${config.monitors.length} endpoint(s)...`);
+        console.log(`Checking ${config.monitors.length} distribution(s)...`);
         await service.checkAll();
         console.log('All checks completed.');
       }

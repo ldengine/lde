@@ -1,7 +1,7 @@
 {
   "name": "@lde/sparql-monitor",
-  "version": "0.5.13",
-  "description": "Monitor SPARQL endpoints with periodic checks",
+  "version": "0.6.0",
+  "description": "Renamed to @lde/distribution-monitor. Thin re-export shim.",
   "repository": {
     "url": "git+https://github.com/ldelements/lde.git",
     "directory": "packages/sparql-monitor"
@@ -20,24 +20,13 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "sparql-monitor": "dist/cli.js"
-  },
   "files": [
     "dist",
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "c12": "^3.3.4",
-    "commander": "^14.0.3",
-    "cron": "^4.1.0",
-    "drizzle-kit": "1.0.0-beta.20",
-    "drizzle-orm": "1.0.0-beta.22-41a7d21",
-    "fetch-sparql-endpoint": "^7.1.0",
-    "postgres": "^3.4.9",
+    "@lde/distribution-monitor": "0.1.0",
     "tslib": "^2.3.0"
   },
-  "devDependencies": {
-    "@testcontainers/postgresql": "^11.14.0"
-  }
+  "deprecated": "Renamed to @lde/distribution-monitor. Update your dependency."
 }
