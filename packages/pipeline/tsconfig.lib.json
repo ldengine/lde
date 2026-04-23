@@ -11,10 +11,16 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
+      "path": "../local-sparql-endpoint/tsconfig.lib.json"
+    },
+    {
       "path": "../sparql-server/tsconfig.lib.json"
     },
     {
       "path": "../sparql-importer/tsconfig.lib.json"
+    },
+    {
+      "path": "../distribution-probe/tsconfig.lib.json"
     },
     {
       "path": "../dataset-registry-client/tsconfig.lib.json"

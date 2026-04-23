@@ -14,7 +14,7 @@ import {
   DataDumpProbeResult,
   NetworkError,
   type ProbeResultType,
-} from '../src/distribution/probe.js';
+} from '@lde/distribution-probe';
 import type { Writer } from '../src/writer/writer.js';
 import type { ProgressReporter } from '../src/progressReporter.js';
 import type { StageOutputResolver } from '../src/stageOutputResolver.js';
@@ -197,7 +197,7 @@ describe('Pipeline', () => {
         async write(_dataset, quads) {
           for await (const quad of quads) {
             // Simulate a slow consumer (e.g. HTTP-based SparqlUpdateWriter).
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
             quadsB.push(quad);
           }
         },
@@ -222,7 +222,7 @@ describe('Pipeline', () => {
         ),
       ];
 
-      const stage = new Stage({name: 'stage1', executors: []});
+      const stage = new Stage({ name: 'stage1', executors: [] });
       vi.spyOn(stage, 'run').mockImplementation(
         async (_dataset, _distribution, stageWriter) => {
           await stageWriter.write(

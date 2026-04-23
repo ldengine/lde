@@ -12,7 +12,7 @@ import {
   NoDistributionAvailable,
   ResolvedDistribution,
 } from './resolver.js';
-import { NetworkError } from './probe.js';
+import { NetworkError } from '@lde/distribution-probe';
 
 export interface ImportResolverOptions {
   importer: Importer;

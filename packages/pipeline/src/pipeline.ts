@@ -16,7 +16,7 @@ import {
   NetworkError,
   SparqlProbeResult,
   type ProbeResultType,
-} from './distribution/probe.js';
+} from '@lde/distribution-probe';
 import { NotSupported } from './sparql/executor.js';
 import type { StageOutputResolver } from './stageOutputResolver.js';
 import type {
@@ -65,7 +65,7 @@ function tee<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T>[] {
 
     // This branch already consumed the current item – wait for the next round.
     if (consumed[branch]) {
-      return new Promise<void>(resolve => waiting.push(resolve)).then(() =>
+      return new Promise<void>((resolve) => waiting.push(resolve)).then(() =>
         advance(branch),
       );
     }
@@ -80,7 +80,7 @@ function tee<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T>[] {
     return current;
   }
 
-  return Array.from({length: count}, (_, index) => ({
+  return Array.from({ length: count }, (_, index) => ({
     [Symbol.asyncIterator](): AsyncIterator<T> {
       return {
         async next() {
