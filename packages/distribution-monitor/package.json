@@ -21,8 +21,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "distribution-monitor": "dist/cli.js",
-    "sparql-monitor": "dist/cli.js"
+    "distribution-monitor": "dist/cli.js"
   },
   "files": [
     "dist",

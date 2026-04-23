@@ -31,8 +31,6 @@ npx distribution-monitor check dbpedia
 npx distribution-monitor start --config ./configs/production.config.ts
 ```
 
-The `sparql-monitor` binary name remains installed as an alias for one minor version; new usage should invoke `distribution-monitor`.
-
 ### TypeScript Config (`distribution-monitor.config.ts`)
 
 ```typescript

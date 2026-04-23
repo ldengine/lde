@@ -136,14 +136,10 @@ type SparqlQueryType = 'ASK' | 'SELECT' | 'CONSTRUCT' | 'DESCRIBE';
  * for small or unknown-size bodies).
  *
  * Returns a pure result object; never throws.
- *
- * @param distribution The distribution to probe.
- * @param options Probe options. For back-compat, passing a `number` is
- *   equivalent to `{ timeoutMs: number }` and is deprecated.
  */
 export async function probe(
   distribution: Distribution,
-  options?: number | ProbeOptions,
+  options?: ProbeOptions,
 ): Promise<ProbeResultType> {
   const resolved = resolveOptions(options);
   const url = distribution.accessUrl?.toString() ?? 'unknown';
@@ -181,15 +177,8 @@ export async function probe(
 }
 
 function resolveOptions(
-  options: number | ProbeOptions | undefined,
+  options: ProbeOptions | undefined,
 ): Required<ProbeOptions> {
-  if (typeof options === 'number') {
-    return {
-      timeoutMs: options,
-      headers: new Headers(),
-      sparqlQuery: DEFAULT_SPARQL_QUERY,
-    };
-  }
   return {
     timeoutMs: options?.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     headers: options?.headers ?? new Headers(),

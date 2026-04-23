@@ -369,23 +369,6 @@ describe('probe', () => {
 
       expect(result).toBeInstanceOf(SparqlProbeResult);
     });
-
-    it('accepts a bare number for backwards compatibility', async () => {
-      vi.mocked(fetch).mockResolvedValue(
-        new Response('{"results": {"bindings": []}}', {
-          status: 200,
-          headers: { 'Content-Type': 'application/sparql-results+json' },
-        }),
-      );
-
-      const distribution = Distribution.sparql(
-        new URL('http://example.org/sparql'),
-      );
-
-      const result = await probe(distribution, 1000);
-
-      expect(result).toBeInstanceOf(SparqlProbeResult);
-    });
   });
 
   describe('URL-embedded Basic auth', () => {
