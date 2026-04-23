@@ -35,7 +35,7 @@ function sparqlResponse(overrides?: ResponseInit): Response {
 describe('probeResultsToQuads', () => {
   it('yields schema:error literal for a network error', async () => {
     const results = [
-      new NetworkError('http://example.org/sparql', 'ECONNREFUSED'),
+      new NetworkError('http://example.org/sparql', 'ECONNREFUSED', 0),
     ];
     const store = await collect(
       probeResultsToQuads(results, 'http://example.org/dataset'),
@@ -50,6 +50,8 @@ describe('probeResultsToQuads', () => {
     const result = new SparqlProbeResult(
       'http://example.org/sparql',
       new Response('', { status: 404, statusText: 'Not Found' }),
+      0,
+      'application/sparql-results+json',
     );
     const store = await collect(
       probeResultsToQuads([result], 'http://example.org/dataset'),
@@ -66,6 +68,8 @@ describe('probeResultsToQuads', () => {
     const result = new SparqlProbeResult(
       'http://example.org/sparql',
       sparqlResponse(),
+      0,
+      'application/sparql-results+json',
     );
     const store = await collect(
       probeResultsToQuads([result], 'http://example.org/dataset'),
@@ -106,6 +110,7 @@ describe('probeResultsToQuads', () => {
           'Last-Modified': 'Wed, 01 Jan 2025 00:00:00 GMT',
         },
       }),
+      0,
     );
     const store = await collect(
       probeResultsToQuads([result], 'http://example.org/dataset'),
@@ -156,8 +161,13 @@ describe('probeResultsToQuads', () => {
 
   it('yields quads for multiple probe results', async () => {
     const results = [
-      new SparqlProbeResult('http://example.org/sparql', sparqlResponse()),
-      new NetworkError('http://example.org/other', 'timeout'),
+      new SparqlProbeResult(
+        'http://example.org/sparql',
+        sparqlResponse(),
+        0,
+        'application/sparql-results+json',
+      ),
+      new NetworkError('http://example.org/other', 'timeout', 0),
     ];
     const store = await collect(
       probeResultsToQuads(results, 'http://example.org/dataset'),
@@ -178,6 +188,7 @@ describe('probeResultsToQuads', () => {
         status: 200,
         headers: { 'Content-Length': '1000' },
       }),
+      0,
     );
     const importError = new ImportFailed(distribution, 'Parse error');
 
@@ -211,6 +222,7 @@ describe('probeResultsToQuads', () => {
         status: 200,
         headers: { 'Content-Type': 'text/turtle' },
       }),
+      0,
       'Distribution is empty',
     );
     const store = await collect(

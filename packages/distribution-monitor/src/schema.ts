@@ -34,9 +34,9 @@ export const observations = pgTable(
     index('observations_observed_at_idx').on(table.observedAt),
     index('observations_monitor_observed_at_idx').on(
       table.monitor,
-      sql`${table.observedAt} DESC`
+      sql`${table.observedAt} DESC`,
     ),
-  ]
+  ],
 );
 
 /**
@@ -51,7 +51,7 @@ export const refreshLatestObservationsViewSql = sql`
  */
 export const latestObservations = pgMaterializedView(
   'latest_observations',
-  columns
+  columns,
 ).as(sql`
   SELECT DISTINCT ON (monitor) *
   FROM ${observations}

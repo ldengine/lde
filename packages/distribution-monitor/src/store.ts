@@ -26,12 +26,11 @@ export class PostgresObservationStore implements ObservationStore {
    * See: https://github.com/drizzle-team/drizzle-orm/issues/5293
    */
   static async create(
-    connectionString: string
+    connectionString: string,
   ): Promise<PostgresObservationStore> {
     const store = new PostgresObservationStore(connectionString);
-    const { generateDrizzleJson, generateMigration } = await import(
-      'drizzle-kit/api-postgres'
-    );
+    const { generateDrizzleJson, generateMigration } =
+      await import('drizzle-kit/api-postgres');
 
     // Generate migration from empty state to our schema
     const empty = await generateDrizzleJson({});
@@ -59,7 +58,7 @@ export class PostgresObservationStore implements ObservationStore {
     // Create unique index on materialized view for CONCURRENTLY refresh
     try {
       await store.db.execute(
-        sql`CREATE UNIQUE INDEX latest_observations_monitor_idx ON latest_observations (monitor)`
+        sql`CREATE UNIQUE INDEX latest_observations_monitor_idx ON latest_observations (monitor)`,
       );
     } catch {
       // Index may already exist

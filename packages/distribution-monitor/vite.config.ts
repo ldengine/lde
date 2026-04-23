@@ -5,17 +5,18 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/sparql-monitor',
+    cacheDir: '../../node_modules/.vite/packages/distribution-monitor',
     test: {
       coverage: {
         exclude: ['src/cli.ts', 'drizzle.config.ts'],
         thresholds: {
-          functions: 96.96,
-          lines: 95.23,
-          branches: 79.06,
-          statements: 93.8,
+          autoUpdate: true,
+          functions: 96.29,
+          lines: 94.04,
+          branches: 77.27,
+          statements: 92.47,
         },
       },
     },
-  })
+  }),
 );

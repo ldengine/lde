@@ -1,20 +1,30 @@
+import { Distribution } from '@lde/dataset';
+
 /**
- * Configuration for a monitor.
+ * Configuration for a single monitor.
+ *
+ * Monitors target any DCAT {@link Distribution}: a SPARQL endpoint (in which
+ * case `sparqlQuery` is used for the probe) or a data dump (in which case
+ * `sparqlQuery` is ignored and the distribution is fetched with HEAD/GET).
  */
 export interface MonitorConfig {
   /** Unique identifier for this monitor. */
   identifier: string;
-  /** URL of the SPARQL endpoint to monitor. */
-  endpointUrl: URL;
-  /** SPARQL query to execute. */
-  query: string;
+  /** The DCAT distribution to probe. */
+  distribution: Distribution;
+  /**
+   * SPARQL query to run against the endpoint. Only meaningful when the
+   * distribution is a SPARQL endpoint. Defaults to a minimal availability
+   * probe (`SELECT * { ?s ?p ?o } LIMIT 1`).
+   */
+  sparqlQuery?: string;
 }
 
 /**
- * Result of a single check against a SPARQL endpoint.
+ * Result of a single check against a distribution.
  */
 export interface CheckResult {
-  /** Whether the endpoint responded successfully. */
+  /** Whether the distribution responded successfully. */
   success: boolean;
   /** Response time in milliseconds. */
   responseTimeMs: number;

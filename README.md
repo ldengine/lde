@@ -125,9 +125,9 @@ await pipeline.run();
 </tr>
 <tr><th colspan="3" align="left">Monitoring – Observe pipeline runs and endpoint health</th></tr>
 <tr>
-  <td><a href="packages/sparql-monitor">@lde/sparql-monitor</a></td>
-  <td><a href="https://www.npmjs.com/package/@lde/sparql-monitor"><img src="https://img.shields.io/npm/v/@lde/sparql-monitor" alt="npm"></a></td>
-  <td>Monitor SPARQL endpoints with periodic checks</td>
+  <td><a href="packages/distribution-monitor">@lde/distribution-monitor</a></td>
+  <td><a href="https://www.npmjs.com/package/@lde/distribution-monitor"><img src="https://img.shields.io/npm/v/@lde/distribution-monitor" alt="npm"></a></td>
+  <td>Monitor DCAT distributions (SPARQL endpoints and data dumps) with periodic probes</td>
 </tr>
 <tr>
   <td><a href="packages/pipeline-console-reporter">@lde/pipeline-console-reporter</a></td>
@@ -200,7 +200,7 @@ graph TD
 
   subgraph Monitoring
     pipeline-console-reporter --> pipeline
-    sparql-monitor
+    distribution-monitor --> distribution-probe
   end
 
   subgraph Infrastructure

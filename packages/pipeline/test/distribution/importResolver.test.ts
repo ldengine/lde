@@ -23,6 +23,7 @@ const dataDumpProbeResult = new DataDumpProbeResult(
       'Content-Type': 'application/n-triples',
     },
   }),
+  0,
 );
 
 function makeDataset(): Dataset {
@@ -220,9 +221,7 @@ describe('ImportResolver', () => {
 
     expect(result).toBeInstanceOf(NoDistributionAvailable);
     const noDistribution = result as NoDistributionAvailable;
-    expect(noDistribution.message).toBe(
-      'No supported import format available',
-    );
+    expect(noDistribution.message).toBe('No supported import format available');
     expect(onImportFailed).toHaveBeenCalledWith(
       dataset.distributions[0],
       'No supported import format',

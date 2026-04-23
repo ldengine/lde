@@ -42,7 +42,7 @@
       "path": "./packages/docgen"
     },
     {
-      "path": "./packages/sparql-monitor"
+      "path": "./packages/distribution-monitor"
     },
     {
       "path": "./packages/fastify-rdf"

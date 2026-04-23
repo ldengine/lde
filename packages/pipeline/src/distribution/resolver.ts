@@ -69,7 +69,7 @@ export class SparqlDistributionResolver implements DistributionResolver {
   ): Promise<ResolvedDistribution | NoDistributionAvailable> {
     const results = await Promise.all(
       dataset.distributions.map(async (distribution) => {
-        const result = await probe(distribution, this.timeout);
+        const result = await probe(distribution, { timeoutMs: this.timeout });
         callbacks?.onProbe?.(distribution, result);
         return result;
       }),

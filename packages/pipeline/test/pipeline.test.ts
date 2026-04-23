@@ -619,14 +619,18 @@ describe('Pipeline', () => {
           status: 200,
           headers: { 'Content-Type': 'application/sparql-results+json' },
         }),
+        0,
+        'application/sparql-results+json',
       );
       const dataDumpResult = new DataDumpProbeResult(
         'http://example.org/data.nt',
         new Response('', { status: 404 }),
+        0,
       );
       const networkError = new NetworkError(
         'http://example.org/down',
         'Connection refused',
+        0,
       );
 
       const pipeline = new Pipeline({
@@ -759,6 +763,7 @@ describe('Pipeline', () => {
       const networkError = new NetworkError(
         'http://example.org/down',
         'Connection refused',
+        0,
       );
 
       const pipeline = new Pipeline({
