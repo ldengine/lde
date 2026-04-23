@@ -1,3 +1,14 @@
+## 0.1.1 (2026-04-23)
+
+### 🚀 Features
+
+- consolidate probing, rename sparql-monitor to distribution-monitor ([#358](https://github.com/ldelements/lde/pull/358))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/distribution-probe to 0.1.2
+- Updated @lde/dataset to 0.7.3
+
 ## 0.5.13 (2026-02-27)
 
 ### 🩹 Fixes

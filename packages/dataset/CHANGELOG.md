@@ -1,3 +1,7 @@
+## 0.7.3 (2026-04-23)
+
+This was a version bump only for @lde/dataset to align it with other projects, there were no code changes.
+
 ## 0.7.2 (2026-03-16)
 
 ### 🩹 Fixes
