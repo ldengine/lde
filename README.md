@@ -103,6 +103,11 @@ await pipeline.run();
   <td>Download distributions for local processing</td>
 </tr>
 <tr>
+  <td><a href="packages/distribution-probe">@lde/distribution-probe</a></td>
+  <td><a href="https://www.npmjs.com/package/@lde/distribution-probe"><img src="https://img.shields.io/npm/v/@lde/distribution-probe" alt="npm"></a></td>
+  <td>Probe distributions for availability and metadata</td>
+</tr>
+<tr>
   <td><a href="packages/sparql-importer">@lde/sparql-importer</a></td>
   <td><a href="https://www.npmjs.com/package/@lde/sparql-importer"><img src="https://img.shields.io/npm/v/@lde/sparql-importer" alt="npm"></a></td>
   <td>Import data dumps to a local SPARQL endpoint for querying</td>
@@ -183,6 +188,8 @@ graph TD
     pipeline-shacl-validator --> pipeline
     pipeline-void --> pipeline
     distribution-downloader --> dataset
+    distribution-probe --> dataset
+    pipeline --> distribution-probe
     sparql-importer --> dataset
   end
 

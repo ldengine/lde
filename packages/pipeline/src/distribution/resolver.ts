@@ -1,6 +1,10 @@
 import { Dataset, Distribution } from '@lde/dataset';
 import type { ImportFailed } from '@lde/sparql-importer';
-import { probe, SparqlProbeResult, type ProbeResultType } from './probe.js';
+import {
+  probe,
+  SparqlProbeResult,
+  type ProbeResultType,
+} from '@lde/distribution-probe';
 
 export class ResolvedDistribution {
   constructor(

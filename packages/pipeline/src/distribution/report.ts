@@ -5,7 +5,7 @@ import {
   SparqlProbeResult,
   DataDumpProbeResult,
   type ProbeResultType,
-} from './probe.js';
+} from '@lde/distribution-probe';
 
 const { quad, namedNode, blankNode, literal } = DataFactory;
 

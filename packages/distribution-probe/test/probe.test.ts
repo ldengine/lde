@@ -3,7 +3,7 @@ import {
   SparqlProbeResult,
   DataDumpProbeResult,
   NetworkError,
-} from '../../src/distribution/index.js';
+} from '../src/index.js';
 import { Distribution } from '@lde/dataset';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
