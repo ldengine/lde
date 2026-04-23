@@ -29,7 +29,7 @@
   ],
   "dependencies": {
     "@lde/dataset": "0.7.2",
-    "@lde/distribution-probe": "0.1.0",
+    "@lde/distribution-probe": "0.1.1",
     "c12": "^3.3.4",
     "commander": "^14.0.3",
     "cron": "^4.1.0",
