@@ -1,3 +1,9 @@
+## 0.28.12 (2026-04-28)
+
+### 🩹 Fixes
+
+- **pipeline:** propagate Last-Modified from probe to candidate distribution ([#365](https://github.com/ldelements/lde/pull/365), [#296](https://github.com/ldelements/lde/issues/296))
+
 ## 0.28.11 (2026-04-23)
 
 ### 🚀 Features
