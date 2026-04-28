@@ -1,14 +1,56 @@
-import type { JsonLdArray } from 'jsonld/jsonld-spec.js';
+import type { Frame, JsonLdArray } from 'jsonld/jsonld-spec.js';
+import type { NodeObject } from 'jsonld';
 import jsonld from 'jsonld';
 import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export async function frame(document: JsonLdArray, frame: string) {
-  return await jsonld.frame(
-    document,
-    JSON.parse(await readFile(frame, 'utf8')),
-    {
-      omitGraph: false,
-      embed: '@always',
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const defaultFramePath = join(__dirname, '../frames/shacl.frame.jsonld');
+
+export async function frame(
+  document: JsonLdArray,
+  userFramePath?: string
+): Promise<NodeObject> {
+  const defaultFrame = await readFrame(defaultFramePath);
+  const mergedFrame = userFramePath
+    ? deepMerge(defaultFrame, await readFrame(userFramePath))
+    : defaultFrame;
+
+  return await jsonld.frame(document, mergedFrame, {
+    omitGraph: false,
+    embed: '@always',
+  });
+}
+
+async function readFrame(path: string): Promise<Frame> {
+  return JSON.parse(await readFile(path, 'utf8')) as Frame;
+}
+
+/**
+ * Recursively merges `source` into `target`, returning a new object. Plain
+ * objects are merged key-by-key; arrays and primitives in `source` replace
+ * those in `target`. Used to compose a user-supplied JSON-LD frame on top of
+ * docgen’s built-in default so consumers only need to specify their additions.
+ */
+function deepMerge(target: Frame, source: Frame): Frame {
+  const result = { ...(target as Record<string, unknown>) };
+  for (const [key, sourceValue] of Object.entries(
+    source as Record<string, unknown>
+  )) {
+    const targetValue = result[key];
+    if (isPlainObject(targetValue) && isPlainObject(sourceValue)) {
+      result[key] = deepMerge(targetValue as Frame, sourceValue as Frame);
+    } else {
+      result[key] = sourceValue;
     }
+  }
+  return result as Frame;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' && value !== null && !Array.isArray(value)
   );
 }

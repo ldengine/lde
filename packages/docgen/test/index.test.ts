@@ -6,15 +6,10 @@ import { generateDocumentation } from '../src/index.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SHACL_PATH = join(__dirname, 'fixtures', 'shacl.ttl');
 const TEMPLATE_PATH = join(__dirname, 'fixtures', 'template.liquid');
-const FRAME_PATH = join(__dirname, '../frames', 'shacl.frame.jsonld');
 
 describe('Integration tests', () => {
-  it('should render template', async () => {
-    const output = await generateDocumentation(
-      SHACL_PATH,
-      TEMPLATE_PATH,
-      FRAME_PATH
-    );
+  it('should render template using the built-in default frame', async () => {
+    const output = await generateDocumentation(SHACL_PATH, TEMPLATE_PATH);
 
     expect(output.trim().replace(/ +$/gm, ''))
       .toBe(`targetClass: http://www.w3.org/ns/dcat#Dataset
