@@ -32,9 +32,9 @@ npx @lde/docgen@latest from-shacl <shacl-file> <template-file> [options]
 
 ### Options
 
-| Option               | Description                  | Default                              |
-| -------------------- | ---------------------------- | ------------------------------------ |
-| `-f, --frame <file>` | Path to a JSON-LD Frame file | Built-in `frames/shacl.frame.jsonld` |
+| Option               | Description                                                                                                                                          | Default                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `-f, --frame <file>` | Path to a JSON-LD Frame file. Deep-merged on top of the built-in default frame, so it only needs to contain your additions (e.g. extra `@context` entries). | Built-in `frames/shacl.frame.jsonld` |
 
 ### Example
 
@@ -108,8 +108,20 @@ Property shapes with the same `sh:path` are common in SHACL (e.g. one for cardin
 
 ## Custom frames
 
-The default frame selects all `sh:NodeShape` resources. To customise which shapes are selected or how they are nested, pass a custom [JSON-LD Frame](https://www.w3.org/TR/json-ld11-framing/):
+The default frame selects all `sh:NodeShape` resources and provides type coercions for common SHACL terms (`targetClass`, `path`, `severity`, etc.). To extend it, pass a partial [JSON-LD Frame](https://www.w3.org/TR/json-ld11-framing/) – it is **deep-merged** on top of the default, so you only need to specify your additions:
+
+```json
+{
+  "@context": {
+    "nde": "https://def.nde.nl#",
+    "nde:futureChange": {},
+    "nde:version": {}
+  }
+}
+```
 
 ```sh
 npx @lde/docgen@latest from-shacl shapes.ttl template.liquid -f my-frame.jsonld
 ```
+
+Plain objects are merged key-by-key, with user values winning; arrays and primitives in your frame replace the default. To override a built-in coercion (e.g. change `severity` from `@vocab` to `@id`), redefine the same key in your `@context`.
