@@ -381,6 +381,101 @@ describe('ImportResolver', () => {
       expect(server.start).not.toHaveBeenCalled();
     });
 
+    it('propagates Last-Modified from probe to candidate distribution', async () => {
+      const dataset = makeDataset();
+      const lastModified = new Date('2026-01-15T10:00:00Z');
+      const probeResult = new DataDumpProbeResult(
+        'http://example.org/data.nt',
+        new Response('', {
+          status: 200,
+          headers: {
+            'Content-Length': '1000',
+            'Content-Type': 'application/n-triples',
+            'Last-Modified': lastModified.toUTCString(),
+          },
+        }),
+        0,
+      );
+      const inner = makeInnerResolver(
+        new NoDistributionAvailable(dataset, 'No endpoint', [probeResult]),
+      );
+
+      const mockImporter = {
+        import: vi
+          .fn()
+          .mockResolvedValue(
+            new ImportSuccessful(
+              Distribution.sparql(new URL('http://localhost:7878/sparql')),
+              'test-graph',
+            ),
+          ),
+      };
+
+      const resolver = new ImportResolver(inner, {
+        importer: mockImporter,
+        server: makeServer(),
+      });
+      await resolver.resolve(dataset);
+
+      expect(dataset.distributions[0].lastModified).toEqual(lastModified);
+      expect(mockImporter.import).toHaveBeenCalledWith([
+        dataset.distributions[0],
+      ]);
+    });
+
+    it('does not overwrite Last-Modified already set on the distribution', async () => {
+      const existingLastModified = new Date('2026-01-01T00:00:00Z');
+      const dataset = new Dataset({
+        iri: new URL('http://example.org/dataset'),
+        distributions: [
+          (() => {
+            const distribution = new Distribution(
+              new URL('http://example.org/data.nt'),
+              'application/n-triples',
+            );
+            distribution.lastModified = existingLastModified;
+            return distribution;
+          })(),
+        ],
+      });
+      const probeResult = new DataDumpProbeResult(
+        'http://example.org/data.nt',
+        new Response('', {
+          status: 200,
+          headers: {
+            'Content-Length': '1000',
+            'Content-Type': 'application/n-triples',
+            'Last-Modified': new Date('2026-02-15T10:00:00Z').toUTCString(),
+          },
+        }),
+        0,
+      );
+      const inner = makeInnerResolver(
+        new NoDistributionAvailable(dataset, 'No endpoint', [probeResult]),
+      );
+
+      const mockImporter = {
+        import: vi
+          .fn()
+          .mockResolvedValue(
+            new ImportSuccessful(
+              Distribution.sparql(new URL('http://localhost:7878/sparql')),
+              'test-graph',
+            ),
+          ),
+      };
+
+      const resolver = new ImportResolver(inner, {
+        importer: mockImporter,
+        server: makeServer(),
+      });
+      await resolver.resolve(dataset);
+
+      expect(dataset.distributions[0].lastModified).toEqual(
+        existingLastModified,
+      );
+    });
+
     it('preserves subjectFilter from imported distribution', async () => {
       const dataset = makeDataset();
       const inner = makeInnerResolver(

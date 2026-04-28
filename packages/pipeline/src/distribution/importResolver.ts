@@ -80,6 +80,22 @@ export class ImportResolver implements DistributionResolver {
       .getDownloadDistributions()
       .filter((d) => d.accessUrl && successfulUrls.has(d.accessUrl.toString()));
 
+    // Propagate Last-Modified from probe to candidate so the downloader can
+    // skip redundant downloads (and preserve the QLever index cache).
+    for (const candidate of candidates) {
+      if (candidate.lastModified) continue;
+      const probeResult = probeResults.find(
+        (r) => r.url === candidate.accessUrl.toString(),
+      );
+      if (
+        probeResult &&
+        !(probeResult instanceof NetworkError) &&
+        probeResult.lastModified
+      ) {
+        candidate.lastModified = probeResult.lastModified;
+      }
+    }
+
     if (candidates.length === 0) {
       return new NoDistributionAvailable(
         dataset,
