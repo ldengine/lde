@@ -52,3 +52,5 @@ vite.base.config.d.ts
 vite.base.config.d.ts.map
 .claude/worktrees
 .claude/settings.local.json
+.nx/polygraph
+.nx/self-healing
