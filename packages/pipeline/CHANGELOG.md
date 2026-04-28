@@ -1,3 +1,13 @@
+## 0.28.13 (2026-04-28)
+
+### 🚀 Features
+
+- **docgen:** deep-merge user-supplied JSON-LD frame with built-in default ([#366](https://github.com/ldelements/lde/pull/366), [#313](https://github.com/ldelements/lde/issues/313))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/dataset-registry-client to 0.7.7
+
 ## 0.28.12 (2026-04-28)
 
 ### 🩹 Fixes

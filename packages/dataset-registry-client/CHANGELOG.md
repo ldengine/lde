@@ -1,3 +1,9 @@
+## 0.7.7 (2026-04-28)
+
+### 🚀 Features
+
+- **docgen:** deep-merge user-supplied JSON-LD frame with built-in default ([#366](https://github.com/ldelements/lde/pull/366), [#313](https://github.com/ldelements/lde/issues/313))
+
 ## 0.7.6 (2026-04-23)
 
 ### 🧱 Updated Dependencies
