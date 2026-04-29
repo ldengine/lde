@@ -11,8 +11,8 @@ describe('Integration tests', () => {
   it('should render template using the built-in default frame', async () => {
     const output = await generateDocumentation(SHACL_PATH, TEMPLATE_PATH);
 
-    expect(output.trim().replace(/ +$/gm, ''))
-      .toBe(`targetClass: http://www.w3.org/ns/dcat#Dataset
+    expect(output.trim().replace(/ +$/gm, '')).toBe(`name: Dataset
+    targetClass: http://www.w3.org/ns/dcat#Dataset
     numOfProperties: 5
         path: http://purl.org/dc/terms/title
         minCount: 1
