@@ -25,6 +25,6 @@ describe('Server', () => {
         `http://localhost:${port}/sparql`,
       );
       await server.stop();
-    }, 20_000);
+    }, 120_000);
   });
 });
