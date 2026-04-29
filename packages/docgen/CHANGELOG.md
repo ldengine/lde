@@ -1,3 +1,9 @@
+## 0.6.16 (2026-04-29)
+
+### 🩹 Fixes
+
+- **docgen:** unwrap xsd:string literals after jsonld v9 fromRDF ([#370](https://github.com/ldelements/lde/pull/370))
+
 ## 0.6.15 (2026-04-28)
 
 ### 🚀 Features
