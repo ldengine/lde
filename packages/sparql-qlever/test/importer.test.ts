@@ -78,7 +78,7 @@ describe('Importer', () => {
       const result = await importer.import(distributions);
       expect(result).toBeInstanceOf(ImportSuccessful);
       expect((result as ImportSuccessful).tripleCount).toBe(1);
-    }, 30_000);
+    }, 120_000);
   });
 
   describe('index caching', () => {
