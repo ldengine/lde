@@ -1,4 +1,5 @@
 {% for nodeShape in nodeShapes -%}
+    name: {{ nodeShape.name }}
     targetClass: {{ nodeShape.targetClass }}
     {% assign mergedProperties = nodeShape.property | mergePropertiesByPath -%}
     numOfProperties: {{ mergedProperties.size -}}
