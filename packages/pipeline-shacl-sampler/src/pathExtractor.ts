@@ -1,5 +1,5 @@
 import { DataFactory, Store } from 'n3';
-import type { NamedNode, Quad, Term } from '@rdfjs/types';
+import type { NamedNode, Term } from '@rdfjs/types';
 import { rdfDereferencer } from 'rdf-dereference';
 
 const { namedNode } = DataFactory;
@@ -22,86 +22,197 @@ const rdfRest = namedNode(`${RDF}rest`);
 const rdfNil = namedNode(`${RDF}nil`);
 
 /**
- * A SHACL NodeShape with `sh:targetClass`, distilled to the information the
- * sampler needs: which paths are declared, and which of those need depth-1
- * follow because their constraint references a nested shape.
+ * A SHACL `sh:targetClass` shape distilled into the path chains the sampler
+ * needs to walk to feed the validator a closed sample subgraph.
  */
 export interface TargetShape {
   /** The class targeted by `sh:targetClass`. */
   targetClass: NamedNode;
-  /** All distinct `sh:path` IRIs declared on property shapes of this target. */
-  paths: NamedNode[];
   /**
-   * Subset of {@link paths} whose property shape constrains the value to
-   * another shape — via `sh:node`, `sh:class`, `sh:qualifiedValueShape`, or
-   * `sh:or` branches that themselves reference a nested shape. The sampler
-   * pulls in depth-1 triples reachable along these paths so SHACL nested
-   * constraints (e.g. `creator → Person.name`) can validate.
+   * Property-path chains rooted at a sampled instance of {@link targetClass}.
+   *
+   * Each chain is the sequence of `sh:path` IRIs leading from the sampled
+   * subject to a node whose direct triples are needed for validation —
+   * because the SHACL declares a nested-shape constraint on that path
+   * (`sh:node`, `sh:class`, `sh:qualifiedValueShape`, or `sh:or` branches
+   * that reference those). Chains continue recursively into every shape
+   * thus referenced and stop on a cycle (a shape revisited on the current
+   * stack) or on a leaf property shape whose constraints reference no
+   * further shape.
+   *
+   * Each chain is *additive*: shorter prefixes are also present in the
+   * list when they themselves terminate at a nested-shape property.
    */
-  followPaths: NamedNode[];
+  pathChains: NamedNode[][];
 }
 
 /**
- * Load the SHACL shapes file and extract its `sh:targetClass` shapes.
+ * Load a SHACL shapes file and extract its `sh:targetClass` shapes into
+ * {@link TargetShape}s.
  *
  * Multiple NodeShapes can target the same class — they are merged into a
- * single {@link TargetShape} entry per class. Only plain-IRI `sh:path`
- * values are supported; sequence, alternative and inverse paths throw.
+ * single entry. Only plain-IRI `sh:path` values are supported; sequence,
+ * alternative and inverse paths throw.
  *
- * @param shapesFile URL or local path to the SHACL shapes file.
- *   Any format supported by `rdf-dereference` (Turtle, JSON-LD, N-Triples …).
+ * @param shapesFile URL or local path to the SHACL shapes file. Any format
+ *   supported by `rdf-dereference` (Turtle, JSON-LD, N-Triples, …).
  */
 export async function extractTargetShapes(
   shapesFile: string,
 ): Promise<TargetShape[]> {
   const store = await loadShapes(shapesFile);
 
-  const byClass = new Map<string, { iri: NamedNode; shapeIris: Term[] }>();
+  const classToShapes = new Map<string, Term[]>();
   for (const quad of store.getQuads(null, sh.targetClass, null, null)) {
     if (quad.object.termType !== 'NamedNode') continue;
     const key = quad.object.value;
-    const entry = byClass.get(key) ?? {
-      iri: quad.object as NamedNode,
-      shapeIris: [],
-    };
-    entry.shapeIris.push(quad.subject);
-    byClass.set(key, entry);
+    const list = classToShapes.get(key) ?? [];
+    list.push(quad.subject);
+    classToShapes.set(key, list);
   }
 
   const result: TargetShape[] = [];
-  for (const { iri, shapeIris } of byClass.values()) {
-    const paths: NamedNode[] = [];
-    const followPaths: NamedNode[] = [];
-    const seenPath = new Set<string>();
-    const seenFollow = new Set<string>();
-
+  for (const [classIri, shapeIris] of classToShapes) {
+    const pathChains: NamedNode[][] = [];
+    const seen = new Set<string>();
     for (const shapeIri of shapeIris) {
-      for (const propQuad of store.getQuads(
+      for (const chain of expandShape(
+        store,
         shapeIri,
-        sh.property,
-        null,
-        null,
+        new Set(),
+        classToShapes,
       )) {
-        const propShape = propQuad.object;
-        const path = readPath(store, propShape);
-        if (!seenPath.has(path.value)) {
-          seenPath.add(path.value);
-          paths.push(path);
-        }
-        if (
-          constraintReferencesNestedShape(store, propShape) &&
-          !seenFollow.has(path.value)
-        ) {
-          seenFollow.add(path.value);
-          followPaths.push(path);
+        const key = chainKey(chain);
+        if (!seen.has(key)) {
+          seen.add(key);
+          pathChains.push(chain);
         }
       }
     }
-
-    result.push({ targetClass: iri, paths, followPaths });
+    result.push({ targetClass: namedNode(classIri), pathChains });
   }
 
   return result;
+}
+
+/**
+ * Walk one shape's property graph, producing every path chain that ends at a
+ * nested-shape property. Cycle-detected via the {@link stack} of shape keys
+ * the current recursion has entered but not yet left.
+ */
+function expandShape(
+  store: Store,
+  shape: Term,
+  stack: Set<string>,
+  classToShapes: ReadonlyMap<string, Term[]>,
+): NamedNode[][] {
+  const key = termKey(shape);
+  if (stack.has(key)) return [];
+  stack.add(key);
+
+  const chains: NamedNode[][] = [];
+  const seen = new Set<string>();
+  for (const propQuad of store.getQuads(shape, sh.property, null, null)) {
+    const propShape = propQuad.object;
+    if (!constraintReferencesValueShape(store, propShape)) continue;
+    const path = readPath(store, propShape);
+
+    addUnique(chains, seen, [path]);
+    for (const nestedRef of nestedShapeRefs(store, propShape, classToShapes)) {
+      for (const subChain of expandShape(
+        store,
+        nestedRef,
+        stack,
+        classToShapes,
+      )) {
+        addUnique(chains, seen, [path, ...subChain]);
+      }
+    }
+  }
+
+  stack.delete(key);
+  return chains;
+}
+
+/**
+ * Whether the property shape has any constraint that ties the value to a
+ * shape — `sh:node`, `sh:class`, `sh:qualifiedValueShape`, or `sh:or`
+ * branches with those. Independent of whether the referenced classes
+ * actually have target shapes in this SHACL: we still want a chain to
+ * the value node so the validator can see its type triples.
+ */
+function constraintReferencesValueShape(
+  store: Store,
+  constraintShape: Term,
+): boolean {
+  if (store.getQuads(constraintShape, sh.node, null, null).length > 0) {
+    return true;
+  }
+  if (store.getQuads(constraintShape, sh.class, null, null).length > 0) {
+    return true;
+  }
+  if (
+    store.getQuads(constraintShape, sh.qualifiedValueShape, null, null).length >
+    0
+  ) {
+    return true;
+  }
+  for (const q of store.getQuads(constraintShape, sh.or, null, null)) {
+    for (const branch of orListBranches(store, q.object)) {
+      if (constraintReferencesValueShape(store, branch)) return true;
+    }
+  }
+  return false;
+}
+
+function nestedShapeRefs(
+  store: Store,
+  constraintShape: Term,
+  classToShapes: ReadonlyMap<string, Term[]>,
+): Term[] {
+  const refs: Term[] = [];
+  for (const q of store.getQuads(constraintShape, sh.node, null, null)) {
+    refs.push(q.object);
+  }
+  for (const q of store.getQuads(
+    constraintShape,
+    sh.qualifiedValueShape,
+    null,
+    null,
+  )) {
+    refs.push(q.object);
+  }
+  for (const q of store.getQuads(constraintShape, sh.class, null, null)) {
+    if (q.object.termType !== 'NamedNode') continue;
+    for (const target of classToShapes.get(q.object.value) ?? []) {
+      refs.push(target);
+    }
+  }
+  for (const q of store.getQuads(constraintShape, sh.or, null, null)) {
+    for (const branch of orListBranches(store, q.object)) {
+      refs.push(...nestedShapeRefs(store, branch, classToShapes));
+    }
+  }
+  return refs;
+}
+
+function orListBranches(store: Store, listHead: Term): Term[] {
+  const branches: Term[] = [];
+  let current: Term = listHead;
+  while (
+    !(current.termType === 'NamedNode' && current.value === rdfNil.value)
+  ) {
+    if (current.termType !== 'NamedNode' && current.termType !== 'BlankNode') {
+      break;
+    }
+    const firsts = store.getQuads(current, rdfFirst, null, null);
+    if (firsts.length === 0) break;
+    branches.push(firsts[0].object);
+    const rests = store.getQuads(current, rdfRest, null, null);
+    if (rests.length === 0) break;
+    current = rests[0].object;
+  }
+  return branches;
 }
 
 async function loadShapes(shapesFile: string): Promise<Store> {
@@ -109,12 +220,13 @@ async function loadShapes(shapesFile: string): Promise<Store> {
     localFiles: true,
   });
   const store = new Store();
-  return new Promise<Store>((resolve, reject) => {
-    data
-      .on('data', (quad: Quad) => store.addQuad(quad))
-      .on('end', () => resolve(store))
-      .on('error', (error: Error) => reject(error));
-  });
+  await new Promise<void>((resolve, reject) =>
+    store
+      .import(data)
+      .on('end', () => resolve())
+      .on('error', reject),
+  );
+  return store;
 }
 
 function readPath(store: Store, propShape: Term): NamedNode {
@@ -134,36 +246,23 @@ function readPath(store: Store, propShape: Term): NamedNode {
   return pathTerm;
 }
 
-function constraintReferencesNestedShape(
-  store: Store,
-  propShape: Term,
-): boolean {
-  if (store.getQuads(propShape, sh.node, null, null).length > 0) return true;
-  if (store.getQuads(propShape, sh.class, null, null).length > 0) return true;
-  if (store.getQuads(propShape, sh.qualifiedValueShape, null, null).length > 0)
-    return true;
-  for (const orQuad of store.getQuads(propShape, sh.or, null, null)) {
-    if (orListReferencesNestedShape(store, orQuad.object)) return true;
-  }
-  return false;
+function addUnique(
+  chains: NamedNode[][],
+  seen: Set<string>,
+  chain: NamedNode[],
+): void {
+  const key = chainKey(chain);
+  if (seen.has(key)) return;
+  seen.add(key);
+  chains.push(chain);
 }
 
-function orListReferencesNestedShape(store: Store, listHead: Term): boolean {
-  let current: Term = listHead;
-  while (
-    !(current.termType === 'NamedNode' && current.value === rdfNil.value)
-  ) {
-    if (current.termType !== 'NamedNode' && current.termType !== 'BlankNode') {
-      return false;
-    }
-    const firsts = store.getQuads(current, rdfFirst, null, null);
-    if (firsts.length === 0) return false;
-    if (constraintReferencesNestedShape(store, firsts[0].object)) return true;
-    const rests = store.getQuads(current, rdfRest, null, null);
-    if (rests.length === 0) return false;
-    current = rests[0].object;
-  }
-  return false;
+function chainKey(chain: NamedNode[]): string {
+  return chain.map((n) => n.value).join('/');
+}
+
+function termKey(term: Term): string {
+  return `${term.termType}:${term.value}`;
 }
 
 function termLabel(term: Term): string {

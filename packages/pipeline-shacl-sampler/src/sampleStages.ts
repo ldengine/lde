@@ -40,9 +40,9 @@ export interface ShaclSampleStagesOptions {
 /**
  * Build one sampling {@link Stage} per `sh:targetClass` declared in the SHACL
  * shapes file. Each stage's CONSTRUCT executor takes N instances of its
- * target class plus their depth-1 neighbours along every path the SHACL
- * declares with a nested shape constraint (`sh:node`, `sh:class`,
- * `sh:qualifiedValueShape`, or `sh:or` branches that reference those).
+ * target class plus, for every path chain the SHACL declares (recursively,
+ * stopping at leaf constraints or cycles), the triples reachable along that
+ * chain’s terminal node.
  *
  * Pass a {@link Validator} to attach it to every generated stage:
  *
@@ -76,16 +76,18 @@ export async function shaclSampleStages(
 
 function buildSampleQuery(shape: TargetShape, limit: number): string {
   assertSafeIri(shape.targetClass.value);
-  for (const path of shape.followPaths) assertSafeIri(path.value);
+  for (const chain of shape.pathChains) {
+    for (const path of chain) assertSafeIri(path.value);
+  }
 
-  const followClause =
-    shape.followPaths.length === 0
-      ? ''
-      : ` UNION {
-    ?s ?followPath ?neighbour .
-    VALUES ?followPath { ${shape.followPaths.map((p) => `<${p.value}>`).join(' ')} }
+  const chainBranches = shape.pathChains
+    .map(
+      (chain) => ` UNION {
+    ?s ${chain.map((p) => `<${p.value}>`).join('/')} ?neighbour .
     ?neighbour ?np ?nv .
-  }`;
+  }`,
+    )
+    .join('');
 
   return `CONSTRUCT {
   ?s ?p ?o .
@@ -101,7 +103,7 @@ WHERE {
   }
   {
     ?s ?p ?o .
-  }${followClause}
+  }${chainBranches}
 }`;
 }
 
