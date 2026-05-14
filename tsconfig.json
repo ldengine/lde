@@ -57,6 +57,9 @@
       "path": "./packages/pipeline-shacl-validator"
     },
     {
+      "path": "./packages/pipeline-shacl-sampler"
+    },
+    {
       "path": "./packages/distribution-probe"
     }
   ]
