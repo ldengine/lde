@@ -1,6 +1,13 @@
-import { Stage, SparqlConstructExecutor, type Validator } from '@lde/pipeline';
+import {
+  Stage,
+  SparqlConstructExecutor,
+  type StageOptions,
+  type Validator,
+} from '@lde/pipeline';
 import { assertSafeIri } from '@lde/dataset';
 import { extractTargetShapes, type TargetShape } from './pathExtractor.js';
+
+type OnInvalid = NonNullable<StageOptions['validation']>['onInvalid'];
 
 /** Options for {@link shaclSampleStages}. */
 export interface ShaclSampleStagesOptions {
@@ -27,7 +34,7 @@ export interface ShaclSampleStagesOptions {
    * {@link validator} is set.
    * @default 'write'
    */
-  onInvalid?: 'write' | 'skip' | 'halt';
+  onInvalid?: OnInvalid;
 }
 
 /**
