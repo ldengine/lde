@@ -114,11 +114,12 @@ function expandShape(
   const seen = new Set<string>();
   for (const propQuad of store.getQuads(shape, sh.property, null, null)) {
     const propShape = propQuad.object;
-    if (!constraintReferencesValueShape(store, propShape)) continue;
+    const analysis = valueShapeAnalysis(store, propShape, classToShapes);
+    if (!analysis.emit) continue;
     const path = readPath(store, propShape);
 
     addUnique(chains, seen, [path]);
-    for (const nestedRef of nestedShapeRefs(store, propShape, classToShapes)) {
+    for (const nestedRef of analysis.refs) {
       for (const subChain of expandShape(
         store,
         nestedRef,
@@ -134,44 +135,32 @@ function expandShape(
   return chains;
 }
 
-/**
- * Whether the property shape has any constraint that ties the value to a
- * shape — `sh:node`, `sh:class`, `sh:qualifiedValueShape`, or `sh:or`
- * branches with those. Independent of whether the referenced classes
- * actually have target shapes in this SHACL: we still want a chain to
- * the value node so the validator can see its type triples.
- */
-function constraintReferencesValueShape(
-  store: Store,
-  constraintShape: Term,
-): boolean {
-  if (store.getQuads(constraintShape, sh.node, null, null).length > 0) {
-    return true;
-  }
-  if (store.getQuads(constraintShape, sh.class, null, null).length > 0) {
-    return true;
-  }
-  if (
-    store.getQuads(constraintShape, sh.qualifiedValueShape, null, null).length >
-    0
-  ) {
-    return true;
-  }
-  for (const q of store.getQuads(constraintShape, sh.or, null, null)) {
-    for (const branch of orListBranches(store, q.object)) {
-      if (constraintReferencesValueShape(store, branch)) return true;
-    }
-  }
-  return false;
+interface ValueShapeAnalysis {
+  /**
+   * True if any value-shape constraint is present (`sh:node`, `sh:class`,
+   * `sh:qualifiedValueShape`, or `sh:or` containing those) — independent of
+   * whether each referenced class actually has a target shape in the SHACL.
+   * Drives whether the sampler emits a chain ending at this property so the
+   * validator can see the value node’s type triples.
+   */
+  emit: boolean;
+  /**
+   * Shapes the recursion should descend into for deeper chains: resolved
+   * targets of `sh:class`, direct shape references from `sh:node` /
+   * `sh:qualifiedValueShape`, and the same harvested from `sh:or` branches.
+   */
+  refs: Term[];
 }
 
-function nestedShapeRefs(
+function valueShapeAnalysis(
   store: Store,
   constraintShape: Term,
   classToShapes: ReadonlyMap<string, Term[]>,
-): Term[] {
+): ValueShapeAnalysis {
   const refs: Term[] = [];
+  let emit = false;
   for (const q of store.getQuads(constraintShape, sh.node, null, null)) {
+    emit = true;
     refs.push(q.object);
   }
   for (const q of store.getQuads(
@@ -180,9 +169,11 @@ function nestedShapeRefs(
     null,
     null,
   )) {
+    emit = true;
     refs.push(q.object);
   }
   for (const q of store.getQuads(constraintShape, sh.class, null, null)) {
+    emit = true;
     if (q.object.termType !== 'NamedNode') continue;
     for (const target of classToShapes.get(q.object.value) ?? []) {
       refs.push(target);
@@ -190,10 +181,12 @@ function nestedShapeRefs(
   }
   for (const q of store.getQuads(constraintShape, sh.or, null, null)) {
     for (const branch of orListBranches(store, q.object)) {
-      refs.push(...nestedShapeRefs(store, branch, classToShapes));
+      const sub = valueShapeAnalysis(store, branch, classToShapes);
+      if (sub.emit) emit = true;
+      refs.push(...sub.refs);
     }
   }
-  return refs;
+  return { emit, refs };
 }
 
 function orListBranches(store: Store, listHead: Term): Term[] {
