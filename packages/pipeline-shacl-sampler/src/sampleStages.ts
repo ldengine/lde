@@ -1,10 +1,13 @@
 import {
   Stage,
   SparqlConstructExecutor,
+  SparqlItemSelector,
+  type ItemSelector,
   type StageOptions,
   type Validator,
 } from '@lde/pipeline';
 import { assertSafeIri } from '@lde/dataset';
+import type { NamedNode } from '@rdfjs/types';
 import { extractTargetShapes, type TargetShape } from './pathExtractor.js';
 
 type OnInvalid = NonNullable<StageOptions['validation']>['onInvalid'];
@@ -24,6 +27,16 @@ export interface ShaclSampleStagesOptions {
    */
   timeout?: number;
   /**
+   * Maximum number of sampled subjects per executor call. Defaults to
+   * {@link samplesPerClass} so the whole sample fits in one CONSTRUCT
+   * round-trip; lower to spread work across multiple parallel queries.
+   */
+  batchSize?: number;
+  /**
+   * Maximum concurrent in-flight executor batches per stage. @default 10
+   */
+  maxConcurrency?: number;
+  /**
    * Validator attached to every generated stage. Typically a
    * {@link https://www.npmjs.com/package/@lde/pipeline-shacl-validator ShaclValidator}
    * configured with the same {@link shapesFile}.
@@ -39,10 +52,11 @@ export interface ShaclSampleStagesOptions {
 
 /**
  * Build one sampling {@link Stage} per `sh:targetClass` declared in the SHACL
- * shapes file. Each stage's CONSTRUCT executor takes N instances of its
- * target class plus, for every path chain the SHACL declares (recursively,
- * stopping at leaf constraints or cycles), the triples reachable along that
- * chain’s terminal node.
+ * shapes file. Each stage pairs a SELECT-based {@link ItemSelector} that picks
+ * N instances of its target class with a CONSTRUCT executor that, for every
+ * path chain the SHACL declares (recursively, stopping at leaf constraints
+ * or cycles), pulls in the triples reachable along that chain’s terminal
+ * node.
  *
  * Pass a {@link Validator} to attach it to every generated stage:
  *
@@ -56,6 +70,8 @@ export async function shaclSampleStages(
 ): Promise<Stage[]> {
   const samplesPerClass = options.samplesPerClass ?? 50;
   const timeout = options.timeout ?? 60_000;
+  const batchSize = options.batchSize ?? samplesPerClass;
+  const maxConcurrency = options.maxConcurrency;
   const validation = options.validator
     ? { validator: options.validator, onInvalid: options.onInvalid ?? 'write' }
     : undefined;
@@ -65,17 +81,53 @@ export async function shaclSampleStages(
     (shape) =>
       new Stage({
         name: `shacl-sample-${localName(shape.targetClass.value)}`,
+        itemSelector: subjectSelector(shape.targetClass, samplesPerClass),
         executors: new SparqlConstructExecutor({
-          query: buildSampleQuery(shape, samplesPerClass),
+          query: buildSampleQuery(shape),
           timeout,
         }),
+        batchSize,
+        maxConcurrency,
         validation,
       }),
   );
 }
 
-function buildSampleQuery(shape: TargetShape, limit: number): string {
-  assertSafeIri(shape.targetClass.value);
+function subjectSelector(targetClass: NamedNode, limit: number): ItemSelector {
+  assertSafeIri(targetClass.value);
+  return {
+    select(distribution, batchSize) {
+      const query = buildSubjectSelectorQuery(
+        targetClass,
+        limit,
+        distribution.subjectFilter,
+        distribution.namedGraph,
+      );
+      return new SparqlItemSelector({ query }).select(distribution, batchSize);
+    },
+  };
+}
+
+export function buildSubjectSelectorQuery(
+  targetClass: NamedNode,
+  limit: number,
+  subjectFilter?: string,
+  namedGraph?: string,
+): string {
+  let fromClause = '';
+  if (namedGraph) {
+    assertSafeIri(namedGraph);
+    fromClause = `FROM <${namedGraph}>`;
+  }
+  return [
+    'SELECT DISTINCT ?s',
+    fromClause,
+    `WHERE { ${subjectFilter ?? ''} ?s a <${targetClass.value}> . }`,
+    `LIMIT ${limit}`,
+  ].join('\n');
+}
+
+export function buildSampleQuery(shape: TargetShape): string {
   for (const chain of shape.pathChains) {
     for (const path of chain) assertSafeIri(path.value);
   }
@@ -94,13 +146,6 @@ function buildSampleQuery(shape: TargetShape, limit: number): string {
   ?neighbour ?np ?nv .
 }
 WHERE {
-  {
-    SELECT ?s {
-      #subjectFilter#
-      ?s a <${shape.targetClass.value}> .
-    }
-    LIMIT ${limit}
-  }
   {
     ?s ?p ?o .
   }${chainBranches}
