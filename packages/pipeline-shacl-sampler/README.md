@@ -54,3 +54,39 @@ await new Pipeline({ /* … */, stages }).run();
 - `sh:targetClass` is the only target form recognised; `sh:targetNode`,
   `sh:targetSubjectsOf`, `sh:targetObjectsOf` and `sh:sparqlTarget` are
   not yet supported.
+
+## Related work
+
+### `extract-cbd-shape`
+
+The TREEcg / W3C TREE-incubation
+[`extract-cbd-shape`](https://github.com/TREEcg/extract-cbd-shape)
+library implements a per-entity walk over an in-memory `RdfStore`,
+falling back to an HTTP dereference of the focus node whenever a
+required path is missing from the local store. It is the right tool
+for streaming hypermedia consumers (e.g. LDES clients) that already
+hold a current context and can fetch more of it over HTTP.
+
+It is the wrong tool for this package’s setting. We assemble sample
+subgraphs against a remote SPARQL endpoint with millions of triples;
+the per-entity round-trip pattern would issue _N samples × M target
+classes_ dereferences per dataset and assumes content-negotiable
+entity IRIs that resolve to RDF — rarely true for the cultural
+heritage datasets this package was built for.
+
+### SHACL2SPARQL
+
+The Corman, Reutter & Savković 2019
+[translation](https://link.springer.com/chapter/10.1007/978-3-030-30796-7_27)
+of SHACL constraints to SPARQL targets validation, not sample
+subgraph extraction. No production JavaScript implementation exists.
+
+### Why batch CONSTRUCT per `sh:targetClass`
+
+For each top-level shape, this package emits one `Stage` whose
+CONSTRUCT executor receives a batch of sampled subjects and walks
+every path chain the SHACL declares server-side. A capable SPARQL
+endpoint (e.g. QLever) evaluates the property-path UNIONs in a
+single round-trip per batch, regardless of chain count. The
+alternative — extracting per entity in the client — would multiply
+round-trips by the sample size.
