@@ -32,12 +32,12 @@ describe('ConsoleReporter', () => {
     expect(reporter).toBeInstanceOf(ConsoleReporter);
   });
 
-  describe('stageValidated', () => {
+  describe('datasetValidated', () => {
     it('shows success when validation conforms', () => {
       const reporter = new ConsoleReporter();
       const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
 
-      reporter.stageValidated('transform', {
+      reporter.datasetValidated(makeDataset(), {
         conforms: true,
         violations: 0,
         quadsValidated: 5000,
@@ -52,7 +52,7 @@ describe('ConsoleReporter', () => {
       const reporter = new ConsoleReporter();
       const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
 
-      reporter.stageValidated('transform', {
+      reporter.datasetValidated(makeDataset(), {
         conforms: false,
         violations: 3,
         quadsValidated: 10000,
