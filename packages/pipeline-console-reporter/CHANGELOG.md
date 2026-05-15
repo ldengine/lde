@@ -1,3 +1,13 @@
+## 0.19.17 (2026-05-15)
+
+### 🚀 Features
+
+- **pipeline-shacl-sampler:** add per-class sampling stages derived from SHACL ([#381](https://github.com/ldelements/lde/pull/381))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.28.14
+
 ## 0.19.16 (2026-04-28)
 
 ### 🧱 Updated Dependencies
