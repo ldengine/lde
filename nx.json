@@ -93,7 +93,9 @@
       "bundler": "tsc",
       "linter": "eslint",
       "publishable": true,
-      "unitTestRunner": "vitest"
+      "unitTestRunner": "vitest",
+      "useProjectJson": false,
+      "minimal": true
     }
   },
   "analytics": false

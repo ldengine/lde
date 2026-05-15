@@ -91,12 +91,25 @@ Each package uses conditional exports with a `development` condition for local d
 
 ## Creating New Packages
 
-- Use Nx generators: packages are TypeScript libraries with ESLint and Vitest
-- Configure Nx in `package.json` (not `project.json`)
-- Add `development` condition in exports for local dev
-- Add README.md similar to other packages
-- Add the package to root README.md
-- For CLIs, use Commander and expose version from `package.json`
+The `@nx/js:library` generator’s output diverges from the conventions in this monorepo (different test directory layout, standalone instead of base-extending vitest config, missing per-package metadata and peerDependencies). Rather than maintain a custom generator, **copy a sibling package** and adjust:
+
+1. **Pick a sibling that matches the new package’s shape.** For a library that depends on `@lde/pipeline`, copy from e.g. `packages/pipeline-shacl-validator`. For an executable/CLI, copy from one that already uses Commander.
+2. **Copy the package directory.** `cp -R packages/<sibling> packages/<new-name>`.
+3. **Update `package.json`:**
+   - `name` → `@lde/<new-name>`
+   - `description` — write something useful
+   - `repository.directory` → `packages/<new-name>`
+   - `version` — leave at the sibling’s current version; nx release will bump it from there on the first release. (If you want the first published version to be `0.1.0`, set it to `0.0.1` — a `feat:` commit on a 0.x package bumps minor.)
+   - `dependencies` and `peerDependencies` — replace with what the new package actually needs
+4. **Replace the source.** Empty out `src/` and `test/`, write the new code.
+5. **Update `tsconfig.lib.json` `references`** to match the new package’s actual `@lde/*` peers.
+6. **Reset coverage thresholds.** In `vite.config.ts`, drop the explicit numbers to `0`; the first test run with `autoUpdate: true` will set the real baseline.
+7. **Update the root README.md** packages table with a row for the new package.
+8. **Run `npx nx sync`** to add the new package’s path to the workspace root `tsconfig.json` references array.
+9. **Configure Nx in `package.json`** (not `project.json`) — already enforced by copying a sibling.
+10. **For CLIs**, expose the version from `package.json` (the existing CLI packages do this via Commander).
+
+For releasing the new package’s first version, see [Releasing a new package](#releasing-a-new-package) below.
 
 ## CI/CD
 
@@ -111,6 +124,33 @@ Each package uses conditional exports with a `development` condition for local d
 - Uses conventional commits for version determination
 - Independent versioning per package
 - Uses NPM OIDC Trusted Publishing
+
+#### Releasing a new package
+
+`.github/workflows/release.yml` publishes existing packages on every push to main, but the CI workflow alone cannot bring up a brand-new `@lde/<name>` package: npm’s Trusted Publisher configuration can only be added to a package that already exists on the registry. The first version has to be published manually by a maintainer; CI takes over from the second version onwards.
+
+**Before merging the PR that introduces the package**, set `"version": "0.0.0"` in its `package.json`. nx release uses conventional commits to bump from there, so the `feat:` commit that introduces the package lands the first release at `0.1.0`. Starting at `0.1.0` in the source would bump the first release to `0.2.0`.
+
+One-time bootstrap for a new package (do this once it has been merged to main):
+
+1. **Publish the first version manually.** From a maintainer’s machine:
+   ```sh
+   npm login --auth-type=web   # opens a browser tab; handles 2FA
+   npm whoami                  # verify the publisher account
+   cd packages/<name>
+   npm publish --access public --provenance
+   ```
+   The package is created on npm at the version in its `package.json`.
+2. **Add a Trusted Publisher to the now-existing package.** On npmjs.com, open the new package → ‘Settings’ → ‘Trusted Publishers’ → ‘Add trusted publisher’. Fill in:
+   - Publisher: GitHub Actions
+   - Organization or user: `ldelements`
+   - Repository: `lde`
+   - Workflow filename: `release.yml`
+   - Environment name: leave blank (the workflow does not use a deployment environment)
+3. **Lock the package down.** On the same package settings page, enable ‘Require two-factor authentication and disallow tokens (recommended)’. From now on, only the Trusted Publisher (i.e. the `release.yml` workflow) can publish further versions; classic NPM tokens are rejected.
+4. **Verify CI takes over.** Push a follow-up conventional commit that bumps the package; the next `release.yml` run on main should publish via OIDC + provenance with no token involvement.
+
+Until step 1 is done, the CI release run’s publish step for the new package will fail (the token cannot create new packages once the org-wide policy is in place); existing packages continue to publish normally.
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
