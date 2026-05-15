@@ -74,7 +74,10 @@ Selects resources from the distribution and fans out executor calls per batch of
 
 ```typescript
 interface ItemSelector {
-  select(distribution: Distribution, batchSize?: number): AsyncIterable<VariableBindings>;
+  select(
+    distribution: Distribution,
+    batchSize?: number,
+  ): AsyncIterable<VariableBindings>;
 }
 ```
 
@@ -217,6 +220,26 @@ new Stage({
 | `'halt'`    | Throw an error, stopping the pipeline              |
 
 `Validator` is an interface, so you can implement your own validation strategy. See [@lde/pipeline-shacl-validator](../pipeline-shacl-validator) for the SHACL implementation.
+
+#### Per-dataset reporting
+
+After all stages for a dataset have run, the pipeline calls `validator.report(dataset)` once for each distinct validator attached to any stage and emits a `datasetValidated(dataset, report)` event on the reporter. The call happens **regardless of whether any stage actually invoked `validate()`** — useful for decorators that want to surface a verdict even when every stage’s `ItemSelector` returned zero items.
+
+#### `requireNonEmptyData`
+
+A small generic decorator over any `Validator`. Wraps the inner validator so its dataset report flips to non-conforming when `quadsValidated === 0` for that dataset — i.e. no stage ever produced data for the validator to inspect.
+
+```typescript
+import { requireNonEmptyData } from '@lde/pipeline';
+import { ShaclValidator } from '@lde/pipeline-shacl-validator';
+
+const validator = requireNonEmptyData(
+  new ShaclValidator({ shapesFile: './shapes.ttl', reportDir: './validation' }),
+  { message: 'No target class matched in this dataset.' },
+);
+```
+
+The decorator is stateless; per-dataset accumulation stays in the inner validator.
 
 ### Writer
 

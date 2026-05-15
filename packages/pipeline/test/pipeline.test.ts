@@ -89,8 +89,9 @@ function makeReporter(): RequiredReporter {
     stageProgress: vi.fn<NonNullable<ProgressReporter['stageProgress']>>(),
     stageComplete: vi.fn<NonNullable<ProgressReporter['stageComplete']>>(),
     stageFailed: vi.fn<NonNullable<ProgressReporter['stageFailed']>>(),
-    stageValidated: vi.fn<NonNullable<ProgressReporter['stageValidated']>>(),
     stageSkipped: vi.fn<NonNullable<ProgressReporter['stageSkipped']>>(),
+    datasetValidated:
+      vi.fn<NonNullable<ProgressReporter['datasetValidated']>>(),
     datasetComplete: vi.fn<NonNullable<ProgressReporter['datasetComplete']>>(),
     datasetSkipped: vi.fn<NonNullable<ProgressReporter['datasetSkipped']>>(),
     pipelineComplete:

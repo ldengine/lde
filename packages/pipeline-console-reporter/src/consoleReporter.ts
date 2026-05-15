@@ -231,7 +231,7 @@ export class ConsoleReporter implements ProgressReporter {
     }
   }
 
-  stageValidated(_stage: string, report: ValidationReport): void {
+  datasetValidated(_dataset: Dataset, report: ValidationReport): void {
     if (report.conforms) {
       this.printLine(
         logSymbols.success,

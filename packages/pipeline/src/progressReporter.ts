@@ -43,9 +43,15 @@ export interface ProgressReporter {
     },
   ): void;
   stageFailed?(stage: string, error: Error): void;
-  /** Called after a stage completes if it has a validator. */
-  stageValidated?(stage: string, report: ValidationReport): void;
   stageSkipped?(stage: string, reason: string): void;
+  /**
+   * Called once per (dataset, validator) pair after all stages for a dataset
+   * have run. Fires regardless of whether any stage actually invoked
+   * `validate()` — the report reflects the validator’s accumulated state,
+   * which lets decorators such as `requireNonEmptyData` surface a verdict
+   * even when no stage produced data.
+   */
+  datasetValidated?(dataset: Dataset, report: ValidationReport): void;
   datasetComplete?(
     dataset: Dataset,
     result: { memoryUsageBytes: number; heapUsedBytes: number },

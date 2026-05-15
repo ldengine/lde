@@ -23,6 +23,7 @@ import type {
   DistributionAnalysisResult,
   ProgressReporter,
 } from './progressReporter.js';
+import type { Validator } from './validator.js';
 
 /** Plugin that hooks into pipeline lifecycle events. */
 export interface PipelinePlugin {
@@ -243,11 +244,30 @@ export class Pipeline {
     }
 
     await this.writer.flush?.(dataset);
+    await this.reportValidators(dataset);
     const datasetMemory = process.memoryUsage();
     this.reporter?.datasetComplete?.(dataset, {
       memoryUsageBytes: datasetMemory.rss,
       heapUsedBytes: datasetMemory.heapUsed,
     });
+  }
+
+  private async reportValidators(dataset: Dataset): Promise<void> {
+    const validators = new Set<Validator>();
+    for (const stage of this.collectStages(this.stages)) {
+      if (stage.validator) validators.add(stage.validator);
+    }
+    for (const validator of validators) {
+      const report = await validator.report(dataset);
+      this.reporter?.datasetValidated?.(dataset, report);
+    }
+  }
+
+  private *collectStages(stages: readonly Stage[]): Iterable<Stage> {
+    for (const stage of stages) {
+      yield stage;
+      if (stage.stages.length > 0) yield* this.collectStages(stage.stages);
+    }
   }
 
   /**
@@ -290,11 +310,6 @@ export class Pipeline {
       quadsGenerated,
       duration: Date.now() - stageStart,
     });
-
-    if (stage.validator) {
-      const report = await stage.validator.report(dataset);
-      this.reporter?.stageValidated?.(stage.name, report);
-    }
 
     return true;
   }
