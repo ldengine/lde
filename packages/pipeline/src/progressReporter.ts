@@ -47,9 +47,11 @@ export interface ProgressReporter {
   /**
    * Called once per (dataset, validator) pair after all stages for a dataset
    * have run. Fires regardless of whether any stage actually invoked
-   * `validate()` — the report reflects the validator’s accumulated state,
-   * which lets decorators such as `requireNonEmptyData` surface a verdict
-   * even when no stage produced data.
+   * `validate()` — the report reflects the validator’s accumulated state.
+   * When no stage produced data, the report typically carries
+   * `quadsValidated: 0` and `conforms: true` (the SHACL vacuous-truth
+   * default); consumers that want to distinguish ‘not tested’ from ‘tested
+   * and passed’ can read `quadsValidated`.
    */
   datasetValidated?(dataset: Dataset, report: ValidationReport): void;
   datasetComplete?(
