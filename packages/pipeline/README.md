@@ -89,6 +89,25 @@ new SparqlItemSelector({
 });
 ```
 
+#### Capping total results with `maxResults`
+
+By default, `SparqlItemSelector` paginates through **all** matching rows: any `LIMIT` clause in the query is interpreted as the page size, then it walks pages with `OFFSET` until the source is exhausted. To cap the total bindings yielded across all pages — for sampling, testing, prototyping, or just safety — set `maxResults`:
+
+```typescript
+new SparqlItemSelector({
+  query: 'SELECT DISTINCT ?s WHERE { ?s a <http://example.com/Class> }',
+  maxResults: 50,
+});
+```
+
+When `maxResults` is set:
+
+- Pagination stops as soon as `maxResults` bindings have been yielded — no wasted page request after the cap is hit.
+- The last (partial) page's `LIMIT` is shrunk to the remaining cap so the endpoint doesn't over-fetch on the remainder (e.g. with `maxResults: 85` and `pageSize: 10`, the 9th page request is `LIMIT 5`, not `LIMIT 10`).
+- The first page uses the configured page size as-is; `maxResults` and page size stay orthogonal. If `maxResults < pageSize`, the first page may return a few rows that aren't yielded.
+- `maxResults: 0` is a valid no-op; the selector yields nothing without issuing any SPARQL request.
+- `maxResults` is independent of any `LIMIT` clause in the query, which still controls page size when the cap is larger than one page.
+
 For dynamic queries that depend on the distribution, implement `ItemSelector` directly:
 
 ```typescript

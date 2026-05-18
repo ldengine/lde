@@ -21,8 +21,19 @@ export interface SparqlItemSelectorOptions {
    *
    * A `LIMIT` clause in the query overrides the stage's `batchSize` as the
    * page size — use this when the SPARQL endpoint enforces a result limit.
+   * It does **not** cap the total number of bindings the selector yields;
+   * pagination continues with `OFFSET` until the source is exhausted. Use
+   * {@link maxResults} to cap the total.
    */
   query: string;
+  /**
+   * Maximum number of bindings the selector yields across all pages.
+   * Use this for sampling — “give me at most N items, don’t walk the full
+   * source”. Independent of {@link query}’s `LIMIT`, which controls page
+   * size. Pagination stops as soon as `maxResults` bindings have been
+   * yielded.
+   */
+  maxResults?: number;
   /** Custom fetcher instance. */
   fetcher?: SparqlEndpointFetcher;
 }
@@ -38,10 +49,17 @@ export interface SparqlItemSelectorOptions {
  * 1. A `LIMIT` clause in the selector query (for endpoints with hard result limits)
  * 2. The stage's {@link StageOptions.batchSize} (passed via {@link select})
  * 3. A default of 10
+ *
+ * {@link SparqlItemSelectorOptions.maxResults} is independent of page size:
+ * it caps the *total* bindings yielded across pages without changing how
+ * the first page is requested. The last (partial) page’s `LIMIT` is
+ * shrunk to whatever’s left of the cap so the endpoint doesn’t over-fetch
+ * on the remainder.
  */
 export class SparqlItemSelector implements ItemSelector {
   private readonly parsed: QuerySelect;
   private readonly queryLimit?: number;
+  private readonly maxResults?: number;
   private readonly fetcher: SparqlEndpointFetcher;
 
   constructor(options: SparqlItemSelectorOptions) {
@@ -59,6 +77,7 @@ export class SparqlItemSelector implements ItemSelector {
 
     this.parsed = parsed as QuerySelect;
     this.queryLimit = this.parsed.solutionModifiers.limitOffset?.limit;
+    this.maxResults = options.maxResults;
     this.fetcher = options.fetcher ?? new SparqlEndpointFetcher();
   }
 
@@ -66,11 +85,22 @@ export class SparqlItemSelector implements ItemSelector {
     distribution: Distribution,
     batchSize?: number,
   ): AsyncIterableIterator<VariableBindings> {
-    const effectivePageSize = this.queryLimit ?? batchSize ?? 10;
+    if (this.maxResults === 0) return;
+    const basePageSize = this.queryLimit ?? batchSize ?? 10;
     const endpoint = distribution.accessUrl!;
     let offset = 0;
+    let totalYielded = 0;
 
     while (true) {
+      const remaining =
+        this.maxResults !== undefined
+          ? this.maxResults - totalYielded
+          : Infinity;
+      // The first page uses the configured page size as-is — keeps page-size
+      // and total-cap orthogonal. Subsequent pages clamp to `remaining` so
+      // the last (partial) page doesn’t over-fetch.
+      const effectivePageSize =
+        offset === 0 ? basePageSize : Math.min(basePageSize, remaining);
       this.parsed.solutionModifiers.limitOffset = F.solutionModifierLimitOffset(
         effectivePageSize,
         offset,
@@ -94,6 +124,13 @@ export class SparqlItemSelector implements ItemSelector {
         if (Object.keys(row).length > 0) {
           yield row;
           count++;
+          totalYielded++;
+          if (
+            this.maxResults !== undefined &&
+            totalYielded >= this.maxResults
+          ) {
+            return;
+          }
         }
       }
 
