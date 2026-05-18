@@ -99,18 +99,19 @@ function subjectSelector(targetClass: NamedNode, limit: number): ItemSelector {
     select(distribution, batchSize) {
       const query = buildSubjectSelectorQuery(
         targetClass,
-        limit,
         distribution.subjectFilter,
         distribution.namedGraph,
       );
-      return new SparqlItemSelector({ query }).select(distribution, batchSize);
+      return new SparqlItemSelector({
+        query,
+        maxResults: limit,
+      }).select(distribution, batchSize);
     },
   };
 }
 
 export function buildSubjectSelectorQuery(
   targetClass: NamedNode,
-  limit: number,
   subjectFilter?: string,
   namedGraph?: string,
 ): string {
@@ -123,7 +124,6 @@ export function buildSubjectSelectorQuery(
     'SELECT DISTINCT ?s',
     fromClause,
     `WHERE { ${subjectFilter ?? ''} ?s a <${targetClass.value}> . }`,
-    `LIMIT ${limit}`,
   ].join('\n');
 }
 
