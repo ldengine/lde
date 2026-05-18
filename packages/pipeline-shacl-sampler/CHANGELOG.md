@@ -1,3 +1,13 @@
+## 0.3.0 (2026-05-18)
+
+### 🩹 Fixes
+
+- **pipeline-shacl-sampler:** cap samples per class via maxResults ([c7c9fe8](https://github.com/ldelements/lde/commit/c7c9fe8))
+
+### 🧱 Updated Dependencies
+
+- Updated @lde/pipeline to 0.29.0
+
 ## 0.2.0 (2026-05-15)
 
 ### 🚀 Features

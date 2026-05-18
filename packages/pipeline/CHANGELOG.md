@@ -1,3 +1,9 @@
+## 0.29.0 (2026-05-18)
+
+### 🚀 Features
+
+- **pipeline:** add maxResults option to SparqlItemSelector ([36d6e89](https://github.com/ldelements/lde/commit/36d6e89))
+
 ## 0.28.14 (2026-05-15)
 
 ### 🚀 Features
