@@ -47,17 +47,16 @@ describe('buildSampleQuery', () => {
 describe('buildSubjectSelectorQuery', () => {
   const targetClass = namedNode('https://schema.org/CreativeWork');
 
-  it('produces a SELECT DISTINCT ?s with LIMIT', () => {
-    const query = buildSubjectSelectorQuery(targetClass, 50);
+  it('produces a SELECT DISTINCT ?s without LIMIT (cap is applied by SparqlItemSelector.maxResults)', () => {
+    const query = buildSubjectSelectorQuery(targetClass);
     expect(query).toMatch(/SELECT DISTINCT \?s/);
-    expect(query).toMatch(/LIMIT 50/);
+    expect(query).not.toMatch(/\bLIMIT\b/);
     expect(query).toContain('?s a <https://schema.org/CreativeWork>');
   });
 
   it('inlines a subjectFilter when provided', () => {
     const query = buildSubjectSelectorQuery(
       targetClass,
-      10,
       '?s <https://example.org/inDataset> <urn:d> .',
     );
     expect(query).toContain('?s <https://example.org/inDataset> <urn:d> .');
@@ -66,7 +65,6 @@ describe('buildSubjectSelectorQuery', () => {
   it('emits a FROM clause when the distribution has a named graph', () => {
     const query = buildSubjectSelectorQuery(
       targetClass,
-      10,
       undefined,
       'https://example.org/graph',
     );
