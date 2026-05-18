@@ -351,4 +351,154 @@ describe('SparqlItemSelector', () => {
       expect.any(String),
     );
   });
+
+  describe('maxResults', () => {
+    it('caps total bindings yielded across pages', async () => {
+      const mockFetcher = {
+        fetchBindings: vi
+          .fn()
+          .mockImplementation(() =>
+            bindingsStream([
+              { uri: namedNode('http://example.com/1') },
+              { uri: namedNode('http://example.com/2') },
+              { uri: namedNode('http://example.com/3') },
+              { uri: namedNode('http://example.com/4') },
+              { uri: namedNode('http://example.com/5') },
+            ]),
+          ),
+      };
+
+      const selector = new SparqlItemSelector({
+        query,
+        fetcher: mockFetcher as never,
+        maxResults: 3,
+      });
+
+      const rows: VariableBindings[] = [];
+      for await (const row of selector.select(distribution, 100)) {
+        rows.push(row);
+      }
+
+      expect(rows).toHaveLength(3);
+    });
+
+    it('does not clamp the first page LIMIT to maxResults (page size and total cap stay orthogonal)', async () => {
+      const queries: string[] = [];
+      const mockFetcher = {
+        fetchBindings: vi
+          .fn()
+          .mockImplementation((_endpoint: string, q: string) => {
+            queries.push(q);
+            return bindingsStream(
+              Array.from({ length: 100 }, (_, i) => ({
+                uri: namedNode(`http://example.com/${i + 1}`),
+              })),
+            );
+          }),
+      };
+
+      const selector = new SparqlItemSelector({
+        query,
+        fetcher: mockFetcher as never,
+        maxResults: 5,
+      });
+
+      const rows: VariableBindings[] = [];
+      for await (const row of selector.select(distribution, 100)) {
+        rows.push(row);
+      }
+
+      // The first page asks for the configured page size (100), even though
+      // we only yield 5 rows from it.
+      expect(queries[0]).toMatch(/LIMIT\s+100/);
+      expect(rows).toHaveLength(5);
+    });
+
+    it('shrinks the last page LIMIT to the remaining cap', async () => {
+      const queries: string[] = [];
+      let calls = 0;
+      const mockFetcher = {
+        fetchBindings: vi
+          .fn()
+          .mockImplementation((_endpoint: string, q: string) => {
+            queries.push(q);
+            calls++;
+            // First page returns 10 rows; second page request should be
+            // shrunk to LIMIT 2 (12 total cap minus 10 already yielded).
+            return bindingsStream(
+              Array.from({ length: calls === 1 ? 10 : 2 }, (_, i) => ({
+                uri: namedNode(`http://example.com/${calls}-${i + 1}`),
+              })),
+            );
+          }),
+      };
+
+      const selector = new SparqlItemSelector({
+        query,
+        fetcher: mockFetcher as never,
+        maxResults: 12,
+      });
+
+      const rows: VariableBindings[] = [];
+      for await (const row of selector.select(distribution, 10)) {
+        rows.push(row);
+      }
+
+      expect(queries[0]).toMatch(/LIMIT\s+10/);
+      expect(queries[1]).toMatch(/LIMIT\s+2/);
+      expect(rows).toHaveLength(12);
+    });
+
+    it('does not paginate beyond maxResults', async () => {
+      let calls = 0;
+      const mockFetcher = {
+        fetchBindings: vi.fn().mockImplementation(() => {
+          calls++;
+          return bindingsStream([
+            { uri: namedNode(`http://example.com/${calls}-1`) },
+            { uri: namedNode(`http://example.com/${calls}-2`) },
+          ]);
+        }),
+      };
+
+      const selector = new SparqlItemSelector({
+        query,
+        fetcher: mockFetcher as never,
+        maxResults: 2,
+      });
+
+      const rows: VariableBindings[] = [];
+      for await (const row of selector.select(distribution, 2)) {
+        rows.push(row);
+      }
+
+      expect(rows).toHaveLength(2);
+      // Only one page fetched; we don't keep asking for more.
+      expect(calls).toBe(1);
+    });
+
+    it('yields nothing when maxResults is 0', async () => {
+      const mockFetcher = {
+        fetchBindings: vi
+          .fn()
+          .mockImplementation(() =>
+            bindingsStream([{ uri: namedNode('http://example.com/1') }]),
+          ),
+      };
+
+      const selector = new SparqlItemSelector({
+        query,
+        fetcher: mockFetcher as never,
+        maxResults: 0,
+      });
+
+      const rows: VariableBindings[] = [];
+      for await (const row of selector.select(distribution, 10)) {
+        rows.push(row);
+      }
+
+      expect(rows).toHaveLength(0);
+      expect(mockFetcher.fetchBindings).not.toHaveBeenCalled();
+    });
+  });
 });
