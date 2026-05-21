@@ -44,10 +44,10 @@ export function needsPreprocessing(distribution: Distribution): boolean {
 /**
  * Convert a JSON-LD distribution to N-Quads alongside the source file.
  *
- * Streams the source through `JsonLdParser` and `n3.StreamWriter` so memory
- * use stays bounded regardless of input size. Handles gzip transparently
- * (declared compressFormat or `.gz` filename) and zip containers (extracts
- * JSON-LD entries one by one, appending to the output).
+ * Streams the source through `rdf-parse` → `rdf-serialize` so memory use
+ * stays bounded regardless of input size. Handles gzip transparently
+ * (declared `compressFormat` or `.gz` filename) and zip containers (folds
+ * each JSON-LD entry into the output stream in order).
  *
  * Cached: if the output is newer than the input, it is reused as-is.
  */
