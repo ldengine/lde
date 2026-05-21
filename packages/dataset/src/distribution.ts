@@ -17,6 +17,17 @@ export class Distribution {
   public readonly mimeType?: string;
 
   /**
+   * Plain content type derived from {@link compressFormat}, e.g. `application/gzip`.
+   * Returns `undefined` when no compression format is declared.
+   */
+  public get compressMimeType(): string | undefined {
+    if (this.compressFormat === undefined) return undefined;
+    return this.compressFormat.startsWith(IANA_MEDIA_TYPE_PREFIX)
+      ? this.compressFormat.slice(IANA_MEDIA_TYPE_PREFIX.length)
+      : this.compressFormat;
+  }
+
+  /**
    * @param accessUrl  Distribution access URL.
    * @param mediaType  IANA media type URI per DCAT-AP 3.0
    *   (e.g. `https://www.iana.org/assignments/media-types/application/n-triples`),

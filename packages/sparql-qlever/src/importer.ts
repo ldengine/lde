@@ -9,6 +9,7 @@ import { Distribution } from '@lde/dataset';
 import { LastModifiedDownloader } from '@lde/distribution-downloader';
 import { basename, dirname, join } from 'path';
 import { readFile, stat, writeFile } from 'node:fs/promises';
+import { needsPreprocessing, preprocess } from './preprocess.js';
 
 export interface QleverIndexOptions {
   /** @default true */
@@ -57,11 +58,17 @@ export class Importer implements ImporterInterface {
   public async import(
     distributions: Distribution[],
   ): Promise<NotSupported | ImportSuccessful | ImportFailed> {
-    const downloadDistributions = distributions.filter(
-      (distribution): distribution is Distribution & { mimeType: string } =>
-        distribution.mimeType !== undefined &&
-        supportedFormats.has(distribution.mimeType),
-    );
+    const downloadDistributions = distributions
+      .filter(
+        (distribution): distribution is Distribution & { mimeType: string } =>
+          distribution.mimeType !== undefined &&
+          supportedFormats.has(distribution.mimeType),
+      )
+      .sort(
+        (a, b) =>
+          (preferenceOrder[a.mimeType] ?? Number.MAX_SAFE_INTEGER) -
+          (preferenceOrder[b.mimeType] ?? Number.MAX_SAFE_INTEGER),
+      );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
     }
@@ -104,20 +111,32 @@ export class Importer implements ImporterInterface {
       return new ImportSuccessful(distribution, undefined, tripleCount);
     }
 
-    const { format, warning } = fileFormatFor(
-      distribution.mimeType,
-      basename(localFile),
-      headers.get('Content-Type') ?? undefined,
-    );
+    let indexFile = localFile;
+    let format: fileFormat;
+    const warnings: string[] = [];
+    if (needsPreprocessing(distribution)) {
+      const result = await preprocess(localFile, distribution);
+      indexFile = result.path;
+      format = result.format;
+      warnings.push(...result.warnings);
+    } else {
+      const resolved = fileFormatFor(
+        distribution.mimeType,
+        basename(localFile),
+        headers.get('Content-Type') ?? undefined,
+      );
+      format = resolved.format;
+      if (resolved.warning) warnings.push(resolved.warning);
+    }
     let logs: string;
     try {
-      logs = await this.index(localFile, format);
+      logs = await this.index(indexFile, format);
     } catch (error) {
       if (
         format === 'ttl' &&
         (error as Error).message?.includes('multiline string literal')
       ) {
-        logs = await this.index(localFile, format, false);
+        logs = await this.index(indexFile, format, false);
       } else {
         throw error;
       }
@@ -133,7 +152,6 @@ export class Importer implements ImporterInterface {
 
     await this.writeCacheInfo(localFile);
 
-    const warnings = warning ? [warning] : [];
     return new ImportSuccessful(distribution, undefined, tripleCount, warnings);
   }
 
@@ -243,11 +261,38 @@ export class Importer implements ImporterInterface {
 
 type fileFormat = 'nt' | 'nq' | 'ttl';
 
-const supportedFormats = new Map<string, fileFormat>([
+/**
+ * Native QLever index formats. `qlever-index -F <flag>` consumes these
+ * directly; `application/ld+json` and `application/zip` go through the
+ * preprocessor first (see {@link preprocess}) and end up as N-Quads.
+ */
+const nativeFormats = new Map<string, fileFormat>([
   ['application/n-triples', 'nt'],
   ['application/n-quads', 'nq'],
   ['text/turtle', 'ttl'],
 ]);
+
+const supportedFormats = new Set<string>([
+  ...nativeFormats.keys(),
+  'application/ld+json',
+]);
+
+/**
+ * Preference order for which distribution to try first. Lower wins. Native
+ * QLever formats come first because they skip preprocessing; JSON-LD requires
+ * an in-Node parse and goes last.
+ *
+ * `application/zip` as a `dcat:mediaType` is intentionally NOT accepted: we
+ * require the inner RDF format to be declared (via the actual `mediaType`)
+ * with `application/zip` only appearing as the `compressFormat`, so we know
+ * what to expect inside the archive.
+ */
+const preferenceOrder: Record<string, number> = {
+  'application/n-quads': 0,
+  'application/n-triples': 0,
+  'text/turtle': 0,
+  'application/ld+json': 1,
+};
 
 const defaultQleverIndexOptions = {
   'ascii-prefixes-only': true,
@@ -291,7 +336,7 @@ function fileFormatFor(
   filename: string,
   serverContentType?: string,
 ): ResolvedFormat {
-  const declaredFormat = supportedFormats.get(declaredMimeType);
+  const declaredFormat = nativeFormats.get(declaredMimeType);
   if (declaredFormat === undefined) {
     throw new Error(`Unsupported media type: ${declaredMimeType}`);
   }
@@ -300,7 +345,7 @@ function fileFormatFor(
   if (serverContentType) {
     const actualType = serverContentType.split(';')[0].trim();
     if (!compressionTypes.has(actualType)) {
-      const serverFormat = supportedFormats.get(actualType);
+      const serverFormat = nativeFormats.get(actualType);
       if (serverFormat !== undefined && serverFormat !== declaredFormat) {
         return {
           format: serverFormat,

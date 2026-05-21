@@ -1,0 +1,157 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { Distribution, IANA_MEDIA_TYPE_PREFIX } from '@lde/dataset';
+import { join, resolve } from 'node:path';
+import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { needsPreprocessing, preprocess } from '../src/preprocess.js';
+
+function makeDistribution(mediaType: string, compressFormat?: string) {
+  const distribution = new Distribution(
+    new URL('https://example.com/dataset/distribution'),
+    mediaType,
+  );
+  if (compressFormat !== undefined) {
+    distribution.compressFormat = compressFormat;
+  }
+  return distribution;
+}
+
+describe('needsPreprocessing', () => {
+  it('returns false for native QLever formats', () => {
+    expect(needsPreprocessing(makeDistribution('application/n-triples'))).toBe(
+      false,
+    );
+    expect(needsPreprocessing(makeDistribution('application/n-quads'))).toBe(
+      false,
+    );
+    expect(needsPreprocessing(makeDistribution('text/turtle'))).toBe(false);
+  });
+
+  it('returns false for gzipped native formats', () => {
+    expect(
+      needsPreprocessing(
+        makeDistribution('application/n-triples', 'application/gzip'),
+      ),
+    ).toBe(false);
+  });
+
+  it('returns false for standalone application/zip (inner format unknown)', () => {
+    expect(needsPreprocessing(makeDistribution('application/zip'))).toBe(false);
+  });
+
+  it('returns true for JSON-LD (plain or gzipped)', () => {
+    expect(needsPreprocessing(makeDistribution('application/ld+json'))).toBe(
+      true,
+    );
+    expect(
+      needsPreprocessing(
+        makeDistribution('application/ld+json', 'application/gzip'),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns true when compressFormat is application/zip with a known inner mediaType', () => {
+    expect(
+      needsPreprocessing(
+        makeDistribution('application/n-quads', 'application/zip'),
+      ),
+    ).toBe(true);
+    expect(
+      needsPreprocessing(
+        makeDistribution('application/ld+json', 'application/zip'),
+      ),
+    ).toBe(true);
+  });
+
+  it('strips the IANA prefix from compressFormat', () => {
+    expect(
+      needsPreprocessing(
+        makeDistribution(
+          'application/n-quads',
+          `${IANA_MEDIA_TYPE_PREFIX}application/zip`,
+        ),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('preprocess', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'preprocess-test-'));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('converts plain JSON-LD to N-Quads', async () => {
+    const file = join(tempDir, 'data.jsonld');
+    await copyFile(resolve('test/fixtures/preprocess/data.jsonld'), file);
+
+    const result = await preprocess(
+      file,
+      makeDistribution('application/ld+json'),
+    );
+
+    expect(result.format).toBe('nq');
+    expect(result.path).toBe(`${file}.preprocessed.nq`);
+    const nquads = await readFile(result.path, 'utf-8');
+    expect(nquads).toContain('<https://example.org/utrecht/story/1>');
+    expect(nquads).toContain('Een verhaal uit Utrecht');
+    // N-Quads triples end with " ." on each line.
+    expect(nquads.trim().split('\n').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('extracts a zip containing JSON-LD (declared via compressFormat) and converts to N-Quads', async () => {
+    const file = join(tempDir, 'data.zip');
+    await copyFile(resolve('test/fixtures/preprocess/data.zip'), file);
+
+    const result = await preprocess(
+      file,
+      makeDistribution('application/ld+json', 'application/zip'),
+    );
+
+    expect(result.format).toBe('nq');
+    const nquads = await readFile(result.path, 'utf-8');
+    expect(nquads).toContain('<https://example.org/utrecht/story/1>');
+    expect(nquads).toContain('Een verhaal uit Utrecht');
+  });
+
+  it('throws when zip inner mediaType is unsupported (e.g. text/turtle)', async () => {
+    const file = join(tempDir, 'data.zip');
+    await copyFile(resolve('test/fixtures/preprocess/data.zip'), file);
+
+    await expect(
+      preprocess(file, makeDistribution('text/turtle', 'application/zip')),
+    ).rejects.toThrow(/Unsupported zip inner mediaType/);
+  });
+
+  it('reuses the preprocessed file on a second call when source is unchanged', async () => {
+    const file = join(tempDir, 'data.jsonld');
+    await copyFile(resolve('test/fixtures/preprocess/data.jsonld'), file);
+    const distribution = makeDistribution('application/ld+json');
+
+    const first = await preprocess(file, distribution);
+    const firstStat = (await import('node:fs/promises')).stat(first.path);
+    const firstMtime = (await firstStat).mtimeMs;
+
+    const second = await preprocess(file, distribution);
+    expect(second.path).toBe(first.path);
+    const secondStat = (await import('node:fs/promises')).stat(second.path);
+    expect((await secondStat).mtimeMs).toBe(firstMtime);
+  });
+
+  it('throws when zip contains no entries matching the declared inner mediaType', async () => {
+    const file = join(tempDir, 'empty.zip');
+    await copyFile(resolve('test/fixtures/preprocess/empty.zip'), file);
+
+    await expect(
+      preprocess(
+        file,
+        makeDistribution('application/ld+json', 'application/zip'),
+      ),
+    ).rejects.toThrow(/contains no entries matching declared inner mediaType/);
+  });
+});
