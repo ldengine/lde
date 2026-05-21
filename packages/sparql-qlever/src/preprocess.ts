@@ -1,11 +1,12 @@
 import { Distribution } from '@lde/dataset';
-import jsonld from 'jsonld';
+import { JsonLdParser } from 'jsonld-streaming-parser';
+import { StreamWriter } from 'n3';
 import { createGunzip } from 'node:zlib';
-import { createReadStream } from 'node:fs';
-import { appendFile, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { rm, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { Readable } from 'node:stream';
-import { text } from 'node:stream/consumers';
+import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
 import yauzl from 'yauzl';
 
@@ -19,27 +20,10 @@ const PREPROCESSED_FORMAT = 'nq' as const;
 export type PreprocessedFormat = typeof PREPROCESSED_FORMAT;
 
 /**
- * For each supported inner mediaType inside a zip, the file extensions we will
- * accept and the conversion kind. Turtle is deliberately absent: concatenating
- * Turtle files mid-stream is unsafe because of prefix declarations.
+ * File extensions inside a JSON-LD zip that we will convert. Other entries
+ * are skipped with a warning.
  */
-const ZIP_INNER_FORMATS: Record<
-  string,
-  { extensions: string[]; kind: 'jsonld' | 'nquads-compatible' }
-> = {
-  'application/ld+json': {
-    extensions: ['.jsonld', '.json'],
-    kind: 'jsonld',
-  },
-  'application/n-triples': {
-    extensions: ['.nt'],
-    kind: 'nquads-compatible',
-  },
-  'application/n-quads': {
-    extensions: ['.nq'],
-    kind: 'nquads-compatible',
-  },
-};
+const JSONLD_ZIP_EXTENSIONS = ['.jsonld', '.json'];
 
 export interface PreprocessResult {
   /** Path to the file ready for `qlever-index`. Always N-Quads. */
@@ -49,35 +33,42 @@ export interface PreprocessResult {
 }
 
 /**
- * Whether a distribution needs preprocessing before `qlever-index` can read it.
+ * Whether a distribution needs Node-side preprocessing before `qlever-index`
+ * can read it.
  *
- * Preprocessing applies when:
- * - the data is JSON-LD (which `qlever-index` does not read directly), or
- * - it is wrapped in a zip archive (which `gunzip -c` cannot unpack).
+ * Only JSON-LD distributions return `true`: `qlever-index` cannot parse
+ * JSON-LD, so we stream it through a JSON-LD parser into N-Quads first.
  *
- * Gzipped native RDF formats do not need preprocessing — they go straight
- * through the existing `gunzip -c | qlever-index` pipeline.
- *
- * A standalone `mediaType=application/zip` is intentionally not handled here:
- * the inner RDF format must be declared (via `mediaType` with `compressFormat`
- * set to `application/zip`) so we know what to expect inside the archive.
+ * Native RDF formats (`nt`, `nq`, `ttl`) — including when wrapped in
+ * `application/gzip` or `application/zip` — go straight through the shell
+ * pipeline in `index()`, which uses `gunzip -c` or `unzip -p` as appropriate.
+ * Standalone `mediaType=application/zip` is rejected upstream: the inner
+ * format must be declared.
  */
 export function needsPreprocessing(distribution: Distribution): boolean {
-  return (
-    distribution.mimeType === JSONLD_MIME ||
-    distribution.compressMimeType === ZIP_MIME
-  );
+  return distribution.mimeType === JSONLD_MIME;
 }
 
 /**
- * Preprocess a downloaded distribution into a single N-Quads file alongside
- * the original. Caches the result: if the output is newer than the input the
- * existing file is reused.
+ * Convert a JSON-LD distribution to N-Quads alongside the source file.
+ *
+ * Streams the source through `JsonLdParser` and `n3.StreamWriter` so memory
+ * use stays bounded regardless of input size. Handles gzip transparently
+ * (declared compressFormat or `.gz` filename) and zip containers (extracts
+ * JSON-LD entries one by one, appending to the output).
+ *
+ * Cached: if the output is newer than the input, it is reused as-is.
  */
 export async function preprocess(
   localFile: string,
   distribution: Distribution,
 ): Promise<PreprocessResult> {
+  if (!needsPreprocessing(distribution)) {
+    throw new Error(
+      `preprocess called for distribution that does not need preprocessing: mediaType=${distribution.mimeType}`,
+    );
+  }
+
   const outputFile = `${localFile}.preprocessed.nq`;
   if (await outputIsUpToDate(localFile, outputFile)) {
     return { path: outputFile, format: PREPROCESSED_FORMAT, warnings: [] };
@@ -87,14 +78,9 @@ export async function preprocess(
   const warnings: string[] = [];
 
   if (distribution.compressMimeType === ZIP_MIME) {
-    await processZip(localFile, outputFile, distribution, warnings);
-  } else if (distribution.mimeType === JSONLD_MIME) {
-    const content = await readPossiblyGzipped(localFile, distribution);
-    await writeFile(outputFile, await jsonldToNquads(content));
+    await streamJsonldZip(localFile, outputFile, warnings);
   } else {
-    throw new Error(
-      `preprocess called for distribution that does not need preprocessing: mediaType=${distribution.mimeType}`,
-    );
+    await streamJsonldFile(localFile, outputFile, distribution);
   }
 
   return { path: outputFile, format: PREPROCESSED_FORMAT, warnings };
@@ -115,25 +101,37 @@ async function outputIsUpToDate(
   }
 }
 
-async function readPossiblyGzipped(
+/**
+ * Pipe a JSON-LD byte stream through parse → serialize → write.
+ *
+ * `append=true` opens the output for appending so multiple zip entries can be
+ * folded into a single N-Quads file.
+ */
+async function streamJsonldToNquads(
+  input: Readable,
+  outputFile: string,
+  append: boolean,
+): Promise<void> {
+  await pipeline(
+    input,
+    new JsonLdParser(),
+    new StreamWriter({ format: 'application/n-quads' }),
+    createWriteStream(outputFile, { flags: append ? 'a' : 'w' }),
+  );
+}
+
+async function streamJsonldFile(
   localFile: string,
+  outputFile: string,
   distribution: Distribution,
-): Promise<string> {
+): Promise<void> {
   const isGzipped =
     distribution.compressMimeType === GZIP_MIME ||
     distribution.compressMimeType === GZIP_MIME_LEGACY ||
     localFile.toLowerCase().endsWith('.gz');
-  if (!isGzipped) {
-    return readFile(localFile, 'utf-8');
-  }
-  return text(createReadStream(localFile).pipe(createGunzip()));
-}
-
-async function jsonldToNquads(content: string): Promise<string> {
-  const parsed: unknown = JSON.parse(content);
-  return (await jsonld.toRDF(parsed as object, {
-    format: 'application/n-quads',
-  })) as unknown as string;
+  const source = createReadStream(localFile);
+  const input = isGzipped ? source.pipe(createGunzip()) : source;
+  await streamJsonldToNquads(input, outputFile, false);
 }
 
 const openZip = promisify(yauzl.open) as (
@@ -141,24 +139,14 @@ const openZip = promisify(yauzl.open) as (
   options: yauzl.Options,
 ) => Promise<yauzl.ZipFile>;
 
-async function processZip(
+async function streamJsonldZip(
   zipFile: string,
   outputFile: string,
-  distribution: Distribution,
   warnings: string[],
 ): Promise<void> {
-  const innerMimeType = distribution.mimeType;
-  const expected = innerMimeType ? ZIP_INNER_FORMATS[innerMimeType] : undefined;
-  if (expected === undefined) {
-    throw new Error(
-      `Unsupported zip inner mediaType: ${innerMimeType ?? 'undeclared'}. ` +
-        `Supported inner formats: ${Object.keys(ZIP_INNER_FORMATS).join(', ')}.`,
-    );
-  }
-
   const zip = await openZip(zipFile, { lazyEntries: true });
 
-  let rdfEntriesProcessed = 0;
+  let entriesProcessed = 0;
   await new Promise<void>((resolve, reject) => {
     zip.on('error', reject);
     zip.on('end', resolve);
@@ -170,21 +158,16 @@ async function processZip(
             return;
           }
           const extension = extname(entry.fileName).toLowerCase();
-          if (!expected.extensions.includes(extension)) {
+          if (!JSONLD_ZIP_EXTENSIONS.includes(extension)) {
             warnings.push(
-              `Skipping zip entry ${entry.fileName}: extension ${extension || '(none)'} does not match declared inner mediaType ${innerMimeType}`,
+              `Skipping zip entry ${entry.fileName}: extension ${extension || '(none)'} is not JSON-LD`,
             );
             zip.readEntry();
             return;
           }
           const stream = await openZipEntry(zip, entry);
-          const content = await text(stream);
-          const nquads =
-            expected.kind === 'jsonld'
-              ? await jsonldToNquads(content)
-              : content;
-          await appendFile(outputFile, nquads);
-          rdfEntriesProcessed++;
+          await streamJsonldToNquads(stream, outputFile, entriesProcessed > 0);
+          entriesProcessed++;
           zip.readEntry();
         } catch (error) {
           reject(error);
@@ -194,10 +177,8 @@ async function processZip(
     zip.readEntry();
   });
 
-  if (rdfEntriesProcessed === 0) {
-    throw new Error(
-      `Zip ${zipFile} contains no entries matching declared inner mediaType ${innerMimeType}`,
-    );
+  if (entriesProcessed === 0) {
+    throw new Error(`Zip ${zipFile} contains no JSON-LD entries`);
   }
 }
 

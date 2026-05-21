@@ -467,6 +467,32 @@ describe('Importer', () => {
       expect(runner.commands[0]).toContain('-F nq');
     });
 
+    it('uses unzip -p in the shell pipeline for .zip files', async () => {
+      const runner = stubTaskRunner(42);
+      const zipFile = join(tempDir, 'data.nt.zip');
+      // Reuse the data.zip fixture; what matters here is the .zip extension.
+      await copyFile(resolve('test/fixtures/preprocess/data.zip'), zipFile);
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download() {
+            return { path: zipFile, headers: new Headers() };
+          },
+        },
+      });
+
+      await importer.import([
+        new Distribution(
+          new URL('https://example.com/data.nt.zip'),
+          'application/n-triples',
+        ),
+      ]);
+
+      expect(runner.commands[0]).toContain("unzip -p 'data.nt.zip'");
+      expect(runner.commands[0]).not.toContain('gunzip -c');
+    });
+
     it('does not accept a standalone application/zip distribution', async () => {
       const runner = stubTaskRunner(42);
       const importer = createImporter(runner);
