@@ -143,6 +143,28 @@ describe('preprocess', () => {
     expect((await secondStat).mtimeMs).toBe(firstMtime);
   });
 
+  it('skips directory entries and entries whose extension does not match the declared mediaType', async () => {
+    const file = join(tempDir, 'mixed.zip');
+    await copyFile(resolve('test/fixtures/preprocess/mixed.zip'), file);
+
+    const result = await preprocess(
+      file,
+      makeDistribution('application/ld+json', 'application/zip'),
+    );
+
+    // Two matching JSON-LD entries (data.jsonld + subdir/data.jsonld) should
+    // both be folded into the N-Quads output.
+    const nquads = await readFile(result.path, 'utf-8');
+    const tripleLines = nquads
+      .trim()
+      .split('\n')
+      .filter((line) => line.length > 0);
+    expect(tripleLines.length).toBeGreaterThanOrEqual(4);
+
+    // The .txt entry must be reported via warnings rather than silently dropped.
+    expect(result.warnings.some((w) => w.includes('extra.txt'))).toBe(true);
+  });
+
   it('throws when zip contains no entries matching the declared inner mediaType', async () => {
     const file = join(tempDir, 'empty.zip');
     await copyFile(resolve('test/fixtures/preprocess/empty.zip'), file);
