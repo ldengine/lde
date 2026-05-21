@@ -154,12 +154,12 @@ function subjectSelector(
   assertSafeIri(targetClass.value);
   return {
     select(distribution, batchSize) {
-      const query = buildSubjectSelectorQuery(
+      const query = buildSubjectSelectorQuery({
         targetClass,
-        distribution.subjectFilter,
-        distribution.namedGraph,
+        subjectFilter: distribution.subjectFilter,
+        namedGraph: distribution.namedGraph,
         namespaceAliases,
-      );
+      });
       return new SparqlItemSelector({
         query,
         maxResults: limit,
@@ -168,12 +168,24 @@ function subjectSelector(
   };
 }
 
-export function buildSubjectSelectorQuery(
-  targetClass: NamedNode,
-  subjectFilter?: string,
-  namedGraph?: string,
-  namespaceAliases: NamespaceAlias[] = [],
-): string {
+/** Options for {@link buildSubjectSelectorQuery}. */
+export interface SubjectSelectorQueryOptions {
+  /** SHACL `sh:targetClass` to match. */
+  targetClass: NamedNode;
+  /** Optional extra triple pattern restricting subjects (interpolated verbatim). */
+  subjectFilter?: string;
+  /** Restrict to a single named graph via `FROM <…>`. */
+  namedGraph?: string;
+  /** Equivalent namespaces to broaden the type match across. @default [] */
+  namespaceAliases?: NamespaceAlias[];
+}
+
+export function buildSubjectSelectorQuery({
+  targetClass,
+  subjectFilter,
+  namedGraph,
+  namespaceAliases = [],
+}: SubjectSelectorQueryOptions): string {
   let fromClause = '';
   if (namedGraph) {
     assertSafeIri(namedGraph);
@@ -206,12 +218,10 @@ function expandTargetClass(
 ): string[] {
   const iri = targetClass.value;
   for (const { canonical, alias } of namespaceAliases) {
-    if (iri.startsWith(canonical)) {
-      return [iri, alias + iri.slice(canonical.length)];
-    }
-    if (iri.startsWith(alias)) {
-      return [iri, canonical + iri.slice(alias.length)];
-    }
+    const match =
+      (iri.startsWith(canonical) && { from: canonical, to: alias }) ||
+      (iri.startsWith(alias) && { from: alias, to: canonical });
+    if (match) return [iri, match.to + iri.slice(match.from.length)];
   }
   return [iri];
 }
@@ -282,12 +292,7 @@ function normalizeQuad(q: Quad, namespaceAliases: NamespaceAlias[]): Quad {
   ) {
     return q;
   }
-  return quad(
-    subject as Quad['subject'],
-    predicate as Quad['predicate'],
-    object as Quad['object'],
-    graph as Quad['graph'],
-  );
+  return quad(subject, predicate, object, graph);
 }
 
 function rewriteIfAlias(

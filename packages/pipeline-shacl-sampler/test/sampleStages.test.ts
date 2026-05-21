@@ -50,26 +50,28 @@ describe('buildSampleQuery', () => {
 
 describe('buildSubjectSelectorQuery', () => {
   const targetClass = namedNode('https://schema.org/CreativeWork');
+  const schemaOrgAlias = {
+    canonical: 'https://schema.org/',
+    alias: 'http://schema.org/',
+  };
 
   it('produces a SELECT DISTINCT ?s without LIMIT (cap is applied by SparqlItemSelector.maxResults)', () => {
-    const query = buildSubjectSelectorQuery(targetClass);
+    const query = buildSubjectSelectorQuery({ targetClass });
     expect(query).toMatch(/SELECT DISTINCT \?s/);
     expect(query).not.toMatch(/\bLIMIT\b/);
   });
 
   it('emits the plain bound type pattern by default (no namespace aliases)', () => {
-    const query = buildSubjectSelectorQuery(targetClass);
+    const query = buildSubjectSelectorQuery({ targetClass });
     expect(query).toContain('?s a <https://schema.org/CreativeWork> .');
     expect(query).not.toMatch(/FILTER\(\?type IN/);
   });
 
   it('broadens to FILTER IN when a configured alias namespace matches the canonical target class IRI', () => {
-    const query = buildSubjectSelectorQuery(
+    const query = buildSubjectSelectorQuery({
       targetClass,
-      undefined,
-      undefined,
-      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
-    );
+      namespaceAliases: [schemaOrgAlias],
+    });
     expect(query).toContain('?s a ?type');
     expect(query).toContain(
       'FILTER(?type IN (<https://schema.org/CreativeWork>, <http://schema.org/CreativeWork>))',
@@ -77,42 +79,37 @@ describe('buildSubjectSelectorQuery', () => {
   });
 
   it('also broadens when the target class IRI itself uses the alias namespace', () => {
-    const query = buildSubjectSelectorQuery(
-      namedNode('http://schema.org/CreativeWork'),
-      undefined,
-      undefined,
-      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
-    );
+    const query = buildSubjectSelectorQuery({
+      targetClass: namedNode('http://schema.org/CreativeWork'),
+      namespaceAliases: [schemaOrgAlias],
+    });
     expect(query).toContain(
       'FILTER(?type IN (<http://schema.org/CreativeWork>, <https://schema.org/CreativeWork>))',
     );
   });
 
   it('leaves a target class outside every configured alias namespace as a plain bound pattern', () => {
-    const query = buildSubjectSelectorQuery(
-      namedNode('https://example.org/vocab/Widget'),
-      undefined,
-      undefined,
-      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
-    );
+    const query = buildSubjectSelectorQuery({
+      targetClass: namedNode('https://example.org/vocab/Widget'),
+      namespaceAliases: [schemaOrgAlias],
+    });
     expect(query).toContain('?s a <https://example.org/vocab/Widget> .');
     expect(query).not.toMatch(/FILTER\(\?type IN/);
   });
 
   it('inlines a subjectFilter when provided', () => {
-    const query = buildSubjectSelectorQuery(
+    const query = buildSubjectSelectorQuery({
       targetClass,
-      '?s <https://example.org/inDataset> <urn:d> .',
-    );
+      subjectFilter: '?s <https://example.org/inDataset> <urn:d> .',
+    });
     expect(query).toContain('?s <https://example.org/inDataset> <urn:d> .');
   });
 
   it('emits a FROM clause when the distribution has a named graph', () => {
-    const query = buildSubjectSelectorQuery(
+    const query = buildSubjectSelectorQuery({
       targetClass,
-      undefined,
-      'https://example.org/graph',
-    );
+      namedGraph: 'https://example.org/graph',
+    });
     expect(query).toContain('FROM <https://example.org/graph>');
   });
 });

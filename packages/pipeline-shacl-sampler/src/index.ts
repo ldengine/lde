@@ -4,4 +4,5 @@ export {
   wrapValidatorWithAliasNormalization,
   type NamespaceAlias,
   type ShaclSampleStagesOptions,
+  type SubjectSelectorQueryOptions,
 } from './sampleStages.js';
