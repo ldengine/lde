@@ -1,3 +1,9 @@
+## 0.7.4 (2026-05-21)
+
+### 🚀 Features
+
+- **sparql-qlever:** support JSON-LD and zipped distributions ([bdf48f0](https://github.com/ldelements/lde/commit/bdf48f0))
+
 ## 0.7.3 (2026-04-23)
 
 This was a version bump only for @lde/dataset to align it with other projects, there were no code changes.
