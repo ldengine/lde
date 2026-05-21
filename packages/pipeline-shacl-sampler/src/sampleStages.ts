@@ -4,13 +4,46 @@ import {
   SparqlItemSelector,
   type ItemSelector,
   type StageOptions,
+  type ValidationReport,
+  type ValidationResult,
   type Validator,
 } from '@lde/pipeline';
-import { assertSafeIri } from '@lde/dataset';
-import type { NamedNode } from '@rdfjs/types';
+import { assertSafeIri, type Dataset } from '@lde/dataset';
+import type { NamedNode, Quad } from '@rdfjs/types';
+import { DataFactory } from 'n3';
 import { extractTargetShapes, type TargetShape } from './pathExtractor.js';
 
+const { namedNode, quad } = DataFactory;
+
 type OnInvalid = NonNullable<StageOptions['validation']>['onInvalid'];
+
+/**
+ * Declares that two namespaces should be treated as equivalent when
+ * sampling and validating, working around vocabularies that publish under
+ * both HTTP and HTTPS variants of the same IRI (notably schema.org).
+ *
+ * The sampler accepts subjects typed under the {@link alias} namespace in
+ * addition to the SHACL `sh:targetClass` IRI under {@link canonical}, and
+ * rewrites alias-namespace IRIs to canonical ones in the sampled quads
+ * before validation so SHACL `sh:targetClass` and `sh:path` patterns
+ * match.
+ */
+export interface NamespaceAlias {
+  /**
+   * The namespace declared in the SHACL shapes file (e.g.
+   * `https://schema.org/`).
+   */
+  canonical: string;
+  /**
+   * The equivalent namespace that may appear in source data (e.g.
+   * `http://schema.org/`).
+   */
+  alias: string;
+}
+
+const DEFAULT_NAMESPACE_ALIASES: NamespaceAlias[] = [
+  { canonical: 'https://schema.org/', alias: 'http://schema.org/' },
+];
 
 /** Options for {@link shaclSampleStages}. */
 export interface ShaclSampleStagesOptions {
@@ -48,6 +81,14 @@ export interface ShaclSampleStagesOptions {
    * @default 'write'
    */
   onInvalid?: OnInvalid;
+  /**
+   * Namespace pairs to treat as equivalent when matching `sh:targetClass`
+   * and when handing quads to the validator. Defaults to a single entry
+   * that treats `http://schema.org/` as an alias of `https://schema.org/`
+   * — the only known case in practice where a single SHACL shape needs to
+   * cover both forms. Pass an empty array to disable.
+   */
+  namespaceAliases?: NamespaceAlias[];
 }
 
 /**
@@ -72,8 +113,16 @@ export async function shaclSampleStages(
   const timeout = options.timeout ?? 60_000;
   const batchSize = options.batchSize ?? samplesPerClass;
   const maxConcurrency = options.maxConcurrency;
+  const namespaceAliases =
+    options.namespaceAliases ?? DEFAULT_NAMESPACE_ALIASES;
   const validation = options.validator
-    ? { validator: options.validator, onInvalid: options.onInvalid ?? 'write' }
+    ? {
+        validator: wrapValidatorWithAliasNormalization(
+          options.validator,
+          namespaceAliases,
+        ),
+        onInvalid: options.onInvalid ?? 'write',
+      }
     : undefined;
   const shapes = await extractTargetShapes(options.shapesFile);
 
@@ -81,7 +130,11 @@ export async function shaclSampleStages(
     (shape) =>
       new Stage({
         name: `shacl-sample-${localName(shape.targetClass.value)}`,
-        itemSelector: subjectSelector(shape.targetClass, samplesPerClass),
+        itemSelector: subjectSelector(
+          shape.targetClass,
+          samplesPerClass,
+          namespaceAliases,
+        ),
         executors: new SparqlConstructExecutor({
           query: buildSampleQuery(shape),
           timeout,
@@ -93,7 +146,11 @@ export async function shaclSampleStages(
   );
 }
 
-function subjectSelector(targetClass: NamedNode, limit: number): ItemSelector {
+function subjectSelector(
+  targetClass: NamedNode,
+  limit: number,
+  namespaceAliases: NamespaceAlias[],
+): ItemSelector {
   assertSafeIri(targetClass.value);
   return {
     select(distribution, batchSize) {
@@ -101,6 +158,7 @@ function subjectSelector(targetClass: NamedNode, limit: number): ItemSelector {
         targetClass,
         distribution.subjectFilter,
         distribution.namedGraph,
+        namespaceAliases,
       );
       return new SparqlItemSelector({
         query,
@@ -114,17 +172,48 @@ export function buildSubjectSelectorQuery(
   targetClass: NamedNode,
   subjectFilter?: string,
   namedGraph?: string,
+  namespaceAliases: NamespaceAlias[] = DEFAULT_NAMESPACE_ALIASES,
 ): string {
   let fromClause = '';
   if (namedGraph) {
     assertSafeIri(namedGraph);
     fromClause = `FROM <${namedGraph}>`;
   }
+  const typePattern = buildTypePattern(targetClass, namespaceAliases);
   return [
     'SELECT DISTINCT ?s',
     fromClause,
-    `WHERE { ${subjectFilter ?? ''} ?s a <${targetClass.value}> . }`,
+    `WHERE { ${subjectFilter ?? ''} ${typePattern} }`,
   ].join('\n');
+}
+
+function buildTypePattern(
+  targetClass: NamedNode,
+  namespaceAliases: NamespaceAlias[],
+): string {
+  const equivalents = expandTargetClass(targetClass, namespaceAliases);
+  for (const iri of equivalents) assertSafeIri(iri);
+  if (equivalents.length === 1) {
+    return `?s a <${equivalents[0]}> .`;
+  }
+  const iriList = equivalents.map((iri) => `<${iri}>`).join(', ');
+  return `?s a ?type . FILTER(?type IN (${iriList}))`;
+}
+
+function expandTargetClass(
+  targetClass: NamedNode,
+  namespaceAliases: NamespaceAlias[],
+): string[] {
+  const iri = targetClass.value;
+  for (const { canonical, alias } of namespaceAliases) {
+    if (iri.startsWith(canonical)) {
+      return [iri, alias + iri.slice(canonical.length)];
+    }
+    if (iri.startsWith(alias)) {
+      return [iri, canonical + iri.slice(alias.length)];
+    }
+  }
+  return [iri];
 }
 
 export function buildSampleQuery(shape: TargetShape): string {
@@ -150,6 +239,68 @@ WHERE {
     ?s ?p ?o .
   }${chainBranches}
 }`;
+}
+
+/**
+ * Decorate a {@link Validator} so every quad it receives has any IRI in an
+ * alias namespace rewritten to the corresponding canonical namespace.
+ * Without this, SHACL shapes declared under the canonical namespace would
+ * silently skip resources whose types and predicates use the alias form,
+ * producing vacuously-conformant reports.
+ */
+export function wrapValidatorWithAliasNormalization(
+  inner: Validator,
+  namespaceAliases: NamespaceAlias[],
+): Validator {
+  if (namespaceAliases.length === 0) {
+    return inner;
+  }
+  return {
+    validate(quads: Quad[], dataset: Dataset): Promise<ValidationResult> {
+      return inner.validate(
+        quads.map((q) => normalizeQuad(q, namespaceAliases)),
+        dataset,
+      );
+    },
+    report(dataset: Dataset): Promise<ValidationReport> {
+      return inner.report(dataset);
+    },
+  };
+}
+
+function normalizeQuad(q: Quad, namespaceAliases: NamespaceAlias[]): Quad {
+  const subject = rewriteIfAlias(q.subject, namespaceAliases) ?? q.subject;
+  const predicate =
+    rewriteIfAlias(q.predicate, namespaceAliases) ?? q.predicate;
+  const object = rewriteIfAlias(q.object, namespaceAliases) ?? q.object;
+  const graph = rewriteIfAlias(q.graph, namespaceAliases) ?? q.graph;
+  if (
+    subject === q.subject &&
+    predicate === q.predicate &&
+    object === q.object &&
+    graph === q.graph
+  ) {
+    return q;
+  }
+  return quad(
+    subject as Quad['subject'],
+    predicate as Quad['predicate'],
+    object as Quad['object'],
+    graph as Quad['graph'],
+  );
+}
+
+function rewriteIfAlias(
+  term: Quad['subject' | 'predicate' | 'object' | 'graph'],
+  namespaceAliases: NamespaceAlias[],
+): NamedNode | undefined {
+  if (term.termType !== 'NamedNode') return undefined;
+  for (const { canonical, alias } of namespaceAliases) {
+    if (term.value.startsWith(alias)) {
+      return namedNode(canonical + term.value.slice(alias.length));
+    }
+  }
+  return undefined;
 }
 
 function localName(iri: string): string {

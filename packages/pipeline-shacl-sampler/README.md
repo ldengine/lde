@@ -46,6 +46,39 @@ await new Pipeline({ /* … */, stages }).run();
 | `maxConcurrency`  | `10`              | Maximum concurrent in-flight executor batches per stage.                                                               |
 | `validator`       | —                 | Optional [`Validator`](../pipeline/src/validator.ts) attached to every generated stage (typically a `ShaclValidator`). |
 | `onInvalid`       | `'write'`         | Behaviour when a sampled batch fails validation: `'write'` \| `'skip'` \| `'halt'`. Only used when `validator` is set. |
+| `namespaceAliases`| `[{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }]` | Namespaces to treat as equivalent when matching `sh:targetClass` and when handing quads to the validator. See [Namespace aliases](#namespace-aliases). Pass `[]` to disable. |
+
+## Namespace aliases
+
+Schema.org publishes the same vocabulary at both `http://schema.org/` and
+`https://schema.org/`. SHACL shapes can only declare one as the
+`sh:targetClass` namespace, so without help the sampler would silently
+skip resources typed under the other form — and the validator would
+report vacuously-conformant runs against datasets that mix the two.
+
+`namespaceAliases` closes the gap. For every declared pair the sampler:
+
+- broadens its subject-selection SELECT to `?s a ?type . FILTER(?type IN
+  (<canonical/X>, <alias/X>))`, so instances typed under either
+  namespace are picked up;
+- decorates the configured `validator` so any alias-namespace IRI in
+  the sampled quads is rewritten to the canonical form before the SHACL
+  engine sees it, allowing the canonical-namespace
+  `sh:targetClass` / `sh:path` patterns to match.
+
+The default covers the only known case in practice. To support another
+dual-namespace vocabulary:
+
+```ts
+const stages = await shaclSampleStages({
+  shapesFile,
+  validator,
+  namespaceAliases: [
+    { canonical: 'https://schema.org/', alias: 'http://schema.org/' },
+    { canonical: 'https://example.org/v2/', alias: 'https://example.org/v1/' },
+  ],
+});
+```
 
 ## Limitations
 
