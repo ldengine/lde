@@ -46,14 +46,15 @@ await new Pipeline({ /* … */, stages }).run();
 | `maxConcurrency`  | `10`              | Maximum concurrent in-flight executor batches per stage.                                                               |
 | `validator`       | —                 | Optional [`Validator`](../pipeline/src/validator.ts) attached to every generated stage (typically a `ShaclValidator`). |
 | `onInvalid`       | `'write'`         | Behaviour when a sampled batch fails validation: `'write'` \| `'skip'` \| `'halt'`. Only used when `validator` is set. |
-| `namespaceAliases`| `[{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }]` | Namespaces to treat as equivalent when matching `sh:targetClass` and when handing quads to the validator. See [Namespace aliases](#namespace-aliases). Pass `[]` to disable. |
+| `namespaceAliases`| `[]`              | Namespaces to treat as equivalent when matching `sh:targetClass` and when handing quads to the validator. See [Namespace aliases](#namespace-aliases). |
 
 ## Namespace aliases
 
-Schema.org publishes the same vocabulary at both `http://schema.org/` and
-`https://schema.org/`. SHACL shapes can only declare one as the
+Some vocabularies publish the same terms under multiple namespaces — most
+notably schema.org, which is reachable at both `http://schema.org/` and
+`https://schema.org/`. SHACL shapes can only declare one of those as the
 `sh:targetClass` namespace, so without help the sampler would silently
-skip resources typed under the other form — and the validator would
+skip resources typed under the other form, and the validator would
 report vacuously-conformant runs against datasets that mix the two.
 
 `namespaceAliases` closes the gap. For every declared pair the sampler:
@@ -66,8 +67,8 @@ report vacuously-conformant runs against datasets that mix the two.
   engine sees it, allowing the canonical-namespace
   `sh:targetClass` / `sh:path` patterns to match.
 
-The default covers the only known case in practice. To support another
-dual-namespace vocabulary:
+Defaults to no aliases. To cover schema.org datasets that publish under
+both HTTP and HTTPS:
 
 ```ts
 const stages = await shaclSampleStages({
@@ -75,7 +76,6 @@ const stages = await shaclSampleStages({
   validator,
   namespaceAliases: [
     { canonical: 'https://schema.org/', alias: 'http://schema.org/' },
-    { canonical: 'https://example.org/v2/', alias: 'https://example.org/v1/' },
   ],
 });
 ```

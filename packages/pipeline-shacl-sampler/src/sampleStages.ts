@@ -41,10 +41,6 @@ export interface NamespaceAlias {
   alias: string;
 }
 
-const DEFAULT_NAMESPACE_ALIASES: NamespaceAlias[] = [
-  { canonical: 'https://schema.org/', alias: 'http://schema.org/' },
-];
-
 /** Options for {@link shaclSampleStages}. */
 export interface ShaclSampleStagesOptions {
   /** URL or local path to the SHACL shapes file. */
@@ -83,10 +79,15 @@ export interface ShaclSampleStagesOptions {
   onInvalid?: OnInvalid;
   /**
    * Namespace pairs to treat as equivalent when matching `sh:targetClass`
-   * and when handing quads to the validator. Defaults to a single entry
-   * that treats `http://schema.org/` as an alias of `https://schema.org/`
-   * — the only known case in practice where a single SHACL shape needs to
-   * cover both forms. Pass an empty array to disable.
+   * and when handing quads to the validator. For each pair, the sampler
+   * broadens its subject-selection SELECT so resources typed under either
+   * namespace are picked up, and wraps the configured {@link validator}
+   * so alias-namespace IRIs in the sampled quads are rewritten to the
+   * canonical form before SHACL evaluates them.
+   *
+   * Defaults to no aliases. To cover schema.org datasets that publish
+   * under both `http://schema.org/` and `https://schema.org/`, pass
+   * `[{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }]`.
    */
   namespaceAliases?: NamespaceAlias[];
 }
@@ -113,8 +114,7 @@ export async function shaclSampleStages(
   const timeout = options.timeout ?? 60_000;
   const batchSize = options.batchSize ?? samplesPerClass;
   const maxConcurrency = options.maxConcurrency;
-  const namespaceAliases =
-    options.namespaceAliases ?? DEFAULT_NAMESPACE_ALIASES;
+  const namespaceAliases = options.namespaceAliases ?? [];
   const validation = options.validator
     ? {
         validator: wrapValidatorWithAliasNormalization(
@@ -172,7 +172,7 @@ export function buildSubjectSelectorQuery(
   targetClass: NamedNode,
   subjectFilter?: string,
   namedGraph?: string,
-  namespaceAliases: NamespaceAlias[] = DEFAULT_NAMESPACE_ALIASES,
+  namespaceAliases: NamespaceAlias[] = [],
 ): string {
   let fromClause = '';
   if (namedGraph) {

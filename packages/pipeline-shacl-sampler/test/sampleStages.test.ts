@@ -57,39 +57,45 @@ describe('buildSubjectSelectorQuery', () => {
     expect(query).not.toMatch(/\bLIMIT\b/);
   });
 
-  it('matches both HTTPS and HTTP schema.org via FILTER IN when the default alias applies', () => {
+  it('emits the plain bound type pattern by default (no namespace aliases)', () => {
     const query = buildSubjectSelectorQuery(targetClass);
+    expect(query).toContain('?s a <https://schema.org/CreativeWork> .');
+    expect(query).not.toMatch(/FILTER\(\?type IN/);
+  });
+
+  it('broadens to FILTER IN when a configured alias namespace matches the canonical target class IRI', () => {
+    const query = buildSubjectSelectorQuery(
+      targetClass,
+      undefined,
+      undefined,
+      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
+    );
     expect(query).toContain('?s a ?type');
     expect(query).toContain(
       'FILTER(?type IN (<https://schema.org/CreativeWork>, <http://schema.org/CreativeWork>))',
     );
   });
 
-  it('emits the plain bound type pattern when no alias namespace matches the target class', () => {
-    const query = buildSubjectSelectorQuery(
-      namedNode('https://example.org/vocab/Widget'),
-    );
-    expect(query).toContain('?s a <https://example.org/vocab/Widget> .');
-    expect(query).not.toMatch(/FILTER\(\?type IN/);
-  });
-
   it('also broadens when the target class IRI itself uses the alias namespace', () => {
     const query = buildSubjectSelectorQuery(
       namedNode('http://schema.org/CreativeWork'),
+      undefined,
+      undefined,
+      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
     );
     expect(query).toContain(
       'FILTER(?type IN (<http://schema.org/CreativeWork>, <https://schema.org/CreativeWork>))',
     );
   });
 
-  it('emits the plain bound type pattern when namespace aliases are disabled', () => {
+  it('leaves a target class outside every configured alias namespace as a plain bound pattern', () => {
     const query = buildSubjectSelectorQuery(
-      targetClass,
+      namedNode('https://example.org/vocab/Widget'),
       undefined,
       undefined,
-      [],
+      [{ canonical: 'https://schema.org/', alias: 'http://schema.org/' }],
     );
-    expect(query).toContain('?s a <https://schema.org/CreativeWork> .');
+    expect(query).toContain('?s a <https://example.org/vocab/Widget> .');
     expect(query).not.toMatch(/FILTER\(\?type IN/);
   });
 
@@ -219,7 +225,7 @@ describe('shaclSampleStages', () => {
     }
   });
 
-  it('wraps the provided validator so alias IRIs are rewritten before delegation', async () => {
+  it('wraps the provided validator so configured alias IRIs are rewritten before delegation', async () => {
     const seen: Quad[][] = [];
     const inner: Validator = {
       async validate(quads) {
@@ -233,6 +239,9 @@ describe('shaclSampleStages', () => {
     const [firstStage] = await shaclSampleStages({
       shapesFile,
       validator: inner,
+      namespaceAliases: [
+        { canonical: 'https://schema.org/', alias: 'http://schema.org/' },
+      ],
     });
     const wrapped = firstStage?.validator;
     expect(wrapped).toBeDefined();
@@ -251,7 +260,7 @@ describe('shaclSampleStages', () => {
     expect(seen[0]?.[0]?.predicate.value).toBe('https://schema.org/creator');
   });
 
-  it('keeps the validator unchanged when namespaceAliases is empty', async () => {
+  it('passes the validator through unchanged when no namespaceAliases are configured (the default)', async () => {
     const inner: Validator = {
       async validate() {
         return { conforms: true, violations: 0 };
@@ -263,7 +272,6 @@ describe('shaclSampleStages', () => {
     const stages = await shaclSampleStages({
       shapesFile,
       validator: inner,
-      namespaceAliases: [],
     });
     for (const stage of stages) {
       expect(stage.validator).toBe(inner);
