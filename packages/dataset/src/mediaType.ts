@@ -14,3 +14,16 @@ export const rdfMediaTypes = [
   iana('application/n-triples'),
   iana('text/turtle'),
 ];
+
+/**
+ * Plain content types that indicate compression of the body rather than the
+ * RDF serialization itself. Consumers use this to ignore an HTTP Content-Type
+ * that just means "bytes were gzipped/zipped" when matching against a declared
+ * RDF media type.
+ */
+export const compressionMediaTypes: ReadonlySet<string> = new Set([
+  'application/gzip',
+  'application/x-gzip',
+  'application/zip',
+  'application/octet-stream',
+]);
