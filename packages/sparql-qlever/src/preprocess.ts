@@ -1,11 +1,11 @@
 import { Distribution } from '@lde/dataset';
-import { JsonLdParser } from 'jsonld-streaming-parser';
-import { StreamWriter } from 'n3';
+import { rdfParser } from 'rdf-parse';
+import { rdfSerializer } from 'rdf-serialize';
 import { createGunzip } from 'node:zlib';
-import { createReadStream, createWriteStream } from 'node:fs';
+import { createReadStream, createWriteStream, WriteStream } from 'node:fs';
 import { rm, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { Readable } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
 import yauzl from 'yauzl';
@@ -15,20 +15,12 @@ const ZIP_MIME = 'application/zip';
 const GZIP_MIME = 'application/gzip';
 const GZIP_MIME_LEGACY = 'application/x-gzip';
 
-/** N-Quads sub-format we always target after preprocessing. */
-const PREPROCESSED_FORMAT = 'nq' as const;
-export type PreprocessedFormat = typeof PREPROCESSED_FORMAT;
-
-/**
- * File extensions inside a JSON-LD zip that we will convert. Other entries
- * are skipped with a warning.
- */
 const JSONLD_ZIP_EXTENSIONS = ['.jsonld', '.json'];
 
 export interface PreprocessResult {
   /** Path to the file ready for `qlever-index`. Always N-Quads. */
   path: string;
-  format: PreprocessedFormat;
+  format: 'nq';
   warnings: string[];
 }
 
@@ -71,7 +63,7 @@ export async function preprocess(
 
   const outputFile = `${localFile}.preprocessed.nq`;
   if (await outputIsUpToDate(localFile, outputFile)) {
-    return { path: outputFile, format: PREPROCESSED_FORMAT, warnings: [] };
+    return { path: outputFile, format: 'nq', warnings: [] };
   }
 
   await rm(outputFile, { force: true });
@@ -83,7 +75,7 @@ export async function preprocess(
     await streamJsonldFile(localFile, outputFile, distribution);
   }
 
-  return { path: outputFile, format: PREPROCESSED_FORMAT, warnings };
+  return { path: outputFile, format: 'nq', warnings };
 }
 
 async function outputIsUpToDate(
@@ -95,29 +87,41 @@ async function outputIsUpToDate(
       stat(inputFile),
       stat(outputFile),
     ]);
-    return outputStat.mtimeMs >= inputStat.mtimeMs && outputStat.size > 0;
+    return outputStat.mtimeMs > inputStat.mtimeMs && outputStat.size > 0;
   } catch {
     return false;
   }
 }
 
 /**
- * Pipe a JSON-LD byte stream through parse → serialize → write.
- *
- * `append=true` opens the output for appending so multiple zip entries can be
- * folded into a single N-Quads file.
+ * Pipe one JSON-LD source through parse → N-Quads serialize into an already
+ * open writable, without closing it. Honors back-pressure via a PassThrough
+ * tap so a slow disk pauses the parser. Callers manage `output`'s lifecycle.
  */
-async function streamJsonldToNquads(
+async function pipeJsonldToWritable(
   input: Readable,
-  outputFile: string,
-  append: boolean,
+  output: WriteStream,
 ): Promise<void> {
-  await pipeline(
-    input,
-    new JsonLdParser(),
-    new StreamWriter({ format: 'application/n-quads' }),
-    createWriteStream(outputFile, { flags: append ? 'a' : 'w' }),
-  );
+  const quads = rdfParser.parse(input, { contentType: JSONLD_MIME });
+  const bytes = rdfSerializer.serialize(quads, {
+    contentType: 'application/n-quads',
+  });
+  const tap = new PassThrough();
+  tap.on('data', (chunk: Buffer | string) => {
+    if (!output.write(chunk)) {
+      tap.pause();
+      output.once('drain', () => tap.resume());
+    }
+  });
+  await pipeline(bytes as unknown as Readable, tap);
+}
+
+async function closeWritable(output: WriteStream): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    output.once('close', resolve);
+    output.once('error', reject);
+    output.end();
+  });
 }
 
 async function streamJsonldFile(
@@ -131,7 +135,12 @@ async function streamJsonldFile(
     localFile.toLowerCase().endsWith('.gz');
   const source = createReadStream(localFile);
   const input = isGzipped ? source.pipe(createGunzip()) : source;
-  await streamJsonldToNquads(input, outputFile, false);
+  const output = createWriteStream(outputFile);
+  try {
+    await pipeJsonldToWritable(input, output);
+  } finally {
+    await closeWritable(output);
+  }
 }
 
 const openZip = promisify(yauzl.open) as (
@@ -145,37 +154,42 @@ async function streamJsonldZip(
   warnings: string[],
 ): Promise<void> {
   const zip = await openZip(zipFile, { lazyEntries: true });
-
+  const output = createWriteStream(outputFile);
   let entriesProcessed = 0;
-  await new Promise<void>((resolve, reject) => {
-    zip.on('error', reject);
-    zip.on('end', resolve);
-    zip.on('entry', (entry: yauzl.Entry) => {
-      void (async () => {
-        try {
-          if (entry.fileName.endsWith('/')) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      zip.on('error', reject);
+      zip.on('end', resolve);
+      zip.on('entry', (entry: yauzl.Entry) => {
+        void (async () => {
+          try {
+            if (entry.fileName.endsWith('/')) {
+              zip.readEntry();
+              return;
+            }
+            const extension = extname(entry.fileName).toLowerCase();
+            if (!JSONLD_ZIP_EXTENSIONS.includes(extension)) {
+              warnings.push(
+                `Skipping zip entry ${entry.fileName}: extension ${extension || '(none)'} is not JSON-LD`,
+              );
+              zip.readEntry();
+              return;
+            }
+            const stream = await openZipEntry(zip, entry);
+            await pipeJsonldToWritable(stream, output);
+            entriesProcessed++;
             zip.readEntry();
-            return;
+          } catch (error) {
+            reject(error);
           }
-          const extension = extname(entry.fileName).toLowerCase();
-          if (!JSONLD_ZIP_EXTENSIONS.includes(extension)) {
-            warnings.push(
-              `Skipping zip entry ${entry.fileName}: extension ${extension || '(none)'} is not JSON-LD`,
-            );
-            zip.readEntry();
-            return;
-          }
-          const stream = await openZipEntry(zip, entry);
-          await streamJsonldToNquads(stream, outputFile, entriesProcessed > 0);
-          entriesProcessed++;
-          zip.readEntry();
-        } catch (error) {
-          reject(error);
-        }
-      })();
+        })();
+      });
+      zip.readEntry();
     });
-    zip.readEntry();
-  });
+  } finally {
+    zip.close();
+    await closeWritable(output);
+  }
 
   if (entriesProcessed === 0) {
     throw new Error(`Zip ${zipFile} contains no JSON-LD entries`);

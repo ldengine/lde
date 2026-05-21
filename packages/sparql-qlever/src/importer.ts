@@ -5,7 +5,7 @@ import {
   ImportSuccessful,
   NotSupported,
 } from '@lde/sparql-importer';
-import { Distribution } from '@lde/dataset';
+import { compressionMediaTypes, Distribution } from '@lde/dataset';
 import { LastModifiedDownloader } from '@lde/distribution-downloader';
 import { basename, dirname, join } from 'path';
 import { readFile, stat, writeFile } from 'node:fs/promises';
@@ -62,12 +62,12 @@ export class Importer implements ImporterInterface {
       .filter(
         (distribution): distribution is Distribution & { mimeType: string } =>
           distribution.mimeType !== undefined &&
-          supportedFormats.has(distribution.mimeType),
+          acceptedMediaTypes.includes(distribution.mimeType),
       )
       .sort(
         (a, b) =>
-          (preferenceOrder[a.mimeType] ?? Number.MAX_SAFE_INTEGER) -
-          (preferenceOrder[b.mimeType] ?? Number.MAX_SAFE_INTEGER),
+          acceptedMediaTypes.indexOf(a.mimeType) -
+          acceptedMediaTypes.indexOf(b.mimeType),
       );
     if (downloadDistributions.length === 0) {
       return new NotSupported();
@@ -250,9 +250,10 @@ export class Importer implements ImporterInterface {
       .join(' ');
 
     const metadataFile = `${this.options.indexName}.meta-data.json`;
-    const decompressCommand = basename(file).toLowerCase().endsWith('.zip')
-      ? `unzip -p '${basename(file)}'`
-      : `(gunzip -c '${basename(file)}' 2>/dev/null || cat '${basename(file)}')`;
+    const localName = basename(file);
+    const decompressCommand = localName.toLowerCase().endsWith('.zip')
+      ? `unzip -p '${localName}'`
+      : `(gunzip -c '${localName}' 2>/dev/null || cat '${localName}')`;
     const indexTask = await this.options.taskRunner.run(
       `${decompressCommand} | qlever-index ${flags} && cat ${metadataFile}`,
     );
@@ -263,9 +264,9 @@ export class Importer implements ImporterInterface {
 type fileFormat = 'nt' | 'nq' | 'ttl';
 
 /**
- * Native QLever index formats. `qlever-index -F <flag>` consumes these
- * directly; `application/ld+json` and `application/zip` go through the
- * preprocessor first (see {@link preprocess}) and end up as N-Quads.
+ * Native QLever index formats — `qlever-index -F <flag>` consumes these
+ * directly. JSON-LD is not here: it is preprocessed to N-Quads first (see
+ * {@link preprocess}).
  */
 const nativeFormats = new Map<string, fileFormat>([
   ['application/n-triples', 'nt'],
@@ -273,27 +274,21 @@ const nativeFormats = new Map<string, fileFormat>([
   ['text/turtle', 'ttl'],
 ]);
 
-const supportedFormats = new Set<string>([
-  ...nativeFormats.keys(),
-  'application/ld+json',
-]);
-
 /**
- * Preference order for which distribution to try first. Lower wins. Native
- * QLever formats come first because they skip preprocessing; JSON-LD requires
- * an in-Node parse and goes last.
+ * Accepted distribution media types, in preference order: the first match is
+ * tried first. Native formats win over JSON-LD because they skip the Node-side
+ * preprocessor.
  *
- * `application/zip` as a `dcat:mediaType` is intentionally NOT accepted: we
- * require the inner RDF format to be declared (via the actual `mediaType`)
- * with `application/zip` only appearing as the `compressFormat`, so we know
- * what to expect inside the archive.
+ * `application/zip` is intentionally absent — the inner RDF format must be
+ * declared via `mediaType` with `application/zip` appearing only as the
+ * `compressFormat`, so we know what is inside.
  */
-const preferenceOrder: Record<string, number> = {
-  'application/n-quads': 0,
-  'application/n-triples': 0,
-  'text/turtle': 0,
-  'application/ld+json': 1,
-};
+const acceptedMediaTypes: readonly string[] = [
+  'application/n-quads',
+  'application/n-triples',
+  'text/turtle',
+  'application/ld+json',
+];
 
 const defaultQleverIndexOptions = {
   'ascii-prefixes-only': true,
@@ -318,13 +313,6 @@ interface ResolvedFormat {
   warning?: string;
 }
 
-const compressionTypes = new Set([
-  'application/gzip',
-  'application/x-gzip',
-  'application/zip',
-  'application/octet-stream',
-]);
-
 /**
  * Determine the QLever format flag for a distribution.
  *
@@ -346,7 +334,7 @@ function fileFormatFor(
   // Try server Content-Type first (strip parameters like "; charset=utf-8").
   if (serverContentType) {
     const actualType = serverContentType.split(';')[0].trim();
-    if (!compressionTypes.has(actualType)) {
+    if (!compressionMediaTypes.has(actualType)) {
       const serverFormat = nativeFormats.get(actualType);
       if (serverFormat !== undefined && serverFormat !== declaredFormat) {
         return {

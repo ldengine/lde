@@ -1,4 +1,4 @@
-import { Distribution } from '@lde/dataset';
+import { compressionMediaTypes, Distribution } from '@lde/dataset';
 import { Parser } from 'n3';
 
 /**
@@ -392,14 +392,6 @@ function validateBody(body: string, contentType: string | null): string | null {
   return null;
 }
 
-/** Content types that indicate compression, not the RDF serialization format. */
-const compressionTypes = new Set([
-  'application/gzip',
-  'application/x-gzip',
-  'application/zip',
-  'application/octet-stream',
-]);
-
 /**
  * Compare the declared MIME type from the dataset registry against the
  * server's Content-Type header. Adds a warning when they disagree.
@@ -411,7 +403,7 @@ function checkContentTypeMismatch(
   if (!result.isSuccess() || !declaredMimeType || !result.contentType) return;
 
   const actual = result.contentType.split(';')[0].trim();
-  if (compressionTypes.has(actual)) return;
+  if (compressionMediaTypes.has(actual)) return;
 
   if (actual !== declaredMimeType) {
     result.warnings.push(
