@@ -437,6 +437,36 @@ describe('Importer', () => {
       ]);
     });
 
+    it('runs JSON-LD through the preprocessor and indexes the resulting N-Quads', async () => {
+      const runner = stubTaskRunner(42);
+      const jsonldFile = join(tempDir, 'data.jsonld');
+      await copyFile(
+        resolve('test/fixtures/preprocess/data.jsonld'),
+        jsonldFile,
+      );
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download() {
+            return { path: jsonldFile, headers: new Headers() };
+          },
+        },
+      });
+
+      const result = await importer.import([
+        new Distribution(
+          new URL('https://example.com/data.jsonld'),
+          'application/ld+json',
+        ),
+      ]);
+
+      expect(result).toBeInstanceOf(ImportSuccessful);
+      // The preprocessed N-Quads file is what reaches qlever-index.
+      expect(runner.commands[0]).toContain('data.jsonld.preprocessed.nq');
+      expect(runner.commands[0]).toContain('-F nq');
+    });
+
     it('does not accept a standalone application/zip distribution', async () => {
       const runner = stubTaskRunner(42);
       const importer = createImporter(runner);
