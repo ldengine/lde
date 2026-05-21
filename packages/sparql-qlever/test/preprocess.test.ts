@@ -104,6 +104,34 @@ describe('preprocess', () => {
     expect(nquads.trim().split('\n').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('gunzips a JSON-LD distribution when compressFormat=application/gzip', async () => {
+    const file = join(tempDir, 'data.jsonld.gz');
+    await copyFile(resolve('test/fixtures/preprocess/data.jsonld.gz'), file);
+
+    const result = await preprocess(
+      file,
+      makeDistribution('application/ld+json', 'application/gzip'),
+    );
+
+    expect(result.format).toBe('nq');
+    const nquads = await readFile(result.path, 'utf-8');
+    expect(nquads).toContain('<https://example.org/utrecht/story/1>');
+  });
+
+  it('gunzips a JSON-LD distribution via .gz extension when compressFormat is missing', async () => {
+    const file = join(tempDir, 'data.jsonld.gz');
+    await copyFile(resolve('test/fixtures/preprocess/data.jsonld.gz'), file);
+
+    // No compressFormat declared (the UU collections case).
+    const result = await preprocess(
+      file,
+      makeDistribution('application/ld+json'),
+    );
+
+    const nquads = await readFile(result.path, 'utf-8');
+    expect(nquads).toContain('<https://example.org/utrecht/story/1>');
+  });
+
   it('extracts a zip containing JSON-LD (declared via compressFormat) and converts to N-Quads', async () => {
     const file = join(tempDir, 'data.zip');
     await copyFile(resolve('test/fixtures/preprocess/data.zip'), file);
@@ -163,6 +191,15 @@ describe('preprocess', () => {
 
     // The .txt entry must be reported via warnings rather than silently dropped.
     expect(result.warnings.some((w) => w.includes('extra.txt'))).toBe(true);
+  });
+
+  it('throws when called for a distribution that does not need preprocessing', async () => {
+    const file = join(tempDir, 'data.nt');
+    await (await import('node:fs/promises')).writeFile(file, '');
+
+    await expect(
+      preprocess(file, makeDistribution('application/n-triples')),
+    ).rejects.toThrow(/does not need preprocessing/);
   });
 
   it('throws when zip contains no entries matching the declared inner mediaType', async () => {
