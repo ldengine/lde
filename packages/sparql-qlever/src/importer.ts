@@ -250,10 +250,11 @@ export class Importer implements ImporterInterface {
       .join(' ');
 
     const metadataFile = `${this.options.indexName}.meta-data.json`;
+    const decompressCommand = basename(file).toLowerCase().endsWith('.zip')
+      ? `unzip -p '${basename(file)}'`
+      : `(gunzip -c '${basename(file)}' 2>/dev/null || cat '${basename(file)}')`;
     const indexTask = await this.options.taskRunner.run(
-      `(gunzip -c '${basename(file)}' 2>/dev/null || cat '${basename(
-        file,
-      )}') | qlever-index ${flags} && cat ${metadataFile}`,
+      `${decompressCommand} | qlever-index ${flags} && cat ${metadataFile}`,
     );
     return await this.options.taskRunner.wait(indexTask);
   }
@@ -320,6 +321,7 @@ interface ResolvedFormat {
 const compressionTypes = new Set([
   'application/gzip',
   'application/x-gzip',
+  'application/zip',
   'application/octet-stream',
 ]);
 
