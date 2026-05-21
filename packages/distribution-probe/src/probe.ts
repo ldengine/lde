@@ -396,6 +396,7 @@ function validateBody(body: string, contentType: string | null): string | null {
 const compressionTypes = new Set([
   'application/gzip',
   'application/x-gzip',
+  'application/zip',
   'application/octet-stream',
 ]);
 

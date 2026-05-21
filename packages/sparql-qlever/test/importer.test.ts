@@ -375,5 +375,81 @@ describe('Importer', () => {
       expect(runner.commands[0]).toContain('-F ttl');
       expect((result as ImportSuccessful).warnings).toEqual([]);
     });
+
+    it('prefers native RDF formats over JSON-LD when both are offered', async () => {
+      const runner = stubTaskRunner(42);
+      const downloadedDistributions: Distribution[] = [];
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download(distribution: Distribution) {
+            downloadedDistributions.push(distribution);
+            return { path: dataFile, headers: new Headers() };
+          },
+        },
+      });
+
+      // JSON-LD first in the array; importer must sort it last.
+      await importer.import([
+        new Distribution(
+          new URL('https://example.com/data.jsonld'),
+          'application/ld+json',
+        ),
+        new Distribution(
+          new URL('https://example.com/data.nq'),
+          'application/n-quads',
+        ),
+      ]);
+
+      expect(downloadedDistributions[0]?.mimeType).toBe('application/n-quads');
+    });
+
+    it('orders distributions: native → JSON-LD', async () => {
+      const runner = stubTaskRunner(0); // 0 triples → ImportFailed → tries next
+      const downloadedDistributions: Distribution[] = [];
+      const importer = new Importer({
+        taskRunner: runner,
+        indexName,
+        downloader: {
+          async download(distribution: Distribution) {
+            downloadedDistributions.push(distribution);
+            // Throw so JSON-LD preprocessing isn't attempted on data.ttl.
+            throw new Error('download stub: skip this distribution');
+          },
+        },
+      });
+
+      await importer.import([
+        new Distribution(
+          new URL('https://example.com/data.jsonld'),
+          'application/ld+json',
+        ),
+        new Distribution(
+          new URL('https://example.com/data.nt'),
+          'application/n-triples',
+        ),
+      ]);
+
+      expect(downloadedDistributions.map((d) => d.mimeType)).toEqual([
+        'application/n-triples',
+        'application/ld+json',
+      ]);
+    });
+
+    it('does not accept a standalone application/zip distribution', async () => {
+      const runner = stubTaskRunner(42);
+      const importer = createImporter(runner);
+
+      const result = await importer.import([
+        new Distribution(
+          new URL('https://example.com/data.zip'),
+          'application/zip',
+        ),
+      ]);
+
+      // NotSupported indicates no distribution was acceptable.
+      expect(result.constructor.name).toBe('NotSupported');
+    });
   });
 });
