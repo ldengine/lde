@@ -5,8 +5,8 @@ import { createGunzip } from 'node:zlib';
 import { createReadStream, createWriteStream, WriteStream } from 'node:fs';
 import { rm, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { PassThrough, Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { finished } from 'node:stream/promises';
 import { promisify } from 'node:util';
 import yauzl from 'yauzl';
 
@@ -95,8 +95,8 @@ async function outputIsUpToDate(
 
 /**
  * Pipe one JSON-LD source through parse → N-Quads serialize into an already
- * open writable, without closing it. Honors back-pressure via a PassThrough
- * tap so a slow disk pauses the parser. Callers manage `output`'s lifecycle.
+ * open writable, without closing it. Back-pressure is handled by Node's
+ * built-in `.pipe()`; the caller manages `output`'s lifecycle.
  */
 async function pipeJsonldToWritable(
   input: Readable,
@@ -105,15 +105,9 @@ async function pipeJsonldToWritable(
   const quads = rdfParser.parse(input, { contentType: JSONLD_MIME });
   const bytes = rdfSerializer.serialize(quads, {
     contentType: 'application/n-quads',
-  });
-  const tap = new PassThrough();
-  tap.on('data', (chunk: Buffer | string) => {
-    if (!output.write(chunk)) {
-      tap.pause();
-      output.once('drain', () => tap.resume());
-    }
-  });
-  await pipeline(bytes as unknown as Readable, tap);
+  }) as unknown as Readable;
+  bytes.pipe(output, { end: false });
+  await finished(bytes);
 }
 
 async function closeWritable(output: WriteStream): Promise<void> {
